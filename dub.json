@@ -1,0 +1,12 @@
+{
+	"name": "grtrace",
+	"description": "General Relativity Tracer",
+	"copyright": "Copyright © 2015, ICM UW",
+	"authors": ["Jakub Szewczyk", "Grzegorz Uriasz"],
+	"workingDirectory": "bin",
+	"homepage": "https://bitbucket.org/kubasz/grtrace",
+	"targetType": "executable",
+	"targetPath": "bin/",
+	"dependencies": {
+	}
+}
