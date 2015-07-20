@@ -8,5 +8,7 @@
 	"targetType": "executable",
 	"targetPath": "bin/",
 	"dependencies": {
-	}
+		"tcltk": "~>8.6.5"
+	},
+	"mainSourceFile": "source/app.d"
 }
