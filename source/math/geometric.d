@@ -24,6 +24,7 @@ struct Line
 {
 	Point origin;
 	Vectorf direction;
+	Vectorf invdirection;
 	// true if is a ray (half-line)
 	bool ray=false;
 }
@@ -31,7 +32,7 @@ struct Line
 Line LinePoints(Point A, Point B)
 {
 	Vectorf Dir = (A-B).normalized;
-	return Line(A, Dir);
+	return Line(A, Dir, 1.0/Dir);
 }
 
 struct Plane
@@ -67,12 +68,9 @@ bool PointInBox(AABB box, Point p)
 
 bool LineIntersectsBox(AABB box, Line l)
 {
-	Vectorf dirfrac;
-	dirfrac.x = 1.0 / l.direction.x;
-	dirfrac.y = 1.0 / l.direction.y;
-	dirfrac.z = 1.0 / l.direction.z;
-	Vectorf lb = box.min;
-	Vectorf rt = box.max;
+	Vectorf *dirfrac = &l.invdirection;
+	Vectorf *lb = &box.min;
+	Vectorf *rt = &box.max;
 	fpnum t1 = (lb.x - l.origin.x)*dirfrac.x;
 	fpnum t2 = (rt.x - l.origin.x)*dirfrac.x;
 	fpnum t3 = (lb.y - l.origin.y)*dirfrac.y;

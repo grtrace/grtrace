@@ -83,6 +83,11 @@ struct Vector(T)
 		return Vector!T(x/rhs,y/rhs,z/rhs,w);
 	}
 
+	Vector!T opBinaryRight(string op)(T rhs) const if(op=="/")
+	{
+		return Vector!T(rhs/x,rhs/y,rhs/z,w);
+	}
+
 	/// Dot product (*)
 	T opBinary(string op)(Vector!T rhs) const if(op=="*")
 	{
