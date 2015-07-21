@@ -14,3 +14,14 @@ inum cfgResolutionY = 240;
 
 fpnum eps = 1e-9;
 
+// physical constants
+enum P : fpnum
+{
+	c = 1.0,
+	G = 1.0,
+	hd = 2.612e-70, // m^2
+	MS = 1477, // m
+	MZ = 0.004435, // m
+	LS = 1.08e-26
+}
+

@@ -46,17 +46,13 @@ fpnum TrilinearInterpolation(
 }
 
 //multiply polynomial by x-a
-private Polynomial MultiplyByLinear(fpnum a, Polynomial p)
+private Polynomial MultiplyByLinear(fpnum a, in Polynomial p)
 {
-	Polynomial tmp = Polynomial(p.degree);
+	Polynomial tmp = Polynomial();
+	tmp.coeffs = p.coeffs.dup;
 	Polynomial pa = p*a;
-	import std.stdio;
-	writeln("p=",p);
-	writeln("pa=",pa);
-	tmp.coeffs = p.coeffs~[0.0];
-	writeln("ext=",tmp);
+	tmp.coeffs = [0.0]~p.coeffs;
 	tmp = tmp - pa;
-	writeln("diff=",tmp);
 	return tmp;
 }
 
@@ -67,11 +63,15 @@ in
 }
 body
 {
+	import std.math;
+	import std.stdio;
+	FloatingPointControl fpctrl;
+	fpctrl.enableExceptions(FloatingPointControl.severeExceptions);
 	Polynomial res = Polynomial(x.length-1);
 
 	for (int i = 0; i<x.length; i++)
 	{
-		Polynomial tmp = Polynomial();
+		Polynomial tmp = Polynomial(0);
 		tmp.coeffs[0]=1;
 
 		fpnum mul = 1;
@@ -79,36 +79,13 @@ body
 		for(int j = 0; j<x.length; j++)
 		{
 			if(i==j) continue;
-
 			tmp = MultiplyByLinear(x[j], tmp);
-			import std.stdio;
-			writeln(tmp.size);
-			writef("%f %f\n", tmp.coeffs[0], tmp.coeffs[1]);
 			mul *= x[i]-x[j];
 		}
-
 		mul = y[i]/mul;
 		tmp= tmp*mul;
-
 		res = res + tmp;
 	}
 
-	return Polynomial();
-}
-
-unittest
-{
-	import std.stdio;
-
-	fpnum[2] x = [1,10];
-	fpnum[2] y = [0,1];
-
-	Polynomial test = PolynomialInterpolation(x,y);
-
-	writeln(test.size);
-
-	for(auto i = 0; i<test.size; i++)
-	{
-		writeln(test.coeffs[i]);
-	}
+	return res;
 }
