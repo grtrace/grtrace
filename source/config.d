@@ -12,3 +12,5 @@ string cfgScript = "raytrace.tcl";
 inum cfgResolutionX = 320;
 inum cfgResolutionY = 240;
 
+fpnum eps = 1e-9;
+
