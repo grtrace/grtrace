@@ -51,7 +51,7 @@ extern(C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc, 
 	if(cvp is null)
 	{
 		Tcl_AppendResult(interp, "Trying to use nonexistant configvalue\0".ptr,null);
-		return TCL6400_ERROR;
+		return TCL_ERROR;
 	}
 	ConfigValue cv = *cvp;
 	try

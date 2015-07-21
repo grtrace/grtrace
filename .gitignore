@@ -159,3 +159,4 @@ __dummy.html
 *.o
 *.obj
 bin/grtrace
+*.png
