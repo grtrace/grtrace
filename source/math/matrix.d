@@ -248,7 +248,7 @@ public:
 			vals[4], vals[5], vals[6],
 			vals[8], vals[9], vals[10]);
 
-		return tmp.transposed/this.determinant;
+		return tmp.transposed*(1/this.determinant);
 	}
 
 	auto ref T opIndex()(size_t i) const
@@ -332,21 +332,3 @@ public:
 alias Matrix4f = Matrix4!fpnum;
 alias Matrix4i = Matrix4!inum;
 alias Matrix4u = Matrix4!unum;
-
-unittest
-{
-	import std.stdio;
-	import std.random;
-	Matrix4f a = Matrix4f.Matrixes.Indentity*20;
-	while(true)
-	{
-	for(int i = 0; i<16; i++) a[i] = uniform(0,100);
-
-	//for(int i = 0; i<16; i++) { if(i%4==0) writeln(); writef("%.1f ",a[i]);}
-
-	auto b = a*a.inverse;
-	writeln();
-
-	for(int i = 0; i<16; i++) { if(i%4==0) writeln(); writef("%.1f ",b[i]);}
-	}
-}

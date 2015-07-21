@@ -3,22 +3,23 @@
 import config;
 import math.util;
 import std.math;
+import std.string, std.array;
 
 struct Polynomial
 {
-	fpnum[] coeffs;
+	fpnum[] coeffs = [0];
 
-	this(size_t deg=0)
+	this(size_t deg)
 	{
 		coeffs.length = deg+1;
 	}
 
-	@property size_t degree()
+	@property size_t degree() const
 	{
 		return coeffs.length-1;
 	}
 
-	@property size_t size()
+	@property size_t size() const
 	{
 		return coeffs.length;
 	}
@@ -30,6 +31,13 @@ struct Polynomial
 			coeffs.length--;
 		}
 		return this;
+	}
+
+	Polynomial opBinary(string op)(fpnum d) const if (op=="*"||op=="/")
+	{
+		Polynomial res = Polynomial(degree);
+		res.coeffs[] = mixin("coeffs[]"~op~"d");
+		return res;
 	}
 
 	Polynomial opBinary(string op)(Polynomial o) const if (op=="+")
@@ -66,5 +74,20 @@ struct Polynomial
 			R.coeffs[size..$] = o.coeffs[size..$];
 			return R.compress;
 		}
+	}
+
+	string toString()
+	{
+		import std.format;
+		auto ap = appender("");
+		if(coeffs.length==0)
+		{
+			return "0";
+		}
+		for(ptrdiff_t i=coeffs.length-1;i>=0;i--)
+		{
+			ap.put("%+.2f*x^%d ".format(coeffs[i],i));
+		}
+		return ap.data;
 	}
 }
