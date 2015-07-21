@@ -1,6 +1,7 @@
 ﻿module scene.scenemgr;
 
 import math.vector;
+import math.geometric;
 
 interface ISceneObject
 {
