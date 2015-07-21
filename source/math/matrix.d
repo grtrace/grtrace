@@ -9,7 +9,7 @@ struct Matrix4(T)
 {
 private:
 
-	pragma(inline, true) T det3(	
+	T det3(	
 		T a0, T a1, T a2,
 		T a3, T a4, T a5,
 		T a6, T a7, T a8)

@@ -42,7 +42,12 @@ struct Vector(T)
 	/// Length operator
 	T opUnary(string op)() const if (op=="~")
 	{
-		return sqrt(this.opUnary!"*"());
+		return cast(T)sqrt(cast(real)this.opUnary!"*"());
+	}
+
+	@property Vector!T normalized()
+	{
+		return this/(~this);
 	}
 
 	Vector!T opOpAssign(string op)(T rhs) if(op=="*=")
@@ -136,3 +141,7 @@ Vector!T vector(T)(T x, T y, T z, T w = 1)
 alias vectorf = vector!fpnum;
 alias vectori = vector!inum;
 alias vectoru = vector!unum;
+
+alias Vectorf = Vector!fpnum;
+alias Vectori = Vector!inum;
+alias Vectoru = Vector!unum;
