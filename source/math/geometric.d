@@ -51,6 +51,18 @@ Plane PlanePoints(Point p1, Point p2, Point p3)
 	return PlaneVectors(p1, p2-p1, p3-p1);
 }
 
+Plane PlaneAngle(fpnum OXZ_angle, fpnum OXY_angle, Vectorf pointOnPlane)
+	{
+		OXZ_angle*= PI/180;
+		OXY_angle*= PI/180;
+		return Plane(
+		pointOnPlane,
+		Vectorf(
+			sin(OXZ_angle)*cos(OXY_angle),
+			sin(OXZ_angle)*sin(OXY_angle),
+			cos(OXZ_angle)));
+	}
+
 Plane InversePlane(Plane p)
 {
 	return Plane(p.origin,-p.normal);
