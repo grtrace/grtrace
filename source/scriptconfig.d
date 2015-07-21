@@ -1,16 +1,24 @@
 ﻿module scriptconfig;
 
-import std.string, std.array, std.stdio;
+import std.string, std.array, std.stdio, std.variant;
 import tcltk.tcl;
+import config;
 //import tcltk.tk;
 
-Tcl_Interp* tcl;
+alias ConfigValue = Algebraic!(inump,unump,fpnump,string*);
+private ConfigValue[string] cfgOptions;
+public __gshared Tcl_Interp* tcl;
+
 
 void InitScripting(string arg0)
 {
 	Tcl_FindExecutable(arg0.toStringz());
 	tcl = Tcl_CreateInterp();
 	Tcl_Init(tcl);
+	Tcl_CreateObjCommand(tcl, "configset", &tclConfigSet, null, null);
+
+	AddConfig("ResolutionX",&cfgResolutionX);
+	AddConfig("ResolutionY",&cfgResolutionY);
 }
 
 static ~this()
@@ -25,4 +33,62 @@ void DoScript(string path)
 	{
 		throw new Exception("Tcl error");
 	}
+}
+
+extern(C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	string tar;
+	const(char)* tarcs;
+	int tarcl;
+	if(objc!=3)
+	{
+		Tcl_WrongNumArgs(interp, objc, objv, "configset has only 2 arguments!");
+		return TCL_ERROR;
+	}
+	tarcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[1],&tarcl);
+	tar = tarcs[0..tarcl].idup;
+	ConfigValue* cvp = tar in cfgOptions;
+	if(cvp is null)
+	{
+		Tcl_AppendResult(interp, "Trying to use nonexistant configvalue\0".ptr,null);
+		return TCL6400_ERROR;
+	}
+	ConfigValue cv = *cvp;
+	try
+	{
+		if(cv.peek!(string*)()!is null)
+		{
+			const(char)* valcs;
+			int valcl;
+			valcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[2],&valcl);
+			*(cv.get!(string*)) = cast(string)(valcs[0..valcl].idup);
+		}
+		else
+		{
+			long v;
+			if(Tcl_GetLongFromObj(interp, cast(Tcl_Obj*)objv[2], &v)==TCL_ERROR)
+			{
+				return TCL_ERROR;
+			}
+			if(cv.peek!(inump)()!is null)
+			{
+				*(cv.get!(inump)) = cast(inum)v;
+			}
+			else
+			{
+				*(cv.get!(unump)) = cast(unum)v;
+			}
+		}
+	}
+	catch(Exception e)
+	{
+		Tcl_AppendResult(interp, "D exception\0".ptr,null);
+		return TCL_ERROR;
+	}
+	return TCL_OK;
+}
+
+void AddConfig(T)(string name, T val) if (is(T==unump) || is(T==inump) || is(T==string*) || is(T==fpnump))
+{
+	cfgOptions[name] = val;
 }
