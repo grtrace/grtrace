@@ -54,7 +54,7 @@ public:
 		else assert(0);
 	}
 
-};
+}
 
 enum Colors : Color
 {
