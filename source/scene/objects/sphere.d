@@ -13,6 +13,13 @@ class Sphere : Renderable
 	private Vectorf center;
 	private fpnum radius;
 
+	this(Vectorf cente, fpnum rad)
+	{
+		center = cente;
+		radius = rad;
+		mat = Material();
+	}
+
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal)
 	{
 		Vectorf o = ray.origin - center;

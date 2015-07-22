@@ -19,9 +19,16 @@ enum IntersectionCount
 
 alias Point = Vectorf;
 
-/// Line of form `Ax + By + Cz = D`
+/// Line in vector representation
 struct Line
 {
+	this(Point p, Vectorf dir, bool ry=false)
+	{
+		origin = p;
+		direction = dir;
+		invdirection = 1.0/dir;
+		ray = ry;
+	}
 	Point origin;
 	Vectorf direction;
 	Vectorf invdirection;
@@ -32,7 +39,7 @@ struct Line
 Line LinePoints(Point A, Point B)
 {
 	Vectorf Dir = (A-B).normalized;
-	return Line(A, Dir, 1.0/Dir);
+	return Line(A, Dir);
 }
 
 struct Plane

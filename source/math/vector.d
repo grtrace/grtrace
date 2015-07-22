@@ -3,6 +3,7 @@
 import config;
 import std.math;
 import std.traits;
+import std.format, std.string;
 
 struct Vector(T)
 {
@@ -135,6 +136,11 @@ struct Vector(T)
 	bool opEquals()(auto ref const S s) const
 	{
 		return (x==s.x)&&(y==s.y)&&(z==s.z)&&(w==s.w);
+	}
+
+	string toString()
+	{
+		return format("( %.4f ; %.4f ; %.4f ; %.0f )",x,y,z,w);
 	}
 }
 

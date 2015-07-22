@@ -4,6 +4,7 @@ import std.math;
 import math.util;
 import math.vector;
 import config;
+import std.format;
 
 struct Matrix4(T)
 {

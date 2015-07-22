@@ -12,6 +12,18 @@ string cfgScript = "raytrace.tcl";
 inum cfgResolutionX = 320;
 inum cfgResolutionY = 240;
 
+unum cfgSamples = 1;
+string cfgWorldSpace = "euclidean";
+string cfgCameraType = "orthogonal";
+fpnum cfgCameraX = 0.0;
+fpnum cfgCameraY = 0.0;
+fpnum cfgCameraZ = 0.0;
+fpnum cfgCameraPitch = 0.0;
+fpnum cfgCameraYaw = 0.0;
+fpnum cfgCameraRoll = 0.0;
+string cfgCameraOptions = "";
+string cfgOutputFile = "raytrace.png";
+
 fpnum eps = 1e-9;
 
 // physical constants

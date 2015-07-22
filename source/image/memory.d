@@ -7,7 +7,7 @@ import image.color;
 
 class Image
 {
-	public ubyte[] data;
+	public __gshared ubyte[] data;
 	private size_t width, height;
 
 	public @property size_t w() const
@@ -36,6 +36,13 @@ class Image
 	}
 
 	public void Poke(size_t x, size_t y, Color c)
+	{
+		data[(y*width + x)*3] = c.r;
+		data[(y*width + x)*3 + 1] = c.g;
+		data[(y*width + x)*3 + 2] = c.b;
+	}
+
+	public void Poke(size_t x, size_t y, Color c) shared
 	{
 		data[(y*width + x)*3] = c.r;
 		data[(y*width + x)*3 + 1] = c.g;
