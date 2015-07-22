@@ -20,18 +20,24 @@ private:
 public:
 	T[16] vals;
 
-	static enum Matrixes : Matrix4!T
+	static @property Matrix4!T Zero()
 	{
-		Zero = Matrix4!T(
+		static Matrix4!T X = Matrix4!T(
 			0,0,0,0,
 			0,0,0,0,
 			0,0,0,0,
-			0,0,0,0),
-		Indentity = Matrix4!T(
+			0,0,0,0);
+		return X;
+	}
+
+	static @property Matrix4!T Identity()
+	{
+		static Matrix4!T X = Matrix4!T(
 			1,0,0,0,
 			0,1,0,0,
 			0,0,1,0,
-			0,0,0,1)
+			0,0,0,1);
+		return X;
 	}
 
 	static Matrix4!T Translation(Vector!T vec)

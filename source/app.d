@@ -5,16 +5,28 @@ import std.getopt;
 import scriptconfig;
 import config;
 
+enum string HelpStr = `
+General Relativity rayTracer usage:
+%s [options]
+Options:
+--verbose|-v  - Outputs additional information
+--script|-s   - Script to load the configuration from (default raytrace.tcl)
+--help|-h     - Displays this text
+`;
+
 void main(string[] args)
 {
-	InitScripting(args[0]);
-	auto optInfo = getopt(args,
-		"verbose|v", "Outputs debug information", &cfgVerbose,
-		"script|s", "Script to load the configuration from (default raytrace.tcl)", &cfgScript
+	string arg0 = args[0].idup;
+	InitScripting(arg0);
+	bool doHelp;
+	getopt(args,
+		"verbose|v", &cfgVerbose,
+		"script|s", &cfgScript,
+		"help|h", &doHelp
 		);
-	if(optInfo.helpWanted)
+	if(doHelp)
 	{
-		defaultGetoptPrinter("General Relativity rayTracer options:",optInfo.options);
+		writef(HelpStr, arg0);
 		return;
 	}
 	DoScript(cfgScript);
