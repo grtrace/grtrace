@@ -94,7 +94,7 @@ struct Polynomial
 
 	string toString()
 	{
-		import std.format : format;
+		import std.format;
 		if(coeffs.length==0)
 		{
 			return "0";
@@ -109,6 +109,9 @@ struct Polynomial
 
 	fpnum value(fpnum x)
 	{
-		return cast(fpnum)(poly(x, coeffs));
+		real[] cfs;
+		cfs.length = coeffs.length;
+		cfs[] = cast(real[])coeffs[];
+		return cast(fpnum)(poly(cast(real)x, cfs));
 	}
 }
