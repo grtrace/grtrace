@@ -51,21 +51,34 @@ Plane PlanePoints(Point p1, Point p2, Point p3)
 	return PlaneVectors(p1, p2-p1, p3-p1);
 }
 
-Plane PlaneAngle(fpnum OXZ_angle, fpnum OXY_angle, Vectorf pointOnPlane)
+Plane PlaneAngles(fpnum OXZ_deg_angle, fpnum OXY_deg_angle, Vectorf pointOnPlane)
 	{
-		OXZ_angle*= PI/180;
-		OXY_angle*= PI/180;
+		OXZ_deg_angle*= PI/180;
+		OXY_deg_angle*= PI/180;
 		return Plane(
 		pointOnPlane,
 		Vectorf(
-			sin(OXZ_angle)*cos(OXY_angle),
-			sin(OXZ_angle)*sin(OXY_angle),
-			cos(OXZ_angle)));
+			sin(OXZ_deg_angle)*cos(OXY_deg_angle),
+			sin(OXZ_deg_angle)*sin(OXY_deg_angle),
+			cos(OXZ_deg_angle)));
 	}
 
 Plane InversePlane(Plane p)
 {
 	return Plane(p.origin,-p.normal);
+}
+
+bool LineIntersectsPlane(Plane plane, Line line)
+{
+	fpnum B = plane.normal*line.direction;
+	if(B == 0) return false;
+	
+	double t1 = (plane.normal*(plane.origin-line.origin))/B;
+	
+	if(!line.ray || t1 > eps)
+		return true;
+	else 
+		return false;
 }
 
 struct AABB
@@ -102,4 +115,19 @@ bool LineIntersectsBox(AABB box, Line l)
 		return false;
 	}
 	return true;
+}
+
+struct Triangle
+{
+	Plane plane;
+	Vectorf b;
+	Vectorf c;
+}
+
+Triangle TrianglePoints(Vectorf A, Vectorf B, Vectorf C)
+{
+	return Triangle(
+		Plane(A, (B%C).normalized),
+		B-A,
+		C-A);
 }

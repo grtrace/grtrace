@@ -1,15 +1,20 @@
 ﻿module scene.objects.interfaces;
 
-public import math.geometric;
-public import math.vector;
-public import scene.materials.material;
-public import config;
+import math.geometric;
+import math.vector;
+import scene.materials.material;
+import config;
+import std.math;
 
 interface Renderable
 {
 public:
 
-	bool getIntersection(Line ray, out fpnum dist, out Vectorf normal);
+	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal)
+	in
+	{
+		assert(fabs(*ray.direction)<eps);
+	}
 
 	@property Material material();
 

@@ -4,6 +4,4 @@ import config;
 
 struct Material
 {
-	bool isReflective;
-	bool isDiffusive;
 }

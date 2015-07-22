@@ -1,13 +1,15 @@
 ﻿module scene.objects.plane;
 
 import scene.objects.interfaces;
+import math.geometric;
+import math.vector;
+import scene.materials.material;
+import config;
 
 class Plane : Renderable
 {
-private:
-	immutable Material mat;
-	math.Plane plane;
-public:
+	private immutable Material mat;
+	private math.Plane plane;
 
 	this(Material m, math.Plane p)
 	{
@@ -15,22 +17,9 @@ public:
 		plane = p;
 	}
 
-	bool getIntersection(Line ray, out fpnum dist, out Vectorf normal)
+	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal)
 	{
-		fpnum B = plane.normal*ray.direction;
-		if(B == 0) return false;
-		
-		double t1 = (plane.normal*(plane.origin-ray.origin))/B;
-		
-		if(t1 > eps)
-		{
-			dist = t1;
-			if(B<0.0) normal = plane.normal;
-			else normal = -plane.normal;
-			
-			return true;
-		}
-		else return false;
+		return .getClosestIntersection(plane, ray, dist, normal);
 	}
 	
 	@property Material material()
@@ -40,6 +29,25 @@ public:
 	
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V)
 	{
-		assert(0);
+		assert(0, "NIY");
 	}
+
+}
+
+bool getClosestIntersection(math.Plane plane, Line ray, out fpnum dist, out Vectorf normal)
+{
+	fpnum B = plane.normal*ray.direction;
+	if(B == 0) return false;
+	
+	double t1 = (plane.normal*(plane.origin-ray.origin))/B;
+	
+	if(!ray.ray || t1 > eps)
+	{
+		dist = t1;
+		if(B<0.0) normal = plane.normal;
+		else normal = -plane.normal;
+		
+		return true;
+	}
+	else return false;
 }
