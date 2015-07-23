@@ -6,6 +6,7 @@ import scene.materials.material;
 alias fpnum = double;
 alias inum = long;
 alias unum = ulong;
+fpnum eps = 1e-9;
 alias fpnump = fpnum*;
 alias inump = inum*;
 alias unump = unum*;
@@ -35,8 +36,6 @@ __gshared
 	Light[string] cfgLights;
 	Material[string] cfgMaterials;
 }
-
-fpnum eps = 1e-9;
 
 // physical constants
 enum P : fpnum

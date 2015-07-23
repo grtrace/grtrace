@@ -1,13 +1,14 @@
 ﻿module image.memory;
 
 import std.range, std.array, std.math;
-import core.simd;
 import config;
 import image.color;
 
-class Image
+alias Image = MemImage!ubyte;
+
+class MemImage(T)
 {
-	public ubyte[] data;
+	public T[] data;
 	private size_t width, height;
 
 	public @property size_t w() const
@@ -29,53 +30,77 @@ class Image
 	{
 		for(int p=0;p<width*height*3;)
 		{
-			data[p++] = c.ru;
-			data[p++] = c.gu;
-			data[p++] = c.bu;
+			static if(is(T==ubyte))
+			{
+				data[p++] = c.ru;
+				data[p++] = c.gu;
+				data[p++] = c.bu;
+			}
+			else
+			{
+				data[p++] = cast(T)c.r;
+				data[p++] = cast(T)c.g;
+				data[p++] = cast(T)c.b;
+			}
 		}
 	}
 
 	public void Poke(size_t x, size_t y, Color c)
 	{
-		data[(y*width + x)*3] = c.ru;
-		data[(y*width + x)*3 + 1] = c.gu;
-		data[(y*width + x)*3 + 2] = c.bu;
+		static if(is(T==ubyte))
+		{
+			data[(y*width + x)*3] = c.ru;
+			data[(y*width + x)*3 + 1] = c.gu;
+			data[(y*width + x)*3 + 2] = c.bu;
+		}
+		else
+		{
+			data[(y*width + x)*3] = cast(T)c.r;
+			data[(y*width + x)*3 + 1] = cast(T)c.g;
+			data[(y*width + x)*3 + 2] = cast(T)c.b;
+		}
 	}
 
 	public void Poke(size_t x, size_t y, Color c) shared
 	{
-		data[(y*width + x)*3] = c.ru;
-		data[(y*width + x)*3 + 1] = c.gu;
-		data[(y*width + x)*3 + 2] = c.bu;
+		static if(is(T==ubyte))
+		{
+			data[(y*width + x)*3] = c.ru;
+			data[(y*width + x)*3 + 1] = c.gu;
+			data[(y*width + x)*3 + 2] = c.bu;
+		}
+		else
+		{
+			data[(y*width + x)*3] = cast(T)c.r;
+			data[(y*width + x)*3 + 1] = cast(T)c.g;
+			data[(y*width + x)*3 + 2] = cast(T)c.b;
+		}
 	}
 
 	public Color PeekUV(fpnum U, fpnum V)
 	{
-		double2 uv;
-		long2 wh;
-		uv.ptr[0] = U;
-		uv.ptr[1] = V;
-		wh.ptr[0] = width;
-		wh.ptr[1] = height;
-		wh -= 1;
-		uv *= cast(double2)wh;
 		fpnum u,v;
-		u = uv.ptr[0].fmod(width);
-		v = uv.ptr[1].fmod(height);
-		//bool uI = fabs(u-floor(u))<1e-6;
-		//bool vI = fabs(v-floor(v))<1e-6;
+		u = U*(w-1).fmod(width).round();
+		v = V*(h-1).fmod(height).round();
 		return Peek(cast(size_t)u, cast(size_t)v);
 	}
 
 	public Color Peek(size_t x, size_t y)
 	{
-		return Color(data[(y*width + x)*3]/255.0f, data[(y*width + x)*3 + 1]/255.0f, data[(y*width + x)*3 + 2]/255.0f);
+		static if(is(T==ubyte))
+		{
+			return Color(data[(y*width + x)*3]/255.0f, data[(y*width + x)*3 + 1]/255.0f, data[(y*width + x)*3 + 2]/255.0f);
+		}
+		else
+		{
+			return Color(data[(y*width + x)*3], data[(y*width + x)*3 + 1], data[(y*width + x)*3 + 2]);
+		}
 	}
 
 	public void Recreate(size_t w, size_t h)
 	{
 		width = w;
 		height = h;
-		data = repeat(cast(ubyte)0).take(w*h*3).array().dup;
+		data = repeat(cast(T)0).take(w*h*3).array().dup;
 	}
 }

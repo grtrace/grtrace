@@ -1,10 +1,11 @@
 configset "ResolutionX" 800
 configset "ResolutionY" 600
-configset "Samples" 1
+configset "Samples" 4
 configset "CameraType" "linear"
 configset "CameraOptions" "-x 10 -f 45"
 #configset "CameraOptions" "-x 10"
-addobject .light1 -t pointlight -x0 -y-1.5 -z10 -r0.6 -g0.1 -b0.1
+addobject .light1 -t pointlight -x0 -y-1.5 -z10 -r0.2 -g0 -b0
+addobject .light2 -t pointlight -x0 -y11 -z10 -r0.5 -g0 -b0
 addobject .plane1 -t plane -c a -x0 -y-2 -z30 -a90 -b90
 addobject .sph1 -t sphere -x0 -y5 -z10 -r5
 #addobject .sph2 -t sphere -x0 -y0 -z5 -r1

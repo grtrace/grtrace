@@ -36,7 +36,7 @@ abstract class WorldSpace
 	}
 	
 	//public void DoRay(Tid owner, Line ray, unum x, unum y, int tnum);
-	alias RayFunc = void function(Tid owner, Line ray, unum x, unum y, int tnum);
+	alias RayFunc = Color function(Tid owner, Line ray, unum x, unum y, int tnum);
 	protected RayFunc GetRayFunc();
 
 	public void AddObject(Renderable obj)
@@ -53,31 +53,45 @@ abstract class WorldSpace
 	{
 		auto cam = cast(ICamera)(camera);
 		ambientLight = cast(shared(Color))(Colors.White);
-		pixelsx = cfgResolutionX*cfgSamples;
-		pixelsy = cfgResolutionY*cfgSamples;
+		pixelsx = cfgResolutionX;
+		pixelsy = cfgResolutionY;
 		Image im = new Image(pixelsx,pixelsy);
 		WorldSpace.fullray = cast(shared(Image))(im);
 		__gshared unum todo,done=0,prostep,dstep=0;
 		enum unum prosteps = 100;
 		todo = pixelsx*pixelsy/100;
 		prostep = todo/prosteps;
-		writefln("Starting raytrace [Realres: %dx%dx3=%d]...",pixelsx,pixelsy,fullray.data.length);
+		writeln("Starting raytrace...");
 		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s\n Camera up: %s", cam.origin, cam.lookdir, cam.rightdir, cam.updir);
 		auto tdg = function(Tid owner, unum y0, unum y1, int tnum, RayFunc DoRay)
 		{
+			Image im = cast(Image)(WorldSpace.fullray);
 			auto cam = cast(ICamera)(camera);
+			unum samples = cfgSamples;
 			fpnum jmpx = 2.0/pixelsx;
 			fpnum jmpy = 2.0/pixelsy;
+			fpnum smpx = jmpx/cfgSamples;
+			fpnum smpy = jmpy/cfgSamples;
+			fpnum smpd = cast(fpnum)(samples*samples);
 			int cc=0;
 			Line cray;
 			for(unum y=y0;y<y1;y++)
 			{
 				for(unum x=0;x<pixelsx;x++)
 				{
-					if(cam.fetchRay(x*jmpx - 1.0,y*jmpy - 1.0,cray))
+					Color col = Colors.Black;
+					for(unum sy=0;sy<samples;sy++)
 					{
-						DoRay(owner, cray, x, y, tnum);
+						for(unum sx=0;sx<samples;sx++)
+						{
+							if(cam.fetchRay(x*jmpx - 1.0 + sx*smpx,y*jmpy - 1.0 + sy*smpy,cray))
+							{
+								col += DoRay(owner, cray, x, y, tnum);
+							}
+						}
 					}
+					col/=smpd;
+					im.Poke(x,y,col);
 					cc++;
 					if(cc==100)
 					{
@@ -125,40 +139,7 @@ abstract class WorldSpace
 			finally{}
 		}
 		writeln();writeln("Finished!");
-		if(cfgSamples==1)
-		{
-			im.WriteImage(outfile);
-		}
-		else
-		{
-			int sm = cast(int)cfgSamples;
-			int smq = sm*sm;
-			int stride = cast(int)cfgResolutionX*3;
-			int bstride = stride * sm;
-			Image im2 = new Image(cfgResolutionX, cfgResolutionY);
-			foreach(int y; 0..cast(int)(cfgResolutionY))
-			{
-				foreach(int x; 0..cast(int)(cfgResolutionX))
-				{
-					int R=0,G=0,B=0;
-					foreach(int sy; 0..cast(int)(sm))
-					{
-						foreach(int sx; 0..cast(int)(sm))
-						{
-							int pos = (sm*y+sy)*bstride + x*sm*3 + sx*3;
-							R += im.data[pos];
-							G += im.data[pos+1];
-							B += im.data[pos+2];
-						}
-					}
-					int opos = y*stride + x*3;
-					im2.data[opos] = cast(ubyte)(R/smq);
-					im2.data[opos+1] = cast(ubyte)(G/smq);
-					im2.data[opos+2] = cast(ubyte)(B/smq);
-				}
-			}
-			im2.WriteImage(outfile);
-		}
+		im.WriteImage(outfile);
 	}
 
 }
@@ -261,7 +242,7 @@ class EuclideanSpace : WorldSpace
 		return tmpc;
 	}
 
-	public static void DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
+	public static Color DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
 	{
 		Color outc = Rayer(ray, 0, Colors.Black);
 		float mx = max(outc.r, outc.g, outc.b);
@@ -269,7 +250,7 @@ class EuclideanSpace : WorldSpace
 		{
 			outc = outc / mx;
 		}
-		WorldSpace.fullray.Poke(x,y,outc);
+		return outc;
 	}
 }
 

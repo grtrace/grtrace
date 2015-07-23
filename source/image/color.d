@@ -1,13 +1,16 @@
 ﻿module image.color;
 
+import std.math;
+import config;
+
 struct Color
 {
 public:
-	float r;
-	float g;
-	float b;
+	fpnum r;
+	fpnum g;
+	fpnum b;
 
-	this(float R, float G, float B)
+	this(fpnum R, fpnum G, fpnum B)
 	{
 		r = R;
 		g = G;
@@ -24,9 +27,25 @@ public:
 		return mixin( "Color(r"~op~"rhs.r, g"~op~"rhs.g, b"~op~"rhs.b)" );
 	}
 
-	Color opBinary(string op)(float rhs) const
+	Color opOpAssign(string op)(Color rhs)
+	{
+		mixin("r "~op~"= rhs.r;");
+		mixin("g "~op~"= rhs.g;");
+		mixin("b "~op~"= rhs.b;");
+		return this;
+	}
+
+	Color opBinary(string op)(fpnum rhs) const
 	{
 		return mixin( "Color(r"~op~"rhs, g"~op~"rhs, b"~op~"rhs)" );
+	}
+
+	Color opOpAssign(string op)(fpnum rhs)
+	{
+		mixin("r "~op~"= rhs;");
+		mixin("g "~op~"= rhs;");
+		mixin("b "~op~"= rhs;");
+		return this;
 	}
 
 	bool opEquals()(auto ref const Color s) const
@@ -34,12 +53,12 @@ public:
 		return (r==s.r)&&(g==s.g)&&(b==s.b);
 	}
 
-	void opAssign(float v)
+	void opAssign(fpnum v)
 	{
 		r=g=b=v;
 	}
 
-	float opIndex(size_t i) const
+	fpnum opIndex(size_t i) const
 	{
 		if(i == 0) return r;
 		else if(i==1) return g;
@@ -47,7 +66,7 @@ public:
 		else assert(0);
 	}
 
-	void opIndexAssign(size_t i, float v)
+	void opIndexAssign(size_t i, fpnum v)
 	{
 		if(i == 0) r=v;
 		else if(i==1) g=v;
@@ -57,17 +76,17 @@ public:
 
 	@property ubyte ru() const
 	{
-		return cast(ubyte)(r*255.0f);
+		return cast(ubyte)(round(r*255.0));
 	}
 
 	@property ubyte gu() const
 	{
-		return cast(ubyte)(g*255.0f);
+		return cast(ubyte)(round(g*255.0));
 	}
 
 	@property ubyte bu() const
 	{
-		return cast(ubyte)(b*255.0f);
+		return cast(ubyte)(round(b*255.0));
 	}
 
 }

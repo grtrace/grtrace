@@ -51,7 +51,7 @@ private Polynomial MultiplyByLinear(fpnum a, in Polynomial p)
 	Polynomial tmp = Polynomial();
 	tmp.coeffs = p.coeffs.dup;
 	Polynomial pa = p*a;
-	tmp.coeffs = [0.0]~p.coeffs;
+	tmp.coeffs = [cast(fpnum)0]~p.coeffs;
 	tmp = tmp - pa;
 	return tmp;
 }
