@@ -1,5 +1,8 @@
 ﻿module config;
 
+import scene.objects.interfaces;
+import scene.materials.material;
+
 alias fpnum = double;
 alias inum = long;
 alias unum = ulong;
@@ -7,23 +10,30 @@ alias fpnump = fpnum*;
 alias inump = inum*;
 alias unump = unum*;
 
-bool cfgVerbose = false;
-string cfgScript = "raytrace.tcl";
-inum cfgResolutionX = 320;
-inum cfgResolutionY = 240;
-inum cfgThreads = 6;
+__gshared
+{
+	bool cfgVerbose = false;
+	string cfgScript = "raytrace.tcl";
+	inum cfgResolutionX = 320;
+	inum cfgResolutionY = 240;
+	inum cfgThreads = 6;
+	inum cfgMaxDepth = 5;
 
-unum cfgSamples = 1;
-string cfgWorldSpace = "euclidean";
-string cfgCameraType = "orthogonal";
-fpnum cfgCameraX = 0.0;
-fpnum cfgCameraY = 0.0;
-fpnum cfgCameraZ = 0.0;
-fpnum cfgCameraPitch = 0.0;
-fpnum cfgCameraYaw = 0.0;
-fpnum cfgCameraRoll = 0.0;
-string cfgCameraOptions = "";
-string cfgOutputFile = "raytrace.png";
+	unum cfgSamples = 1;
+	string cfgWorldSpace = "euclidean";
+	string cfgCameraType = "orthogonal";
+	fpnum cfgCameraX = 0.0;
+	fpnum cfgCameraY = 0.0;
+	fpnum cfgCameraZ = 0.0;
+	fpnum cfgCameraPitch = 0.0;
+	fpnum cfgCameraYaw = 0.0;
+	fpnum cfgCameraRoll = 0.0;
+	string cfgCameraOptions = "";
+	string cfgOutputFile = "raytrace.png";
+
+	Renderable[string] cfgObjects;
+	Material[string] cfgMaterials;
+}
 
 fpnum eps = 1e-9;
 

@@ -168,12 +168,17 @@ class EuclideanSpace : WorldSpace
 		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
 	}
 
-	public static void DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
+	protected static Color Rayer(Line ray, int recnum, Color lastcol)
 	{
+		if(recnum>cfgMaxDepth)
+		{
+			return lastcol;
+		}
+		Color tmpc = lastcol;
 		fpnum dist;
 		Vectorf normal;
 		fpnum mindist=1e99;
-		Color outc = Colors.Black;
+		// tail rcall: return Rayer(ray2, recnum+1, color);
 		foreach(shared(Renderable) o; WorldSpace.objects)
 		{
 			Renderable O = cast(Renderable)(o);
@@ -181,11 +186,17 @@ class EuclideanSpace : WorldSpace
 			{
 				if(dist<mindist)
 				{
-					outc = NormalToColor(normal);
+					tmpc = NormalToColor(normal);
 					mindist = dist;
 				}
 			}
 		}
+		return tmpc;
+	}
+
+	public static void DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
+	{
+		Color outc = Rayer(ray, 0, Colors.Black);
 		WorldSpace.fullray.Poke(x,y,outc);
 	}
 }

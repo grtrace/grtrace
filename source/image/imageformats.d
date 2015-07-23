@@ -1479,7 +1479,6 @@ struct JPEG_Decoder {
 }
 
 struct HuffTab {
-	// TODO where in the spec does it say 256 values/codes at most?
 	ubyte[256] values;
 	ubyte[257] sizes;
 	short[16] mincode, maxcode;
@@ -1571,7 +1570,7 @@ void read_huffman_tables(ref JPEG_Decoder dc) {
 		int mt = 0;
 		foreach (i; 1..17)
 			mt += tmp[i];
-		if (256 < mt)   // TODO where in the spec?
+		if (256 < mt)
 			throw new ImageIOException("invalid / not supported");
 		
 		if (table_class == 0) {
