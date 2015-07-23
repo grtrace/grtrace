@@ -38,7 +38,7 @@ class Plane : Renderable
 		{
 			Vectorf orig; fpnum OXZ_deg_angle; fpnum OXY_deg_angle;
 			
-			getopt(a,
+			getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
 				"origin_x|x", &orig.x,
 				"origin_y|y", &orig.y,
 				"origin_z|z", &orig.z,
@@ -51,7 +51,7 @@ class Plane : Renderable
 		{
 			Vectorf orig; Vectorf v1; Vectorf v2;
 			
-			getopt(a,
+			getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
 				"first_x|a", &orig.x,
 				"first_y|b", &orig.y,
 				"first_z|c", &orig.z,
@@ -111,17 +111,77 @@ bool getClosestIntersection(math.Plane plane, Line ray, out fpnum dist, out Vect
 
 class TexturablePlane : Plane
 {
+	private Vectorf origin;
+	private Vectorf A;
+	private Vectorf B;
+
+	fpnum tex_a_u; fpnum tex_a_v;
+	fpnum tex_d_u; fpnum tex_d_v;
+
+
+	private fpnum len;
+
 	this()
 	{
 	}
 
-	this(Material m, math.Plane p)
+	this(Material m, math.Plane p, Vectorf a, Vectorf b, fpnum a_u, fpnum a_v, fpnum d_u, fpnum d_v)
+	in
+	{
+		assert(a_u<d_u);
+		assert(a_v<d_v);
+	}
+	body
 	{
 		super(m, p);
+
+		tex_a_u = a_u;
+		tex_a_v = a_v;
+		tex_d_u = d_u;
+		tex_d_v = d_v;
+
+		setCache(a,b);
+	}
+
+	private void setCache(Vectorf a, Vectorf b)
+	{
+		origin = a;
+		A = b-a;
+		len = ~A;
+		B = (A%plane.normal).normalized*len;
 	}
 
 	override void setupFromOptions(string[] a)
 	{
-		assert(0, "NIY");
+		super.setupFromOptions(a);
+
+		Vectorf first; Vectorf second;
+
+		getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
+			"tex_vector_first_x|A", &first.x,
+			"tex_vector_first_y|B", &first.y,
+			"tex_vector_first_z|C", &first.z,
+			
+			"tex_vector_second_x|D", &second.x,
+			"tex_vector_second_y|E", &second.y,
+			"tex_vector_second_z|F", &second.z,
+			
+			"tex_crd_first_u|G", &tex_a_u,
+			"tex_crd_first_v|H", &tex_a_v,
+			"tex_crd_second_u|I", &tex_d_u,
+			"tex_crd_second_v|J", &tex_d_v);
+
+		setCache(first, second);
+	}
+
+	override void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
+	{
+		Vectorf tmp = point-origin;
+
+		U = (~(A%tmp))/len;
+		U = U*(tex_d_u-tex_a_u) + tex_a_u;
+
+		V = (~(B%tmp))/len;
+		V = V*(tex_d_v-tex_a_v) + tex_a_v;
 	}
 }
