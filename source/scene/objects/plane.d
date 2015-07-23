@@ -27,30 +27,51 @@ class Plane : Renderable
 		string mat_name;
 		dchar mode;
 
-		getopt(
-			a,std.getopt.config.passThrough,
+		getopt(a,std.getopt.config.passThrough,
 			"material|m", &mat_name,
 			"construction|c", &mode);
 
-		//FIXME:mat = cfgMaterials[mat_name];
+		mat = cfgMaterials[mat_name];
 		mode = toLower(mode);
 
-		switch(mode)
+		if(mode == 'a')
 		{
-			case 'a':
-				Vectorf orig;
+			Vectorf orig; fpnum OXZ_deg_angle; fpnum OXY_deg_angle;
+			
+			getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
+				"origin_x|x", &orig.x,
+				"origin_y|y", &orig.y,
+				"origin_z|z", &orig.z,
+				"OXZ_deg_angle|a", &OXY_deg_angle,
+				"OXY_deg_angle|b", &OXY_deg_angle);
+			
+			plane = PlaneAngles(OXZ_deg_angle, OXY_deg_angle, orig);
+		}
+		else if(mode == 'v' || mode =='p')
+		{
+			Vectorf orig; Vectorf v1; Vectorf v2;
+			
+			getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
+				"first_x|a", &orig.x,
+				"first_y|b", &orig.y,
+				"first_z|c", &orig.z,
+				
+				"second_x|d", &v1.x,
+				"second_y|e", &v1.y,
+				"second_z|f", &v1.z,
+				
+				"third_x|g", &v2.x,
+				"third_y|h", &v2.y,
+				"third_z|i", &v2.z);
 
-				getopt(a,
-					"origin_x|x", &orig.x,
-					"origin_y|y", &orig.y,
-					"origin_z|z", &orig.z);
-				break;
-			case 'v':
-				break;
-			case 'p':
-				break;
-			default: 
-				assert(0);
+			if(mode == 'v')
+				plane = PlaneVectors(orig, v1, v2);
+			else
+				plane = PlanePoints(orig, v1, v2);
+		}
+		else
+		{
+			assert(0, "invalid plane construction mode: "~cast(char)mode);
 		}
 	}
 
@@ -90,17 +111,77 @@ bool getClosestIntersection(math.Plane plane, Line ray, out fpnum dist, out Vect
 
 class TexturablePlane : Plane
 {
+	private Vectorf origin;
+	private Vectorf A;
+	private Vectorf B;
+
+	fpnum tex_a_u; fpnum tex_a_v;
+	fpnum tex_d_u; fpnum tex_d_v;
+
+
+	private fpnum len;
+
 	this()
 	{
 	}
 
-	this(Material m, math.Plane p)
+	this(Material m, math.Plane p, Vectorf a, Vectorf b, fpnum a_u, fpnum a_v, fpnum d_u, fpnum d_v)
+	in
+	{
+		assert(a_u<d_u);
+		assert(a_v<d_v);
+	}
+	body
 	{
 		super(m, p);
+
+		tex_a_u = a_u;
+		tex_a_v = a_v;
+		tex_d_u = d_u;
+		tex_d_v = d_v;
+
+		setCache(a,b);
+	}
+
+	private void setCache(Vectorf a, Vectorf b)
+	{
+		origin = a;
+		A = b-a;
+		len = ~A;
+		B = (A%plane.normal).normalized*len;
 	}
 
 	override void setupFromOptions(string[] a)
 	{
-		assert(0);
+		super.setupFromOptions(a);
+
+		Vectorf first; Vectorf second;
+
+		getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
+			"tex_vector_first_x|A", &first.x,
+			"tex_vector_first_y|B", &first.y,
+			"tex_vector_first_z|C", &first.z,
+			
+			"tex_vector_second_x|D", &second.x,
+			"tex_vector_second_y|E", &second.y,
+			"tex_vector_second_z|F", &second.z,
+			
+			"tex_crd_first_u|G", &tex_a_u,
+			"tex_crd_first_v|H", &tex_a_v,
+			"tex_crd_second_u|I", &tex_d_u,
+			"tex_crd_second_v|J", &tex_d_v);
+
+		setCache(first, second);
+	}
+
+	override void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
+	{
+		Vectorf tmp = point-origin;
+
+		U = (~(A%tmp))/len;
+		U = U*(tex_d_u-tex_a_u) + tex_a_u;
+
+		V = (~(B%tmp))/len;
+		V = V*(tex_d_v-tex_a_v) + tex_a_v;
 	}
 }

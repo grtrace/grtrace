@@ -7,6 +7,7 @@ import scene.materials.material;
 import config;
 import std.math;
 static import scene.objects.plane;
+import std.string, std.getopt, std.array, std.range, std.math, std.algorithm;
 
 class Triangle : Renderable
 {
@@ -25,7 +26,29 @@ class Triangle : Renderable
 
 	void setupFromOptions(string[] a)
 	{
-		assert(0);
+		string mat_name;
+		Vectorf A; Vectorf B; Vectorf C;
+
+		getopt(a, 
+			std.getopt.config.passThrough,
+			std.getopt.config.caseSensitive,
+
+			"material|m", &mat_name,
+
+			"first_x|d", &A.x,
+			"first_y|e", &A.y,
+			"first_z|f", &A.z,
+			
+			"second_x|g", &B.x,
+			"second_y|h", &B.y,
+			"second_z|i", &B.z,
+			
+			"third_x|j", &C.x,
+			"third_y|k", &C.y,
+			"third_z|l", &C.z);
+
+		mat = cfgMaterials[mat_name];
+		triangle = TrianglePoints(A, B, B);
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -120,19 +143,35 @@ class TexturableTriangle : Triangle
 		tex_u_b = U_b; tex_v_b = V_b;
 		tex_u_c = U_c; tex_v_c = V_c;
 
+		setCache();
+	}
+
+	private void setCache()
+	{
 		Vectorf v0 = triangle.b - triangle.plane.origin;
 		Vectorf v1 = triangle.c - triangle.plane.origin;
-
+		
 		cached = Cached(
-		v0*v0,
-		v0*v1,
-		v1*v1,
-		1/ ((v0*v0) * (v1*v1) - (v0*v1) * (v0*v1)));
+			v0*v0,
+			v0*v1,
+			v1*v1,
+			1/ ((v0*v0) * (v1*v1) - (v0*v1) * (v0*v1)));
 	}
 
 	override void setupFromOptions(string[] a)
 	{
-		assert(0);
+		super.setupFromOptions(a);
+		getopt(a, std.getopt.config.caseSensitive,
+			"texture_a_u|a", &tex_u_a,
+			"texture_a_v|A", &tex_v_a,
+
+			"texture_b_u|b", &tex_u_b,
+			"texture_b_v|B", &tex_v_b,
+
+			"texture_c_u|c", &tex_u_c,
+			"texture_c_v|C", &tex_v_c);
+
+		setCache();
 	}
 
 	override void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
