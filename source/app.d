@@ -37,15 +37,22 @@ void main(string[] args)
 	writefln("Rendering to an %dx%d image",cfgResolutionX,cfgResolutionY);
 	auto space = CreateSpace(cfgWorldSpace);
 	SetupCamera(cfgCameraType, vectorf(cfgCameraX,cfgCameraY,cfgCameraZ), cfgCameraPitch, cfgCameraYaw, cfgCameraRoll, cfgCameraOptions);
+	int cntO=0, cntL=0;
 	foreach(name,object;cfgObjects)
 	{
 		space.AddObject(object);
-		writeln("Added "~name~" ",object);
+		cntO++;
+		if(cfgVerbose)
+			writeln("Added "~name~" ",object);
 	}
 	foreach(name,object;cfgLights)
 	{
 		space.AddLight(object);
-		writeln("Added "~name);
+		cntL++;
+		if(cfgVerbose)
+			writeln("Added "~name);
 	}
+	if(!cfgVerbose)
+		writefln("Added %d objects and %d lights.",cntO,cntL);
 	space.StartTracing(cfgOutputFile);
 }

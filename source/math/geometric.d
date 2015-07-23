@@ -28,10 +28,12 @@ struct Line
 		direction = dir;
 		invdirection = 1.0/dir;
 		ray = ry;
+		data = 0;
 	}
 	Point origin;
 	Vectorf direction;
 	Vectorf invdirection;
+	fpnum data;
 	// true if is a ray (half-line)
 	bool ray=false;
 }

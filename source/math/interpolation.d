@@ -63,10 +63,6 @@ in
 }
 body
 {
-	import std.math;
-	import std.stdio;
-	FloatingPointControl fpctrl;
-	fpctrl.enableExceptions(FloatingPointControl.severeExceptions);
 	Polynomial res = Polynomial(x.length-1);
 
 	for (int i = 0; i<x.length; i++)

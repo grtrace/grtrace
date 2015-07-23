@@ -17,6 +17,7 @@ import scene.objects.sphere;
 import scene.camera;
 import core.cpuid;
 import std.algorithm;
+import std.random;
 
 abstract class WorldSpace
 {
@@ -65,6 +66,8 @@ abstract class WorldSpace
 		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s\n Camera up: %s", cam.origin, cam.lookdir, cam.rightdir, cam.updir);
 		auto tdg = function(Tid owner, unum y0, unum y1, int tnum, RayFunc DoRay)
 		{
+			Xorshift192 rnd = Xorshift192(1);
+			rnd.seed(unpredictableSeed());
 			Image im = cast(Image)(WorldSpace.fullray);
 			auto cam = cast(ICamera)(camera);
 			unum samples = cfgSamples;
@@ -75,6 +78,7 @@ abstract class WorldSpace
 			fpnum smpd = cast(fpnum)(samples*samples);
 			int cc=0;
 			Line cray;
+			double jitx, jity;
 			for(unum y=y0;y<y1;y++)
 			{
 				for(unum x=0;x<pixelsx;x++)
@@ -84,7 +88,9 @@ abstract class WorldSpace
 					{
 						for(unum sx=0;sx<samples;sx++)
 						{
-							if(cam.fetchRay(x*jmpx - 1.0 + sx*smpx,y*jmpy - 1.0 + sy*smpy,cray))
+							jitx = uniform01!double(rnd)*2.0-1.0;
+							jity = uniform01!double(rnd)*2.0-1.0;
+							if(cam.fetchRay(x*jmpx - 1.0 + sx*smpx + jitx*smpx,y*jmpy - 1.0 + sy*smpy + jity*smpy,cray))
 							{
 								col += DoRay(owner, cray, x, y, tnum);
 							}
@@ -170,6 +176,7 @@ class EuclideanSpace : WorldSpace
 		foreach(shared(Renderable) o; WorldSpace.objects)
 		{
 			Renderable O = cast(Renderable)(o);
+			import std.math;
 			if(O.getClosestIntersection(ray,dist,normal))
 			{
 				if(mdist>dist)
@@ -213,6 +220,7 @@ class EuclideanSpace : WorldSpace
 		Color tmpc = lastcol;
 		Vectorf rayhit;
 		Vectorf normal;
+		import std.math;
 		Renderable closest;
 		bool hit=false;
 		Raytrace!(true,true,true)(ray, hit, &rayhit, &normal, &closest);
@@ -227,6 +235,7 @@ class EuclideanSpace : WorldSpace
 				fpnum dst = Raytrace!(false,false,false)(hitRay,unlit);
 				if(unlit)
 				{
+					import std.math;
 					fpnum dLO = *(l.getPosition()-rayhit);
 					if(dLO<(dst*dst))
 					{
@@ -235,7 +244,9 @@ class EuclideanSpace : WorldSpace
 				}
 				if(unlit==false) // lit
 				{
-					tmpc = tmpc + l.getColor()*(normal*(hitRay.direction));
+					fpnum DP = normal*(hitRay.direction);
+					if(DP>0)
+						tmpc = tmpc + l.getColor()*(DP);
 				}
 			}
 		}
