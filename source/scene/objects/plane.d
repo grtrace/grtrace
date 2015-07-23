@@ -27,30 +27,51 @@ class Plane : Renderable
 		string mat_name;
 		dchar mode;
 
-		getopt(
-			a,std.getopt.config.passThrough,
-			std.getopt.config.required, "material|m", &mat_name,
-			std.getopt.config.required, "construction|c", &mode);
+		getopt(a,std.getopt.config.passThrough,
+			"material|m", &mat_name,
+			"construction|c", &mode);
 
-		//FIXME:mat = cfgMaterials[mat_name];
+		mat = cfgMaterials[mat_name];
 		mode = toLower(mode);
 
-		switch(mode)
+		if(mode == 'a')
 		{
-			case 'a':
-				Vectorf orig;
+			Vectorf orig; fpnum OXZ_deg_angle; fpnum OXY_deg_angle;
+			
+			getopt(a,
+				"origin_x|x", &orig.x,
+				"origin_y|y", &orig.y,
+				"origin_z|z", &orig.z,
+				"OXZ_deg_angle|a", &OXY_deg_angle,
+				"OXY_deg_angle|b", &OXY_deg_angle);
+			
+			plane = PlaneAngles(OXZ_deg_angle, OXY_deg_angle, orig);
+		}
+		else if(mode == 'v' || mode =='p')
+		{
+			Vectorf orig; Vectorf v1; Vectorf v2;
+			
+			getopt(a,
+				"first_x|a", &orig.x,
+				"first_y|b", &orig.y,
+				"first_z|c", &orig.z,
+				
+				"second_x|d", &v1.x,
+				"second_y|e", &v1.y,
+				"second_z|f", &v1.z,
+				
+				"third_x|g", &v2.x,
+				"third_y|h", &v2.y,
+				"third_z|i", &v2.z);
 
-				getopt(a,
-					std.getopt.config.required, "origin_x|x", &orig.x,
-					std.getopt.config.required, "origin_y|y", &orig.y,
-					std.getopt.config.required, "origin_z|z", &orig.z);
-				break;
-			case 'v':
-				break;
-			case 'p':
-				break;
-			default: 
-				assert(0);
+			if(mode == 'v')
+				plane = PlaneVectors(orig, v1, v2);
+			else
+				plane = PlanePoints(orig, v1, v2);
+		}
+		else
+		{
+			assert(0, "invalid plane construction mode: "~cast(char)mode);
 		}
 	}
 
@@ -101,6 +122,6 @@ class TexturablePlane : Plane
 
 	override void setupFromOptions(string[] a)
 	{
-		assert(0);
+		assert(0, "NIY");
 	}
 }
