@@ -5,11 +5,16 @@ import math.geometric;
 import math.vector;
 import scene.materials.material;
 import config;
+import std.string, std.getopt, std.array, std.range, std.math, std.algorithm, std.uni;
 
 class Plane : Renderable
 {
-	private immutable Material mat;
+	private Material mat;
 	private math.Plane plane;
+
+	this()
+	{
+	}
 
 	this(Material m, math.Plane p)
 	{
@@ -17,21 +22,52 @@ class Plane : Renderable
 		plane = p;
 	}
 
+	void setupFromOptions(string[] a)
+	{
+		string mat_name;
+		dchar mode;
+
+		getopt(
+			a,std.getopt.config.passThrough,
+			std.getopt.config.required, "material|m", &mat_name,
+			std.getopt.config.required, "construction|c", &mode);
+
+		//FIXME:mat = cfgMaterials[mat_name];
+		mode = toLower(mode);
+
+		switch(mode)
+		{
+			case 'a':
+				Vectorf orig;
+
+				getopt(a,
+					std.getopt.config.required, "origin_x|x", &orig.x,
+					std.getopt.config.required, "origin_y|y", &orig.y,
+					std.getopt.config.required, "origin_z|z", &orig.z);
+				break;
+			case 'v':
+				break;
+			case 'p':
+				break;
+			default: 
+				assert(0);
+		}
+	}
+
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
 	{
 		return .getClosestIntersection(plane, ray, dist, normal);
 	}
 	
-	@property Material material() const
+	@property Material material()
 	{
 		return mat;
 	}
 	
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
-		assert(0, "NIY");
+		assert(0, "For texturable plane use TexturablePlane");
 	}
-
 }
 
 bool getClosestIntersection(math.Plane plane, Line ray, out fpnum dist, out Vectorf normal)
@@ -50,4 +86,21 @@ bool getClosestIntersection(math.Plane plane, Line ray, out fpnum dist, out Vect
 		return true;
 	}
 	else return false;
+}
+
+class TexturablePlane : Plane
+{
+	this()
+	{
+	}
+
+	this(Material m, math.Plane p)
+	{
+		super(m, p);
+	}
+
+	override void setupFromOptions(string[] a)
+	{
+		assert(0);
+	}
 }

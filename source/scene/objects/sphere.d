@@ -9,15 +9,23 @@ import std.math;
 
 class Sphere : Renderable
 {
-	private immutable Material mat;
+	private Material mat;
 	private Vectorf center;
 	private fpnum radius;
+
+	this()
+	{
+	}
 
 	this(Vectorf cente, fpnum rad)
 	{
 		center = cente;
 		radius = rad;
-		mat = Material();
+	}
+
+	void setupFromOptions(string[] a)
+	{
+		assert(0);
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -60,7 +68,7 @@ class Sphere : Renderable
 		else return false;
 	}
 	
-	@property Material material() const
+	@property Material material()
 	{
 		return mat;
 	}

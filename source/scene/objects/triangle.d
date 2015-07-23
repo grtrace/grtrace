@@ -10,13 +10,22 @@ static import scene.objects.plane;
 
 class Triangle : Renderable
 {
-	private immutable Material mat;
+	private Material mat;
 	private math.Triangle triangle;
+
+	this()
+	{
+	}
 
 	this(Material m, math.Triangle tr)
 	{
 		mat = m;
 		triangle = tr;
+	}
+
+	void setupFromOptions(string[] a)
+	{
+		assert(0);
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -53,7 +62,7 @@ class Triangle : Renderable
 			return false;
 	}
 
-	@property Material material() const
+	@property Material material()
 	{
 		return mat;
 	}
@@ -97,7 +106,11 @@ class TexturedTriangle : Triangle
 		fpnum denom;
 	}
 
-	immutable Cached cached;
+	Cached cached;
+
+	this()
+	{
+	}
 
 	this(Material m, math.Triangle tr, fpnum U_a, fpnum V_a, fpnum U_b, fpnum V_b, fpnum U_c, fpnum V_c)
 	{
@@ -115,6 +128,11 @@ class TexturedTriangle : Triangle
 		v0*v1,
 		v1*v1,
 		1/ ((v0*v0) * (v1*v1) - (v0*v1) * (v0*v1)));
+	}
+
+	override void setupFromOptions(string[] a)
+	{
+		assert(0);
 	}
 
 	override void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const

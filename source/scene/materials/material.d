@@ -2,6 +2,6 @@
 
 import config;
 
-struct Material
+class Material
 {
 }

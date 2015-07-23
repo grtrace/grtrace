@@ -11,13 +11,15 @@ interface Renderable
 {
 public:
 
+	void setupFromOptions(string[] a);
+
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
 	in
 	{
 		assert(fabs(*ray.direction)<eps);
 	}
 
-	@property Material material() const;
+	@property Material material();
 
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const;
 }
@@ -25,15 +27,20 @@ public:
 
 class Transformed : Renderable
 {
-	protected immutable Renderable object;
+	protected Renderable object;
 	private Matrix4f transform;
 	private Matrix4f invTransform;
 
-	this(immutable Renderable obj, Matrix4f tr = Matrix4f.Identity)
+	this(Renderable obj, Matrix4f tr = Matrix4f.Identity)
 	{
 		object = obj;
 		transform = tr;
 		invTransform = tr.inverse;
+	}
+
+	void setupFromOptions(string[] a)
+	{
+
 	}
 
 	Matrix4f getTransform()
@@ -69,7 +76,7 @@ class Transformed : Renderable
 		return true;
 	}
 	
-	@property Material material() const
+	@property Material material()
 	{
 		return object.material;
 	}
