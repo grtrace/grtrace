@@ -63,11 +63,13 @@ class OrthogonalCamera : ICamera
 	}
 }
 
-class LinearPerspectiveCamera
+class LinearPerspectiveCamera : ICamera
 {
-	private Vectorf orig, dir, righ, up;
+	private Vectorf orig, dir, righ, up, dirm;
 	private fpnum yx=1.0;
 	private fpnum xdim=1.0;
+	private fpnum FOVM=1.0;
+	private fpnum FOV=45.0;
 	/// set camera origin
 	@property ref Vectorf origin()
 	{
@@ -92,14 +94,16 @@ class LinearPerspectiveCamera
 	@property void options(string opts)
 	{
 		string[] oa = ["0"]~opts.split();
-		getopt(oa, "xsize|x", &xdim);
+		getopt(oa, "xsize|x", &xdim,"fov|f", &FOV);
 		up = dir%righ;
+		FOVM = 1.0/tan(FOV*PI/180.0);
+		dirm = dir*FOVM;
 	}
 	/// X,Y in <-1;1>
 	bool fetchRay(fpnum X, fpnum Y, out Line ray)
 	{
-		//ray = Line(orig + righ*X*xdim + up*Y*xdim*yx, dir, true);
-		return false;
+		ray = Line(orig, (dirm + rightdir*X + up*Y*yx).normalized, true);
+		return true;
 	}
 }
 
@@ -138,9 +142,11 @@ private void anglesToAxes(Vectorf angles, ref Vectorf left, ref Vectorf forward)
 	left.x = cy*cz;
 	left.y = sx*sy*cz + cx*sz;
 	left.z = -cx*sy*cz + sx*sz;
+	left.w = 0;
 	
 	// determine forward axis
 	forward.x = sy;
 	forward.y = -sx*cy;
 	forward.z = cx*cy;
+	forward.w = 0;
 }

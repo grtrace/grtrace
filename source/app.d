@@ -14,6 +14,7 @@ Options:
 --verbose|-v  - Outputs additional information
 --script|-s   - Script to load the configuration from (default raytrace.tcl)
 --help|-h     - Displays this text
+--threads|-t  - Thread number to use
 `;
 
 void main(string[] args)
@@ -24,7 +25,8 @@ void main(string[] args)
 	getopt(args,
 		"verbose|v", &cfgVerbose,
 		"script|s", &cfgScript,
-		"help|h", &doHelp
+		"help|h", &doHelp,
+		"threads|t", &cfgThreads
 		);
 	if(doHelp)
 	{
@@ -33,7 +35,16 @@ void main(string[] args)
 	}
 	DoScript(cfgScript);
 	writefln("Rendering to an %dx%d image",cfgResolutionX,cfgResolutionY);
-	auto space = CreateSpace(cfgWorldSpace, cfgSamples);
+	auto space = CreateSpace(cfgWorldSpace);
 	SetupCamera(cfgCameraType, vectorf(cfgCameraX,cfgCameraY,cfgCameraZ), cfgCameraPitch, cfgCameraYaw, cfgCameraRoll, cfgCameraOptions);
+	if(true)
+	{
+		import scene.objects;
+		space.AddObject(new Sphere(Vectorf(0,0,10),2.0));
+		space.AddObject(new Sphere(Vectorf(4,0,10),3.0));
+		space.AddObject(new Sphere(Vectorf(-4,0,10),3.0));
+		space.AddObject(new Sphere(Vectorf(0,4,10),3.0));
+		space.AddObject(new Sphere(Vectorf(0,-4,10),3.0));
+	}
 	space.StartTracing(cfgOutputFile);
 }

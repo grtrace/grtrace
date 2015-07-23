@@ -17,17 +17,17 @@ class Plane : Renderable
 		plane = p;
 	}
 
-	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal)
+	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
 	{
 		return .getClosestIntersection(plane, ray, dist, normal);
 	}
 	
-	@property Material material()
+	@property Material material() const
 	{
 		return mat;
 	}
 	
-	void getUVMapping(Vectorf point, out fpnum U, out fpnum V)
+	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
 		assert(0, "NIY");
 	}

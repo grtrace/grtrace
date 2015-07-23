@@ -7,7 +7,7 @@ import image.color;
 
 class Image
 {
-	public __gshared ubyte[] data;
+	public ubyte[] data;
 	private size_t width, height;
 
 	public @property size_t w() const
@@ -29,24 +29,24 @@ class Image
 	{
 		for(int p=0;p<width*height*3;)
 		{
-			data[p++] = c.r;
-			data[p++] = c.g;
-			data[p++] = c.b;
+			data[p++] = c.ru;
+			data[p++] = c.gu;
+			data[p++] = c.bu;
 		}
 	}
 
 	public void Poke(size_t x, size_t y, Color c)
 	{
-		data[(y*width + x)*3] = c.r;
-		data[(y*width + x)*3 + 1] = c.g;
-		data[(y*width + x)*3 + 2] = c.b;
+		data[(y*width + x)*3] = c.ru;
+		data[(y*width + x)*3 + 1] = c.gu;
+		data[(y*width + x)*3 + 2] = c.bu;
 	}
 
 	public void Poke(size_t x, size_t y, Color c) shared
 	{
-		data[(y*width + x)*3] = c.r;
-		data[(y*width + x)*3 + 1] = c.g;
-		data[(y*width + x)*3 + 2] = c.b;
+		data[(y*width + x)*3] = c.ru;
+		data[(y*width + x)*3 + 1] = c.gu;
+		data[(y*width + x)*3 + 2] = c.bu;
 	}
 
 	public Color PeekUV(fpnum U, fpnum V)
@@ -69,13 +69,13 @@ class Image
 
 	public Color Peek(size_t x, size_t y)
 	{
-		return Color(data[(y*width + x)*3], data[(y*width + x)*3 + 1], data[(y*width + x)*3 + 2]);
+		return Color(data[(y*width + x)*3]/255.0f, data[(y*width + x)*3 + 1]/255.0f, data[(y*width + x)*3 + 2]/255.0f);
 	}
 
 	public void Recreate(size_t w, size_t h)
 	{
 		width = w;
 		height = h;
-		data = repeat(cast(ubyte)0).take(w*h*3).array();
+		data = repeat(cast(ubyte)0).take(w*h*3).array().dup;
 	}
 }

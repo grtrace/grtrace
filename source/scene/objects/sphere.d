@@ -20,21 +20,21 @@ class Sphere : Renderable
 		mat = Material();
 	}
 
-	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal)
+	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
 	{
 		Vectorf o = ray.origin - center;
-
+		
 		double B = 2*(ray.direction*o);
 		double C = (o*o) - radius*radius;
-
+		
 		double Det = B*B - 4*C;
-
+		
 		if(Det>=0)
 		{
 			Det = sqrt(Det);
 			double t1 = (-B - Det)/2;
 			double t2 = (-B + Det)/2;
-
+			
 			if(ray.ray)
 			{
 				if(t2<eps) return false;
@@ -47,7 +47,7 @@ class Sphere : Renderable
 			{
 				if(fabs(t1) > fabs(t2)) t1 = t2;
 			}
-
+			
 			dist = t1;
 			Vectorf point = ray.direction*t1 + o;
 			point = point*(1/radius);
@@ -60,12 +60,12 @@ class Sphere : Renderable
 		else return false;
 	}
 	
-	@property Material material()
+	@property Material material() const
 	{
 		return mat;
 	}
 	
-	void getUVMapping(Vectorf point, out fpnum U, out fpnum V)
+	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
 		assert(0, "NIY");
 	}

@@ -4,6 +4,7 @@ import config;
 import std.math;
 import std.traits;
 import std.format, std.string;
+import std.algorithm;
 
 struct Vector(T)
 {
@@ -71,7 +72,7 @@ struct Vector(T)
 
 	Vector!T opBinary(string op)(Vector!T rhs) const if ( (op=="+") || (op=="-") )
 	{
-		return mixin("Vector!T(x"~op~"rhs.x,y"~op~"rhs.y,z"~op~"rhs.z,w)");
+		return mixin("Vector!T(x"~op~"rhs.x,y"~op~"rhs.y,z"~op~"rhs.z,max(w,rhs.w))");
 	}
 
 	Vector!T opBinary(string op)(T rhs) const if(op=="*")
@@ -98,7 +99,7 @@ struct Vector(T)
 	/// Cross product (%)
 	Vector!T opBinary(string op)(Vector!T rhs) const if(op=="%")
 	{
-		return Vector!T(y*rhs.z-z*rhs.y, z*rhs.x-x*rhs.z, x*rhs.y-y*rhs.x);
+		return Vector!T(y*rhs.z-z*rhs.y, z*rhs.x-x*rhs.z, x*rhs.y-y*rhs.x, max(w,rhs.w));
 	}
 
 	Vector!T opOpAssign(string op)(Vector!T rhs) if(op=="+=")
@@ -106,6 +107,7 @@ struct Vector(T)
 		x+=rhs.x;
 		y+=rhs.y;
 		z+=rhs.z;
+		w=max(w,rhs.w);
 		return this;
 	}
 
@@ -114,6 +116,7 @@ struct Vector(T)
 		x-=rhs.x;
 		y-=rhs.y;
 		z-=rhs.z;
+		w=max(w,rhs.w);
 		return this;
 	}
 
@@ -122,6 +125,7 @@ struct Vector(T)
 		x*=rhs;
 		y*=rhs;
 		z*=rhs;
+		w=max(w,rhs.w);
 		return this;
 	}
 
@@ -130,6 +134,7 @@ struct Vector(T)
 		x/=rhs;
 		y/=rhs;
 		z/=rhs;
+		w=max(w,rhs.w);
 		return this;
 	}
 

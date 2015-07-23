@@ -1,8 +1,10 @@
 ﻿module scene.scenemgr;
 
 import config;
+import core.time;
 import std.concurrency;
 import std.stdio;
+import std.functional;
 import math.vector;
 import math.geometric;
 import math.matrix;
@@ -13,19 +15,26 @@ import scene.camera;
 import scene.objects.interfaces;
 import scene.objects.sphere;
 import scene.camera;
+import core.cpuid;
 
 abstract class WorldSpace
 {
+	enum Message
+	{
+		Pixel100,
+		Finish
+	}
 	public static shared
 	{
 		Image fullray;
 		ICamera camera;
 		Renderable[] objects;
-		ushort sampleLineCount=1;
+		unum pixelsx,pixelsy;
+		Color ambientLight;
 	}
-	public static Sphere sph;
-	//public void DoRay(Tid owner, Line ray, unum x, unum y);
-	alias RayFunc = void function(Tid owner, Line ray, unum x, unum y);
+	
+	//public void DoRay(Tid owner, Line ray, unum x, unum y, int tnum);
+	alias RayFunc = void function(Tid owner, Line ray, unum x, unum y, int tnum);
 	protected RayFunc GetRayFunc();
 
 	public void AddObject(Renderable obj)
@@ -36,40 +45,113 @@ abstract class WorldSpace
 	public void StartTracing(string outfile)
 	{
 		auto cam = cast(ICamera)(camera);
-		unum pixelsx = cfgResolutionX*sampleLineCount;
-		unum pixelsy = cfgResolutionY*sampleLineCount;
-		fpnum jmpx = 2.0/pixelsx;
-		fpnum jmpy = 2.0/pixelsy;
-		auto DoRay = GetRayFunc();
-		WorldSpace.fullray = cast(shared(Image))(new Image(pixelsx,pixelsy));
-		Line cray;
-		unum todo,done=0,prostep,dstep=0;
-		enum unum prosteps = 1000;
-		todo = pixelsx*pixelsy;
+		ambientLight = cast(shared(Color))(Colors.White);
+		pixelsx = cfgResolutionX*cfgSamples;
+		pixelsy = cfgResolutionY*cfgSamples;
+		Image im = new Image(pixelsx,pixelsy);
+		WorldSpace.fullray = cast(shared(Image))(im);
+		__gshared unum todo,done=0,prostep,dstep=0;
+		enum unum prosteps = 100;
+		todo = pixelsx*pixelsy/100;
 		prostep = todo/prosteps;
-		writeln("Starting raytrace...");
+		writefln("Starting raytrace [Realres: %dx%dx3=%d]...",pixelsx,pixelsy,fullray.data.length);
 		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s", cam.origin, cam.lookdir, cam.rightdir);
-		sph = new Sphere(Vectorf(0,0,10.0),1.0);
-		for(unum y=0;y<pixelsy;y++)
+		auto tdg = function(Tid owner, unum y0, unum y1, int tnum, RayFunc DoRay)
 		{
-			for(unum x=0;x<pixelsx;x++)
+			auto cam = cast(ICamera)(camera);
+			fpnum jmpx = 2.0/pixelsx;
+			fpnum jmpy = 2.0/pixelsy;
+			int cc=0;
+			Line cray;
+			for(unum y=y0;y<y1;y++)
 			{
-				if(cam.fetchRay(x*jmpx - 1.0,y*jmpy - 1.0,cray))
+				for(unum x=0;x<pixelsx;x++)
 				{
-					DoRay(thisTid, cray, x, y);
-				}
-				dstep++;
-				if(dstep==prostep)
-				{
-					dstep = 0;done++;
-					writef("\r                                   \r Done %4d/%4d...",done,prosteps);
-					stdout.flush();
+					if(cam.fetchRay(x*jmpx - 1.0,y*jmpy - 1.0,cray))
+					{
+						DoRay(owner, cray, x, y, tnum);
+					}
+					cc++;
+					if(cc==100)
+					{
+						send(owner,Message.Pixel100);
+						cc=0;
+					}
 				}
 			}
+			send(owner,Message.Finish);
+		};
+		int threads = cast(int)(cfgThreads);
+		writeln("Rendering using ",threads," CPU threads");
+		int perthr = cast(int)pixelsy/threads;
+		Tid[] tasks;
+		tasks.length = threads;
+		int lasty = 0;
+		for(int i=0;i<threads-1;i++)
+		{
+			tasks[i] = spawn(tdg, thisTid, cast(unum)lasty, cast(unum)(lasty+perthr), i+1, GetRayFunc());
+			lasty+=perthr;
+		}
+		tasks[$-1] = spawn(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
+		int running = threads;
+		while(running>0)
+		{
+			try
+			{
+				receiveTimeout(dur!"msecs"(10), (Message m){
+						if(m==Message.Pixel100)
+						{
+							dstep++;
+							if(dstep==prostep)
+							{
+								dstep = 0;done++;
+								writef("\r                                   \r Done %4d/%4d...",done,prosteps);
+								stdout.flush();
+							}
+						}
+						else if(m==Message.Finish)
+						{
+							running--;
+						}
+					});
+			}
+			finally{}
 		}
 		writeln();writeln("Finished!");
-		Image im = cast(Image)(fullray);
-		im.WriteImage(outfile);
+		if(cfgSamples==1)
+		{
+			im.WriteImage(outfile);
+		}
+		else
+		{
+			int sm = cast(int)cfgSamples;
+			int smq = sm*sm;
+			int stride = cast(int)cfgResolutionX*3;
+			int bstride = stride * sm;
+			Image im2 = new Image(cfgResolutionX, cfgResolutionY);
+			foreach(int y; 0..cast(int)(cfgResolutionY))
+			{
+				foreach(int x; 0..cast(int)(cfgResolutionX))
+				{
+					int R=0,G=0,B=0;
+					foreach(int sy; 0..cast(int)(sm))
+					{
+						foreach(int sx; 0..cast(int)(sm))
+						{
+							int pos = (sm*y+sy)*bstride + x*sm*3 + sx*3;
+							R += im.data[pos];
+							G += im.data[pos+1];
+							B += im.data[pos+2];
+						}
+					}
+					int opos = y*stride + x*3;
+					im2.data[opos] = cast(ubyte)(R/smq);
+					im2.data[opos+1] = cast(ubyte)(G/smq);
+					im2.data[opos+2] = cast(ubyte)(B/smq);
+				}
+			}
+			im2.WriteImage(outfile);
+		}
 	}
 
 }
@@ -81,20 +163,35 @@ class EuclideanSpace : WorldSpace
 		return &DoRay;
 	}
 
-	public static void DoRay(Tid owner, Line ray, unum x, unum y)
+	private static Color NormalToColor(Vectorf N)
+	{
+		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
+	}
+
+	public static void DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
 	{
 		fpnum dist;
 		Vectorf normal;
-		if(WorldSpace.sph.getClosestIntersection(ray,dist,normal))
-			WorldSpace.fullray.Poke(x,y,Colors.Green);
-		else
-			WorldSpace.fullray.Poke(x,y,Colors.Black);
+		fpnum mindist=1e99;
+		Color outc = Colors.Black;
+		foreach(shared(Renderable) o; WorldSpace.objects)
+		{
+			Renderable O = cast(Renderable)(o);
+			if(O.getClosestIntersection(ray,dist,normal))
+			{
+				if(dist<mindist)
+				{
+					outc = NormalToColor(normal);
+					mindist = dist;
+				}
+			}
+		}
+		WorldSpace.fullray.Poke(x,y,outc);
 	}
 }
 
-WorldSpace CreateSpace(string name, unum samples)
+WorldSpace CreateSpace(string name)
 {
-	WorldSpace.sampleLineCount = cast(ushort)samples;
 	WorldSpace R;
 	if(name=="euclidean")
 	{
@@ -113,6 +210,10 @@ void SetupCamera(string name, Vectorf origin, fpnum pitch, fpnum yaw, fpnum roll
 	if(name=="orthogonal")
 	{
 		cam = new OrthogonalCamera();
+	}
+	else if(name=="linear")
+	{
+		cam = new LinearPerspectiveCamera();
 	}
 	else
 	{

@@ -11,6 +11,7 @@ bool cfgVerbose = false;
 string cfgScript = "raytrace.tcl";
 inum cfgResolutionX = 320;
 inum cfgResolutionY = 240;
+inum cfgThreads = 6;
 
 unum cfgSamples = 1;
 string cfgWorldSpace = "euclidean";
