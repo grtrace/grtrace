@@ -15,6 +15,8 @@ interface ICamera
 	@property ref Vectorf lookdir();
 	/// right direction
 	@property ref Vectorf rightdir();
+	/// up direction
+	@property Vectorf updir();
 	/// set camera Y/X ratio
 	@property ref fpnum yxratio();
 	/// parse options string (from script)
@@ -42,6 +44,11 @@ class OrthogonalCamera : ICamera
 	@property ref Vectorf rightdir()
 	{
 		return righ;
+	}
+	/// up direction
+	@property Vectorf updir()
+	{
+		return up;
 	}
 	/// set camera Y/X ratio
 	@property ref fpnum yxratio()
@@ -85,6 +92,11 @@ class LinearPerspectiveCamera : ICamera
 	{
 		return righ;
 	}
+	/// up direction
+	@property Vectorf updir()
+	{
+		return up;
+	}
 	/// set camera Y/X ratio
 	@property ref fpnum yxratio()
 	{
@@ -95,7 +107,7 @@ class LinearPerspectiveCamera : ICamera
 	{
 		string[] oa = ["0"]~opts.split();
 		getopt(oa, "xsize|x", &xdim,"fov|f", &FOV);
-		up = dir%righ;
+		up = -dir%righ;
 		FOVM = 1.0/tan(FOV*PI/180.0);
 		dirm = dir*FOVM;
 	}

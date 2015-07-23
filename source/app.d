@@ -40,7 +40,7 @@ void main(string[] args)
 	foreach(name,object;cfgObjects)
 	{
 		space.AddObject(object);
-		writeln("Added "~name);
+		writeln("Added "~name~" ",object);
 	}
 	foreach(name,object;cfgLights)
 	{

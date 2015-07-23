@@ -62,7 +62,7 @@ abstract class WorldSpace
 		todo = pixelsx*pixelsy/100;
 		prostep = todo/prosteps;
 		writefln("Starting raytrace [Realres: %dx%dx3=%d]...",pixelsx,pixelsy,fullray.data.length);
-		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s", cam.origin, cam.lookdir, cam.rightdir);
+		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s\n Camera up: %s", cam.origin, cam.lookdir, cam.rightdir, cam.updir);
 		auto tdg = function(Tid owner, unum y0, unum y1, int tnum, RayFunc DoRay)
 		{
 			auto cam = cast(ICamera)(camera);
@@ -175,7 +175,7 @@ class EuclideanSpace : WorldSpace
 		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
 	}
 
-	protected static void Raytrace(bool doP, bool doN, bool doO)(Line ray, out bool didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
+	protected static fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, out bool didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
 	{
 		static if(doP)
 		{
@@ -220,6 +220,7 @@ class EuclideanSpace : WorldSpace
 			Vectorf P = ray.origin + ray.direction*mdist;
 			*hitpoint = P;
 		}
+		return mdist;
 	}
 
 	protected static Color Rayer(Line ray, int recnum, Color lastcol)
@@ -242,10 +243,18 @@ class EuclideanSpace : WorldSpace
 				Line hitRay = LinePoints(rayhit,l.getPosition());
 				hitRay.ray = true;
 				bool unlit=false;
-				Raytrace!(false,false,false)(hitRay,unlit);
+				fpnum dst = Raytrace!(false,false,false)(hitRay,unlit);
+				if(unlit)
+				{
+					fpnum dLO = *(l.getPosition()-rayhit);
+					if(dLO<(dst*dst))
+					{
+						unlit = false;
+					}
+				}
 				if(unlit==false) // lit
 				{
-					tmpc = tmpc + l.getColor()*(normal*hitRay.direction);
+					tmpc = tmpc + l.getColor()*(normal*(hitRay.direction));
 				}
 			}
 		}

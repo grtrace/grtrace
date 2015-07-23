@@ -31,7 +31,11 @@ class Plane : Renderable
 			"material|m", &mat_name,
 			"construction|c", &mode);
 
-		mat = cfgMaterials[mat_name];
+		auto mt = mat_name in cfgMaterials;
+		if(mt)
+		{
+			mat = *mt;
+		}
 		mode = toLower(mode);
 
 		if(mode == 'a')
@@ -42,9 +46,8 @@ class Plane : Renderable
 				"origin_x|x", &orig.x,
 				"origin_y|y", &orig.y,
 				"origin_z|z", &orig.z,
-				"OXZ_deg_angle|a", &OXY_deg_angle,
+				"OXZ_deg_angle|a", &OXZ_deg_angle,
 				"OXY_deg_angle|b", &OXY_deg_angle);
-			
 			plane = PlaneAngles(OXZ_deg_angle, OXY_deg_angle, orig);
 		}
 		else if(mode == 'v' || mode =='p')
@@ -88,6 +91,11 @@ class Plane : Renderable
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
 		assert(0, "For texturable plane use TexturablePlane");
+	}
+
+	override string toString()
+	{
+		return format("O:%s N:%s", plane.origin, plane.normal);
 	}
 }
 
