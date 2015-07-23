@@ -29,8 +29,8 @@ class Plane : Renderable
 
 		getopt(
 			a,std.getopt.config.passThrough,
-			std.getopt.config.required, "material|m", &mat_name,
-			std.getopt.config.required, "construction|c", &mode);
+			"material|m", &mat_name,
+			"construction|c", &mode);
 
 		//FIXME:mat = cfgMaterials[mat_name];
 		mode = toLower(mode);
@@ -41,9 +41,9 @@ class Plane : Renderable
 				Vectorf orig;
 
 				getopt(a,
-					std.getopt.config.required, "origin_x|x", &orig.x,
-					std.getopt.config.required, "origin_y|y", &orig.y,
-					std.getopt.config.required, "origin_z|z", &orig.z);
+					"origin_x|x", &orig.x,
+					"origin_y|y", &orig.y,
+					"origin_z|z", &orig.z);
 				break;
 			case 'v':
 				break;

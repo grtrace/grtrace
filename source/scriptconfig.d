@@ -143,8 +143,8 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 		string otype,oname;
 		bool isTransformed=false;
 		oname = args[0];
-		getopt(args,std.getopt.config.passThrough,
-			std.getopt.config.required,"type|t",&otype,
+		getopt(args,std.getopt.config.passThrough,std.getopt.config.caseSensitive,
+			"type|t",&otype,
 			"transformed|T", &isTransformed);
 		if(oname in cfgObjects)
 		{
@@ -156,8 +156,39 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 			case "sphere":
 				obj = new Sphere();
 				break;
+			case "plane":
+				obj = new Plane();
+				break;
+			case "texplane":
+				obj = new TexturablePlane();
+				break;
+			case "triangle":
+				obj = new Triangle();
+				break;
+			case "textriangle":
+				obj = new TexturableTriangle();
+				break;
+			case "pointlight":
+				if(oname in cfgLights)
+				{
+					throw new Exception("Light named "~oname~" already exists in the light list!");
+				}
+				cfgLights[oname] = new PointLight();
+				cfgLights[oname].setupFromOptions(args);
+				return TCL_OK;
 			default:
 				throw new Exception("Wrong object type "~otype);
+		}
+		if(isTransformed)
+		{
+			Renderable o2 = new Transformed(obj);
+			o2.setupFromOptions(args);
+			cfgObjects[oname] = o2;
+		}
+		else
+		{
+			obj.setupFromOptions(args);
+			cfgObjects[oname] = obj;
 		}
 	}
 	catch(Exception e)

@@ -16,6 +16,7 @@ import scene.objects.interfaces;
 import scene.objects.sphere;
 import scene.camera;
 import core.cpuid;
+import std.algorithm;
 
 abstract class WorldSpace
 {
@@ -29,6 +30,7 @@ abstract class WorldSpace
 		Image fullray;
 		ICamera camera;
 		Renderable[] objects;
+		Light[] lights;
 		unum pixelsx,pixelsy;
 		Color ambientLight;
 	}
@@ -40,6 +42,11 @@ abstract class WorldSpace
 	public void AddObject(Renderable obj)
 	{
 		WorldSpace.objects ~= [cast(shared(Renderable))(obj)];
+	}
+
+	public void AddLight(Light obj)
+	{
+		WorldSpace.lights ~= [cast(shared(Light))(obj)];
 	}
 
 	public void StartTracing(string outfile)
@@ -168,6 +175,53 @@ class EuclideanSpace : WorldSpace
 		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
 	}
 
+	protected static void Raytrace(bool doP, bool doN, bool doO)(Line ray, out bool didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
+	{
+		static if(doP)
+		{
+			static assert(doN);
+		}
+		fpnum dist,mdist;
+		mdist = +fpnum.infinity;
+		Vectorf normal,mnormal;
+		Renderable H = null;
+		bool dh=false;
+		foreach(shared(Renderable) o; WorldSpace.objects)
+		{
+			Renderable O = cast(Renderable)(o);
+			if(O.getClosestIntersection(ray,dist,normal))
+			{
+				if(mdist>dist)
+				{
+					dh=true;
+					mdist=dist;
+					static if(doN)
+					{
+						mnormal = normal;
+					}
+					static if(doO)
+					{
+						H = O;
+					}
+				}
+			}
+		}
+		didHit = dh;
+		static if(doO)
+		{
+			*hit = H;
+		}
+		static if(doN)
+		{
+			*hitnormal = mnormal;
+		}
+		static if(doP)
+		{
+			Vectorf P = ray.origin + ray.direction*mdist;
+			*hitpoint = P;
+		}
+	}
+
 	protected static Color Rayer(Line ray, int recnum, Color lastcol)
 	{
 		if(recnum>cfgMaxDepth)
@@ -175,19 +229,23 @@ class EuclideanSpace : WorldSpace
 			return lastcol;
 		}
 		Color tmpc = lastcol;
-		fpnum dist;
+		Vectorf rayhit;
 		Vectorf normal;
-		fpnum mindist=1e99;
-		// tail rcall: return Rayer(ray2, recnum+1, color);
-		foreach(shared(Renderable) o; WorldSpace.objects)
+		Renderable closest;
+		bool hit=false;
+		Raytrace!(true,true,true)(ray, hit, &rayhit, &normal, &closest);
+		if(hit)
 		{
-			Renderable O = cast(Renderable)(o);
-			if(O.getClosestIntersection(ray,dist,normal))
+			tmpc = Colors.Black;
+			foreach(shared(Light) l;lights)
 			{
-				if(dist<mindist)
+				Line hitRay = LinePoints(rayhit,l.getPosition());
+				hitRay.ray = true;
+				bool unlit=false;
+				Raytrace!(false,false,false)(hitRay,unlit);
+				if(unlit==false) // lit
 				{
-					tmpc = NormalToColor(normal);
-					mindist = dist;
+					tmpc = tmpc + l.getColor()*(normal*hitRay.direction);
 				}
 			}
 		}
@@ -197,6 +255,11 @@ class EuclideanSpace : WorldSpace
 	public static void DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
 	{
 		Color outc = Rayer(ray, 0, Colors.Black);
+		float mx = max(outc.r, outc.g, outc.b);
+		if(mx>1.0f)
+		{
+			outc = outc / mx;
+		}
 		WorldSpace.fullray.Poke(x,y,outc);
 	}
 }

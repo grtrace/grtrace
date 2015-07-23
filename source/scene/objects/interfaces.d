@@ -6,11 +6,10 @@ import math.vector;
 import scene.materials.material;
 import config;
 import std.math;
+import image.color;
 
 interface Renderable
 {
-public:
-
 	void setupFromOptions(string[] a);
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -24,6 +23,14 @@ public:
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const;
 }
 
+interface Light
+{
+	void setupFromOptions(string[] a);
+	Vectorf getPosition();
+	Color getColor();
+	Vectorf getPosition() shared;
+	Color getColor() shared;
+}
 
 class Transformed : Renderable
 {

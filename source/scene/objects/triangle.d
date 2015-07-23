@@ -92,7 +92,7 @@ class Triangle : Renderable
 	}
 }
 
-class TexturedTriangle : Triangle
+class TexturableTriangle : Triangle
 {
 	private fpnum tex_u_a; private fpnum tex_v_a;
 	private fpnum tex_u_b; private fpnum tex_v_b;

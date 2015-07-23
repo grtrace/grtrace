@@ -37,14 +37,15 @@ void main(string[] args)
 	writefln("Rendering to an %dx%d image",cfgResolutionX,cfgResolutionY);
 	auto space = CreateSpace(cfgWorldSpace);
 	SetupCamera(cfgCameraType, vectorf(cfgCameraX,cfgCameraY,cfgCameraZ), cfgCameraPitch, cfgCameraYaw, cfgCameraRoll, cfgCameraOptions);
-	if(true)
+	foreach(name,object;cfgObjects)
 	{
-		import scene.objects;
-		space.AddObject(new Sphere(Vectorf(0,0,10),2.0));
-		space.AddObject(new Sphere(Vectorf(4,0,10),3.0));
-		space.AddObject(new Sphere(Vectorf(-4,0,10),3.0));
-		space.AddObject(new Sphere(Vectorf(0,4,10),3.0));
-		space.AddObject(new Sphere(Vectorf(0,-4,10),3.0));
+		space.AddObject(object);
+		writeln("Added "~name);
+	}
+	foreach(name,object;cfgLights)
+	{
+		space.AddLight(object);
+		writeln("Added "~name);
 	}
 	space.StartTracing(cfgOutputFile);
 }

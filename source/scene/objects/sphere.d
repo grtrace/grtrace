@@ -6,6 +6,7 @@ import math.vector;
 import scene.materials.material;
 import config;
 import std.math;
+import std.getopt;
 
 class Sphere : Renderable
 {
@@ -25,23 +26,36 @@ class Sphere : Renderable
 
 	void setupFromOptions(string[] a)
 	{
-		assert(0);
+		fpnum x,y,z;
+		string mats;
+		getopt(a,std.getopt.config.caseSensitive,
+			"x",&x,
+			"y",&y,
+			"z",&z,
+			"radius|r",&radius,
+			"material|m",&mats);
+		center = vectorf(x,y,z);
+		auto mt = mats in cfgMaterials;
+		if(mt)
+		{
+			mat = *mt;
+		}
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
 	{
 		Vectorf o = ray.origin - center;
 		
-		double B = 2*(ray.direction*o);
-		double C = (o*o) - radius*radius;
+		fpnum B = 2.0*(ray.direction*o);
+		fpnum C = (*o) - radius*radius;
 		
-		double Det = B*B - 4*C;
+		fpnum Det = B*B - 4*C;
 		
 		if(Det>=0)
 		{
 			Det = sqrt(Det);
-			double t1 = (-B - Det)/2;
-			double t2 = (-B + Det)/2;
+			fpnum t1 = (-B - Det)/2;
+			fpnum t2 = (-B + Det)/2;
 			
 			if(ray.ray)
 			{
@@ -58,9 +72,9 @@ class Sphere : Renderable
 			
 			dist = t1;
 			Vectorf point = ray.direction*t1 + o;
-			point = point*(1/radius);
+			point = point*(1.0/radius);
 			
-			normal = point; // wektor normalny do punktu przeciecia
+			normal = point;
 			
 			return true;
 			

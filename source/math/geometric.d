@@ -38,7 +38,7 @@ struct Line
 
 Line LinePoints(Point A, Point B)
 {
-	Vectorf Dir = (A-B).normalized;
+	Vectorf Dir = (B-A).normalized;
 	return Line(A, Dir);
 }
 
