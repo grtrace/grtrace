@@ -19,7 +19,7 @@ class Triangle : Renderable
 		triangle = tr;
 	}
 
-	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal)
+	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
 	{
 		if (scene.objects.plane.getClosestIntersection(triangle.plane, ray, dist, normal))
 		{
@@ -31,15 +31,15 @@ class Triangle : Renderable
 			//translated to a cordinate system with origin at triangle.plane.origin
 			
 			//this is the data needed for finding barycentric cordinates for InsertPoint
-			double d1, d2, d3, d4, d5, u, v;
+			fpnum d1, d2, d3, d4, d5, u, v;
 			d1 = triangle.c*triangle.c;
 			d2 = triangle.c*triangle.b;
 			d3 = triangle.c*InsertPoint;
 			d4 = triangle.b*triangle.b;
 			d5 = triangle.b*InsertPoint;
-			
+
 			//calculation of barycentric cordinates for InsertPoint
-			double invD = 1 / ((d1 * d4) - (d2 * d2));
+			fpnum invD = 1 / ((d1 * d4) - (d2 * d2));
 			u = ((d4 * d3) - (d2 * d5)) * invD;
 			v = ((d1 * d5) - (d2 * d3)) * invD;
 			
@@ -53,13 +53,87 @@ class Triangle : Renderable
 			return false;
 	}
 
-	@property Material material()
+	@property Material material() const
 	{
 		return mat;
 	}
 	
-	void getUVMapping(Vectorf point, out fpnum U, out fpnum V)
+	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
-		assert(0);
+		// Compute barycentric coordinates (u, v, w) for
+		// point p with respect to triangle (a, b, c)
+
+		Vectorf v0 = triangle.b - triangle.plane.origin;
+		Vectorf v1 = triangle.c - triangle.plane.origin;
+		Vectorf v2 = point - triangle.plane.origin;
+		fpnum d00 = v0*v0;
+		fpnum d01 = v0*v1;
+		fpnum d11 = v1*v1;
+		fpnum d20 = v2*v0;
+		fpnum d21 = v2*v1;
+		fpnum denom = 1/ (d00 * d11 - d01 * d01);
+		fpnum v = (d11 * d20 - d01 * d21) * denom;
+		fpnum w = (d00 * d21 - d01 * d20) * denom;
+		fpnum u = 1.0f - v - w;
+
+		//(U,V)
+		//a=(0,0), b=(1,0), c=(0,1)
+		U = v;
+		V = w;
+	}
+}
+
+class TexturedTriangle : Triangle
+{
+	private fpnum tex_u_a; private fpnum tex_v_a;
+	private fpnum tex_u_b; private fpnum tex_v_b;
+	private fpnum tex_u_c; private fpnum tex_v_c;
+
+	struct Cached
+	{
+		fpnum d00;
+		fpnum d01;
+		fpnum d11;
+		fpnum denom;
+	}
+
+	immutable Cached cached;
+
+	this(Material m, math.Triangle tr, fpnum U_a, fpnum V_a, fpnum U_b, fpnum V_b, fpnum U_c, fpnum V_c)
+	{
+		super(m, tr);
+
+		tex_u_a = U_a; tex_v_a = V_a;
+		tex_u_b = U_b; tex_v_b = V_b;
+		tex_u_c = U_c; tex_v_c = V_c;
+
+		Vectorf v0 = triangle.b - triangle.plane.origin;
+		Vectorf v1 = triangle.c - triangle.plane.origin;
+
+		cached = Cached(
+		v0*v0,
+		v0*v1,
+		v1*v1,
+		1/ ((v0*v0) * (v1*v1) - (v0*v1) * (v0*v1)));
+	}
+
+	override void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
+	{
+		// Compute barycentric coordinates (u, v, w) for
+		// point p with respect to triangle (a, b, c)
+		Vectorf v0 = triangle.b - triangle.plane.origin;
+		Vectorf v1 = triangle.c - triangle.plane.origin;
+		Vectorf v2 = point - triangle.plane.origin;
+
+		fpnum d20 = v2*v0;
+		fpnum d21 = v2*v1;
+
+		fpnum v = (cached.d11 * d20 - cached.d01 * d21) * cached.denom;
+		fpnum w = (cached.d00 * d21 - cached.d01 * d20) * cached.denom;
+		fpnum u = 1.0f - v - w;
+		
+		U = tex_u_a*u + tex_u_b*v + tex_u_c*w;
+		V = tex_v_a*u + tex_v_b*v + tex_v_c*w;
+		
 	}
 }
