@@ -3,6 +3,7 @@
 import std.math;
 import math.util;
 import math.vector;
+import math.geometric;
 import config;
 import std.format;
 
@@ -278,7 +279,7 @@ public:
 		vals[i]=val;
 	}
 
-	Matrix4!T opBinary(string op)(Matrix4!T rhs) if (op=="+"||op=="-"||op=="*")
+	Matrix4!T opBinary(string op)(const Matrix4!T rhs) const if (op=="+"||op=="-"||op=="*")
 	{
 		Matrix4!T res;
 
@@ -314,7 +315,7 @@ public:
 		}
 	}
 
-	Vector!T opBinary(string op)(Vector!T rhs) if (op=="*")
+	Vector!T opBinary(string op)(const Vector!T rhs) const if (op=="*")
 	{
 		return Vector!T(
 			vals[0+4*0]*rhs.x + vals[1+4*0]*rhs.y + vals[2+4*0]*rhs.z + vals[3+4*0]*rhs.w,
@@ -323,7 +324,16 @@ public:
 			);
 	}
 
-	Matrix4!T opBinary(string op)(T rhs) if(op=="*"||op=="/")
+	Line opBinary(string op)(const Line line) const if (op=="*")
+	{
+		return Line(
+			this*line.origin,
+			this*line.direction,
+			line.ray
+			);
+	}
+
+	Matrix4!T opBinary(string op)(const T rhs) const if(op=="*"||op=="/")
 	{
 		Matrix4!T res;
 		res.vals[] = mixin( "vals[]"~op~"rhs" );
