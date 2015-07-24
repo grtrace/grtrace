@@ -12,9 +12,9 @@ fpnum LinearInterpolation(fpnum a, fpnum b, fpnum weight)
 Color LinearInterpolation(Color a, Color b, fpnum weight)
 {
 	return Color(
-		cast(ubyte)LinearInterpolation(a.r, b.r, weight),
-		cast(ubyte)LinearInterpolation(a.g, a.g, weight),
-		cast(ubyte)LinearInterpolation(a.b, a.b, weight));
+		LinearInterpolation(a.r, b.r, weight),
+		LinearInterpolation(a.g, a.g, weight),
+		LinearInterpolation(a.b, a.b, weight));
 }
 
 fpnum BilinearInterpolation(
@@ -29,9 +29,9 @@ Color BilinearInterpolation(
 	Color c, Color d, fpnum U, fpnum V)
 {
 	return Color(
-		cast(ubyte)BilinearInterpolation(a.r, b.r, c.r, d.r, U, V),
-		cast(ubyte)BilinearInterpolation(a.g, b.g, c.g, d.g, U, V),
-		cast(ubyte)BilinearInterpolation(a.b, b.b, c.b, d.b, U, V));
+		BilinearInterpolation(a.r, b.r, c.r, d.r, U, V),
+		BilinearInterpolation(a.g, b.g, c.g, d.g, U, V),
+		BilinearInterpolation(a.b, b.b, c.b, d.b, U, V));
 }
 
 fpnum TrilinearInterpolation(

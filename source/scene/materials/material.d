@@ -23,7 +23,7 @@ enum FilteringTypes : Color function(Image,fpnum,fpnum)
 			im.Peek((cast(size_t)u), (cast(size_t)v)), im.Peek((cast(size_t)u)+1, (cast(size_t)v)),
 			im.Peek((cast(size_t)u), (cast(size_t)v)+1), im.Peek((cast(size_t)u)+1, (cast(size_t)v)+1),
 			U-(cast(fpnum)u)/(cast(fpnum)im.w),
-			V-(cast(fpnum)u)/(cast(fpnum)im.h));
+			V-(cast(fpnum)v)/(cast(fpnum)im.h));
 	}
 }
 
@@ -34,26 +34,35 @@ class Material
 	private Image im = null;
 	private UVFunc f = null;
 	private bool isDiffuse = false;
+
+	private Color emissionColor = Colors.Black;
 	private Color diffuseColor = Colors.Black;
 
 	this()
 	{
 	}
 
-	@property bool is_diffuse()
+	@property ref bool is_diffuse()
 	{
 		return isDiffuse;
 	}
 	
-	@property Color diffuse_color()
+	@property ref Color diffuse_color()
 	{
 		return diffuseColor;
+	}
+
+	@property ref Color emission_color()
+	{
+		return emissionColor;
 	}
 
 	void loadTextureFromFile(string name)
 	{
 		im = ReadImage(name);
 		f = FilteringTypes.NearestNeightbour;
+		isDiffuse = true;
+		diffuseColor = Colors.White;
 	}
 
 	void setFiltering(FilteringTypes filter)
@@ -71,7 +80,7 @@ class Material
 		return im !is null;
 	}
 
-	@property Image texture()
+	@property ref Image texture()
 	{
 		return im;
 	}

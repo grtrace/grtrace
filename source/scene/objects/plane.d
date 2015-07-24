@@ -27,15 +27,9 @@ class Plane : Renderable
 		string mat_name;
 		dchar mode;
 
-		getopt(a,std.getopt.config.passThrough,
-			"material|m", &mat_name,
+		getopt(a,std.getopt.config.passThrough, std.getopt.config.caseSensitive,
 			"construction|c", &mode);
 
-		auto mt = mat_name in cfgMaterials;
-		if(mt)
-		{
-			mat = *mt;
-		}
 		mode = toLower(mode);
 
 		if(mode == 'a')
@@ -83,19 +77,20 @@ class Plane : Renderable
 		return .getClosestIntersection(plane, ray, dist, normal);
 	}
 	
-	@property Material material()
+	@property ref Material material()
 	{
 		return mat;
 	}
 	
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
-		assert(0, "For texturable plane use TexturablePlane");
+		//assert(0, "For texturable plane use TexturablePlane");
+		U=V=0;
 	}
 
 	override string toString()
 	{
-		return format("O:%s N:%s", plane.origin, plane.normal);
+		return format("O:%s N:%s M:%s", plane.origin, plane.normal, mat);
 	}
 }
 
@@ -127,7 +122,7 @@ class TexturablePlane : Plane
 	fpnum tex_d_u; fpnum tex_d_v;
 
 
-	private fpnum len;
+	private fpnum len2;
 
 	this()
 	{
@@ -155,8 +150,8 @@ class TexturablePlane : Plane
 	{
 		origin = a;
 		A = b-a;
-		len = ~A;
-		B = (A%plane.normal).normalized*len;
+		len2 = (*A);
+		B = ((A%plane.normal).normalized)*len2;
 	}
 
 	override void setupFromOptions(string[] a)
@@ -182,14 +177,32 @@ class TexturablePlane : Plane
 		setCache(first, second);
 	}
 
-	override void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
+	override void getUVMapping(Vectorf point, out fpnum u, out fpnum v) const
 	{
 		Vectorf tmp = point-origin;
 
-		U = fmod((~(A%tmp))/len, 1.0);
-		U = U*(tex_d_u-tex_a_u) + tex_a_u;
+		fpnum U,V;
 
-		V = fmod((~(B%tmp))/len, 1.0);
-		V = V*(tex_d_v-tex_a_v) + tex_a_v;
+		U = (A*tmp)/(len2);
+		U = fmod(U, 1.0);
+		//U = U*(tex_d_u-tex_a_u) + tex_a_u;
+
+		V = (B*tmp)/(len2);
+		V = fmod(V, 1.0);
+		//V = V*(tex_d_v-tex_a_v) + tex_a_v;
+		if(U<0)
+			U = 1.0+U;
+		if(V<0)
+			V = 1.0+V;
+		u=U;
+		v=V;
+		//import std.stdio;writeln(U,"\t",V);
+
+	}
+
+	override string toString()
+	{
+		return super.toString()~format(" TO:%s TA:%s TB:%s TAU:%f TAV%f TBU:%f TBV%f", origin, A, B, tex_a_u,
+			tex_a_v, tex_d_u, tex_d_v);
 	}
 }

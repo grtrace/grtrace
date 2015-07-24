@@ -26,14 +26,11 @@ class Triangle : Renderable
 
 	void setupFromOptions(string[] a)
 	{
-		string mat_name;
 		Vectorf A; Vectorf B; Vectorf C;
 
 		getopt(a, 
 			std.getopt.config.passThrough,
 			std.getopt.config.caseSensitive,
-
-			"material|m", &mat_name,
 
 			"first_x|d", &A.x,
 			"first_y|e", &A.y,
@@ -47,7 +44,6 @@ class Triangle : Renderable
 			"third_y|k", &C.y,
 			"third_z|l", &C.z);
 
-		mat = cfgMaterials[mat_name];
 		triangle = TrianglePoints(A, B, B);
 	}
 
@@ -85,7 +81,7 @@ class Triangle : Renderable
 			return false;
 	}
 
-	@property Material material()
+	@property ref Material material()
 	{
 		return mat;
 	}
@@ -112,6 +108,13 @@ class Triangle : Renderable
 		//a=(0,0), b=(1,0), c=(0,1)
 		U = v;
 		V = w;
+	}
+
+	override string toString() 
+	{
+		return format("A:%s B:%s C:%s N:%s M:%s", 
+			triangle.plane.origin, triangle.b, triangle.c,
+			triangle.plane.normal, mat);
 	}
 }
 
@@ -192,5 +195,13 @@ class TexturableTriangle : Triangle
 		U = tex_u_a*u + tex_u_b*v + tex_u_c*w;
 		V = tex_v_a*u + tex_v_b*v + tex_v_c*w;
 		
+	}
+
+	override string toString()
+	{
+		return super.toString()~format("TAU:%f TAV:%f TBU:%f TBV:%f TCU:%f TCV:%f", 
+			tex_u_a, tex_v_a, 
+			tex_u_b, tex_v_b, 
+			tex_u_c, tex_v_c);
 	}
 }

@@ -18,7 +18,7 @@ interface Renderable
 		assert(fabs(*ray.direction)<eps);
 	}
 
-	@property Material material();
+	@property ref Material material();
 
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const;
 }
@@ -47,7 +47,7 @@ class Transformed : Renderable
 
 	void setupFromOptions(string[] a)
 	{
-
+		object.setupFromOptions(a);
 	}
 
 	Matrix4f getTransform()
@@ -83,7 +83,7 @@ class Transformed : Renderable
 		return true;
 	}
 	
-	@property Material material()
+	@property ref Material material()
 	{
 		return object.material;
 	}
