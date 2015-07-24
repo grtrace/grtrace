@@ -185,11 +185,11 @@ class TexturablePlane : Plane
 
 		U = (A*tmp)/(len2);
 		U = fmod(U, 1.0);
-		//U = U*(tex_d_u-tex_a_u) + tex_a_u;
+		U = U*(tex_d_u-tex_a_u) + tex_a_u;
 
 		V = (B*tmp)/(len2);
 		V = fmod(V, 1.0);
-		//V = V*(tex_d_v-tex_a_v) + tex_a_v;
+		V = V*(tex_d_v-tex_a_v) + tex_a_v;
 		if(U<0)
 			U = 1.0+U;
 		if(V<0)

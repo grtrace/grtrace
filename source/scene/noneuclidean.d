@@ -131,39 +131,49 @@ class PlaneDeflectSpace : WorldSpace
 		Color tmpc = lastcol;
 		Vectorf rayhit;
 		Vectorf normal;
-		import std.math;
 		Renderable closest;
 		bool hit=false;
 		Raytrace!(true,true,true)(ray, &hit, &rayhit, &normal, &closest);
 		if(hit)
 		{
-			tmpc = Colors.Black;
-			if(lights.length==0)
+			tmpc = closest.material.emission_color;
+			
+			Color textureColor = Colors.White;
+			
+			if(closest.material.hasTexture())
 			{
-				tmpc = NormalToColor(normal);
+				fpnum U,V;
+				closest.getUVMapping(rayhit, U, V);
+				textureColor = closest.material.peekUV(U,V);
 			}
-			foreach(shared(Light) l;lights)
+			
+			if(closest.material.is_diffuse)
 			{
-				Line hitRay = LinePoints(rayhit,l.getPosition());
-				hitRay.ray = true;
-				bool unlit=false;
-				fpnum dst = Raytrace!(false,false,false)(hitRay,&unlit);
-				if(unlit)
+				Color diffuseColor = closest.material.diffuse_color;
+				
+				foreach(shared(Light) l;lights)
 				{
-					import std.math;
-					fpnum dLO = *(l.getPosition()-rayhit);
-					if(dLO<(dst*dst))
+					Line hitRay = LinePoints(rayhit,l.getPosition());
+					hitRay.ray = true;
+					bool unlit=false;
+					fpnum dst = Raytrace!(false,false,false)(hitRay,&unlit);
+					if(unlit)
 					{
-						unlit = false;
+						fpnum dLO = *(l.getPosition()-rayhit);
+						if(dLO<(dst*dst))
+						{
+							unlit = false;
+						}
+					}
+					if(unlit==false) // lit
+					{
+						fpnum DP = normal*(hitRay.direction);
+						if(DP>0)
+							tmpc = tmpc + diffuseColor*l.getColor()*(DP);
 					}
 				}
-				if(unlit==false) // lit
-				{
-					fpnum DP = normal*(hitRay.direction);
-					if(DP>0)
-						tmpc = tmpc + l.getColor()*(DP);
-				}
 			}
+			tmpc *= textureColor;
 		}
 		return tmpc;
 	}

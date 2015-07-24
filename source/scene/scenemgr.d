@@ -4,6 +4,7 @@ import config;
 import core.time;
 import std.concurrency;
 import std.stdio;
+import std.math;
 import std.functional;
 import math.vector;
 import math.geometric;
@@ -172,7 +173,7 @@ class EuclideanSpace : WorldSpace
 		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
 	}
 
-	protected static fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, out bool didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
+	protected static fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
 	{
 		static if(doP)
 		{
@@ -204,7 +205,7 @@ class EuclideanSpace : WorldSpace
 				}
 			}
 		}
-		didHit = dh;
+		if(dh){*didHit=true;}
 		static if(doO)
 		{
 			*hit = H;
@@ -230,13 +231,12 @@ class EuclideanSpace : WorldSpace
 		Color tmpc = lastcol;
 		Vectorf rayhit;
 		Vectorf normal;
-		import std.math;
 		Renderable closest;
 		bool hit=false;
-		Raytrace!(true,true,true)(ray, hit, &rayhit, &normal, &closest);
+		Raytrace!(true,true,true)(ray, &hit, &rayhit, &normal, &closest);
 		if(hit)
 		{
-			tmpc = Colors.Black /*closest.material.emission_color*/;
+			tmpc = closest.material.emission_color;
 
 			Color textureColor = Colors.White;
 
@@ -245,23 +245,20 @@ class EuclideanSpace : WorldSpace
 				fpnum U,V;
 				closest.getUVMapping(rayhit, U, V);
 				textureColor = closest.material.peekUV(U,V);
-				tmpc *= textureColor;
 			}
 
 			if(closest.material.is_diffuse)
 			{
-				Color diffuseColor = closest.material.diffuse_color*textureColor;
-				//writefln("%f:%f:%f", diffuseColor.r, diffuseColor.g, diffuseColor.b);
+				Color diffuseColor = closest.material.diffuse_color;
 
 				foreach(shared(Light) l;lights)
 				{
 					Line hitRay = LinePoints(rayhit,l.getPosition());
 					hitRay.ray = true;
 					bool unlit=false;
-					fpnum dst = Raytrace!(false,false,false)(hitRay,unlit);
+					fpnum dst = Raytrace!(false,false,false)(hitRay,&unlit);
 					if(unlit)
 					{
-						import std.math;
 						fpnum dLO = *(l.getPosition()-rayhit);
 						if(dLO<(dst*dst))
 						{
@@ -276,6 +273,7 @@ class EuclideanSpace : WorldSpace
 					}
 				}
 			}
+			tmpc *= textureColor;
 		}
 		return tmpc;
 	}

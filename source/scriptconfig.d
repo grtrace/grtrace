@@ -8,6 +8,8 @@ import scene.materials.material;
 import image.memory;
 import image.imgio;
 import image.color;
+import math.vector;
+import scene.scenemgr, scene.camera;
 import std.uni, std.range, std.algorithm;
 //import tcltk.tk;
 
@@ -157,8 +159,6 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 			"type|t",&otype,
 			"transformed|T", &isTransformed,
 			"material|m", &mat_name);
-
-		writeln(mat_name);
 		if(mat_name == "" && otype != "pointlight") 
 			throw new Exception("Objects must have materials! ");
 		if(mat_name != "" && otype == "pointlight")
@@ -274,6 +274,24 @@ Color colorString(string str)
 			fpnum[] components = [0.0,0.0,0.0];
 			str.filter!( (c)=>((!isWhite(c))) )().array().splitter(',').map!((a)=>to!fpnum(a)).copy(components);
 			return Color(components[0],components[1],components[2]);
+		}());
+}
+
+Vectorf vectorString(string str)
+{
+	ICamera cam = cast(ICamera)(WorldSpace.camera);
+	return str.toLower().predSwitch!("a==b")(
+		"", vectorf(0,0,0),
+		"up",    cam.updir,
+		"down", -cam.updir,
+		"left", -cam.rightdir,
+		"right", cam.rightdir,
+		"front", cam.lookdir,
+		"back", -cam.lookdir,
+		{
+			fpnum[] components = [0.0,0.0,0.0];
+			str.filter!( (c)=>((!isWhite(c))) )().array().splitter(',').map!((a)=>to!fpnum(a)).copy(components);
+			return vectorf(components[0],components[1],components[2]);
 		}());
 }
 
