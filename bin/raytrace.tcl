@@ -5,7 +5,7 @@ configset "CameraType" "linear"
 configset "CameraOptions" "-x 10 -f 45"
 #configset "CameraOptions" "-x 10"
 
-loadTexture "\rLoaded \033\[0m\033\[01;31mMaria\033\[0m from fundusz" textures/photo.png
+loadTexture .tex1 textures/photo.png
 addobject .light1 -t pointlight -x0 -y-1.5 -z10 -r0.1 -g0 -b0.1
 addobject .plane1 -t plane -c a -x0 -y-2 -z30 -a90 -b90
 addobject .sph1 -t sphere -x0 -y5 -z10 -r5
