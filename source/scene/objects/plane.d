@@ -69,7 +69,7 @@ class Plane : Renderable
 
 			if(mode == 'v')
 				plane = PlaneVectors(orig, v1, v2);
-			else
+			else //mode p
 				plane = PlanePoints(orig, v1, v2);
 		}
 		else
@@ -186,10 +186,10 @@ class TexturablePlane : Plane
 	{
 		Vectorf tmp = point-origin;
 
-		U = (~(A%tmp))/len;
+		U = fmod((~(A%tmp))/len, 1.0);
 		U = U*(tex_d_u-tex_a_u) + tex_a_u;
 
-		V = (~(B%tmp))/len;
+		V = fmod((~(B%tmp))/len, 1.0);
 		V = V*(tex_d_v-tex_a_v) + tex_a_v;
 	}
 }

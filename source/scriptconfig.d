@@ -4,6 +4,8 @@ import std.string, std.array, std.stdio, std.variant, std.conv, std.getopt;
 import tcltk.tcl;
 import config;
 import scene.objects;
+import image.memory;
+import image.imgio;
 //import tcltk.tk;
 
 alias ConfigValue = Algebraic!(inump,unump,fpnump,string*);
@@ -18,6 +20,7 @@ void InitScripting(string arg0)
 	Tcl_Init(tcl);
 	Tcl_CreateObjCommand(tcl, "configset", &tclConfigSet, null, null);
 	Tcl_CreateObjCommand(tcl, "addobject", &tclAddObject, null, null);
+	Tcl_CreateObjCommand(tcl, "loadTexture", &tclLoadTexture, null, null);
 
 	mixin(ConfigMixin("ResolutionX"));
 	mixin(ConfigMixin("ResolutionY"));
@@ -189,6 +192,44 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 		{
 			obj.setupFromOptions(args);
 			cfgObjects[oname] = obj;
+		}
+	}
+	catch(Exception e)
+	{
+		Tcl_AppendResult(interp, ("D exception "~e.msg~"\0").ptr,null);
+		return TCL_ERROR;
+	}
+	return TCL_OK;
+}
+
+extern(C) int tclLoadTexture(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	string tar;
+	string[] args;
+	const(char)* tarcs;
+	int tarcl;
+	if(objc!=3)
+	{
+		Tcl_WrongNumArgs(interp, objc, objv, "loadTexture has only 2 arguments!");
+		return TCL_ERROR;
+	}
+
+	for(int i=1;i<objc;i++)
+	{
+		tarcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[i],&tarcl);
+		args ~= [tarcs[0..tarcl].idup];
+	}
+
+	try
+	{
+		if(args[0] in cfgTextures)
+		{
+			throw new Exception("Texture named "~args[0]~" already exists in the texture list!");
+		}
+		else
+		{
+			cfgTextures[args[0]] = ReadImage(args[1]);
+			writeln("Loaded texture "~args[0]~" from: "~args[1]);
 		}
 	}
 	catch(Exception e)
