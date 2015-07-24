@@ -19,6 +19,8 @@ import core.cpuid;
 import std.algorithm;
 import std.random;
 
+import scene.noneuclidean;
+
 abstract class WorldSpace
 {
 	enum Message
@@ -78,7 +80,7 @@ abstract class WorldSpace
 			fpnum smpd = cast(fpnum)(samples*samples);
 			int cc=0;
 			Line cray;
-			double jitx, jity;
+			double jitx=0.0, jity=0.0;
 			for(unum y=y0;y<y1;y++)
 			{
 				for(unum x=0;x<pixelsx;x++)
@@ -88,8 +90,8 @@ abstract class WorldSpace
 					{
 						for(unum sx=0;sx<samples;sx++)
 						{
-							jitx = uniform01!double(rnd)*2.0-1.0;
-							jity = uniform01!double(rnd)*2.0-1.0;
+							//jitx = uniform01!double(rnd)*2.0-1.0;
+							//jity = uniform01!double(rnd)*2.0-1.0;
 							if(cam.fetchRay(x*jmpx - 1.0 + sx*smpx + jitx*smpx,y*jmpy - 1.0 + sy*smpy + jity*smpy,cray))
 							{
 								col += DoRay(owner, cray, x, y, tnum);
@@ -271,6 +273,10 @@ WorldSpace CreateSpace(string name)
 	if(name=="euclidean")
 	{
 		R = new EuclideanSpace();
+	}
+	else if(name=="deflect")
+	{
+		R = new PlaneDeflectSpace();
 	}
 	else
 	{

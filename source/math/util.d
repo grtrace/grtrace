@@ -3,8 +3,8 @@
 import std.math;
 import std.functional;
 
-alias msin = memoize!sin;
-alias mcos = memoize!cos;
+alias msin = sin;
+alias mcos = cos;
 
 T fsin(T)(T x)
 {

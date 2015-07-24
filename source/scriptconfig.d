@@ -27,6 +27,7 @@ void InitScripting(string arg0)
 
 	mixin(ConfigMixin("Samples"));
 	mixin(ConfigMixin("WorldSpace"));
+	mixin(ConfigMixin("SpaceConfig"));
 	mixin(ConfigMixin("CameraType"));
 	mixin(ConfigMixin("CameraX"));
 	mixin(ConfigMixin("CameraY"));

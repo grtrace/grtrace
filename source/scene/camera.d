@@ -59,7 +59,7 @@ class OrthogonalCamera : ICamera
 	@property void options(string opts)
 	{
 		string[] oa = ["0"]~opts.split();
-		getopt(oa, "xsize|x", &xdim);
+		getopt(oa, std.getopt.config.passThrough ,"xsize|x", &xdim);
 		up = dir%righ;
 	}
 	/// X,Y in <-1;1>
@@ -106,7 +106,7 @@ class LinearPerspectiveCamera : ICamera
 	@property void options(string opts)
 	{
 		string[] oa = ["0"]~opts.split();
-		getopt(oa, "xsize|x", &xdim,"fov|f", &FOV);
+		getopt(oa, std.getopt.config.passThrough, "xsize|x", &xdim,"fov|f", &FOV);
 		up = -dir%righ;
 		FOVM = 1.0/tan(FOV*PI/180.0);
 		dirm = dir*FOVM;

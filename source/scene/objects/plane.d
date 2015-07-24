@@ -10,7 +10,7 @@ import std.string, std.getopt, std.array, std.range, std.math, std.algorithm, st
 class Plane : Renderable
 {
 	private Material mat;
-	private math.Plane plane;
+	public math.Plane plane;
 
 	this()
 	{
@@ -74,7 +74,7 @@ class Plane : Renderable
 		}
 		else
 		{
-			assert(0, "invalid plane construction mode: "~cast(char)mode);
+			assert(0, "invalid rivateplane construction mode: "~cast(char)mode);
 		}
 	}
 

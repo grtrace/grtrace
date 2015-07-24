@@ -91,29 +91,35 @@ public:
 	}
 
 	static Matrix4!T Rotate(Vector!T axis, T angle)
-	in
 	{
-		assert(fabs(*axis - 1.0)<eps);
-	}
-	body
-	{
+		T sa = fsin!T(angle);
+		T ca = fcos!T(angle);
+		T ca1 = cast(T)(1.0 - ca);
 		return Matrix4!T(
-			fcos!T(angle) + axis.x*axis.x*(1- fcos!T(angle)),
-			axis.x*axis.y*(1-fcos!T(angle)) - axis.z*fsin!T(angle),
-			axis.x*axis.z*(1-fcos!T(angle)) + axis.y*fsin!T(angle),
+			ca + axis.x*axis.x*ca1,
+			axis.x*axis.y*ca1 - axis.z*sa,
+			axis.x*axis.z*ca1 + axis.y*sa,
 			0,
 
-			axis.y*axis.x*(1-fcos!T(angle)) + axis.z*fsin!T(angle),
-			fcos!T(angle) + axis.y*axis.y*(1-fcos!T(angle)),
-			axis.y*axis.z*(1-fcos!T(angle)) - axis.x*fsin!T(angle),
+			axis.y*axis.x*ca1 + axis.z*sa,
+			ca + axis.y*axis.y*ca1,
+			axis.y*axis.z*ca1 - axis.x*sa,
 			0,
 
-			axis.z*axis.x*(1-fcos!T(angle)) - axis.y*fsin!T(angle),
-			axis.z*axis.y*(1-fcos!T(angle)) + axis.x*fsin!T(angle),
-			fcos!T(angle) + axis.z*axis.z*(1-fcos!T(angle)),
+			axis.z*axis.x*ca1 - axis.y*sa,
+			axis.z*axis.y*ca1 + axis.x*sa,
+			ca + axis.z*axis.z*ca1,
 			0,
 			0,0,0,1
 			);
+	}
+
+	static Vector!T RotateV(Vector!T axis, T angle, Vector!T v)
+	{
+		T sa = fsin!T(angle);
+		T ca = fcos!T(angle);
+		T ca1 = cast(T)(1.0 - ca);
+		return v*ca + (axis%v)*sa + axis*(ca1*(axis*v));
 	}
 
 	this(
