@@ -90,8 +90,11 @@ abstract class WorldSpace
 					{
 						for(unum sx=0;sx<samples;sx++)
 						{
-							//jitx = uniform01!double(rnd)*2.0-1.0;
-							//jity = uniform01!double(rnd)*2.0-1.0;
+							if(samples>1)
+							{
+								jitx = uniform01!double(rnd)*2.0-1.0;
+								jity = uniform01!double(rnd)*2.0-1.0;
+							}
 							if(cam.fetchRay(x*jmpx - 1.0 + sx*smpx + jitx*smpx,y*jmpy - 1.0 + sy*smpy + jity*smpy,cray))
 							{
 								col += DoRay(owner, cray, x, y, tnum);
