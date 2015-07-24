@@ -2,6 +2,7 @@
 
 import scene.objects.interfaces;
 import scene.materials.material;
+import image.memory;
 
 alias fpnum = double;
 alias inum = long;
@@ -34,6 +35,7 @@ __gshared
 
 	Renderable[string] cfgObjects;
 	Light[string] cfgLights;
+	Image[string] cfgTextures;
 	Material[string] cfgMaterials;
 }
 
