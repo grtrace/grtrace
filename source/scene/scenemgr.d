@@ -120,6 +120,7 @@ abstract class WorldSpace
 			lasty+=perthr;
 		}
 		tasks[$-1] = spawn(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
+		//tdg(thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
 		int running = threads;
 		while(running>0)
 		{
@@ -142,7 +143,11 @@ abstract class WorldSpace
 						}
 					});
 			}
-			finally{}
+			catch(Exception e)
+			{
+				writeln(e.msg);
+				return;
+			}
 		}
 		writeln();writeln("Finished!");
 		im.WriteImage(outfile);
@@ -226,27 +231,44 @@ class EuclideanSpace : WorldSpace
 		Raytrace!(true,true,true)(ray, hit, &rayhit, &normal, &closest);
 		if(hit)
 		{
-			tmpc = Colors.Black;
-			foreach(shared(Light) l;lights)
+			tmpc = Colors.Black /*closest.material.emission_color*/;
+
+			Color textureColor = Colors.White;
+
+			if(closest.material.hasTexture())
 			{
-				Line hitRay = LinePoints(rayhit,l.getPosition());
-				hitRay.ray = true;
-				bool unlit=false;
-				fpnum dst = Raytrace!(false,false,false)(hitRay,unlit);
-				if(unlit)
+				fpnum U,V;
+				closest.getUVMapping(rayhit, U, V);
+				textureColor = closest.material.peekUV(U,V);
+				tmpc *= textureColor;
+			}
+
+			if(closest.material.is_diffuse)
+			{
+				Color diffuseColor = closest.material.diffuse_color*textureColor;
+				//writefln("%f:%f:%f", diffuseColor.r, diffuseColor.g, diffuseColor.b);
+
+				foreach(shared(Light) l;lights)
 				{
-					import std.math;
-					fpnum dLO = *(l.getPosition()-rayhit);
-					if(dLO<(dst*dst))
+					Line hitRay = LinePoints(rayhit,l.getPosition());
+					hitRay.ray = true;
+					bool unlit=false;
+					fpnum dst = Raytrace!(false,false,false)(hitRay,unlit);
+					if(unlit)
 					{
-						unlit = false;
+						import std.math;
+						fpnum dLO = *(l.getPosition()-rayhit);
+						if(dLO<(dst*dst))
+						{
+							unlit = false;
+						}
 					}
-				}
-				if(unlit==false) // lit
-				{
-					fpnum DP = normal*(hitRay.direction);
-					if(DP>0)
-						tmpc = tmpc + l.getColor()*(DP);
+					if(unlit==false) // lit
+					{
+						fpnum DP = normal*(hitRay.direction);
+						if(DP>0)
+							tmpc = tmpc + diffuseColor*l.getColor()*(DP);
+					}
 				}
 			}
 		}

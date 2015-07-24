@@ -6,7 +6,7 @@ import math.vector;
 import scene.materials.material;
 import config;
 import std.math;
-import std.getopt;
+import std.getopt, std.string;
 
 class Sphere : Renderable
 {
@@ -27,19 +27,12 @@ class Sphere : Renderable
 	void setupFromOptions(string[] a)
 	{
 		fpnum x,y,z;
-		string mats;
 		getopt(a,std.getopt.config.caseSensitive,
 			"x",&x,
 			"y",&y,
 			"z",&z,
-			"radius|r",&radius,
-			"material|m",&mats);
+			"radius|r",&radius);
 		center = vectorf(x,y,z);
-		auto mt = mats in cfgMaterials;
-		if(mt)
-		{
-			mat = *mt;
-		}
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -82,7 +75,7 @@ class Sphere : Renderable
 		else return false;
 	}
 	
-	@property Material material()
+	@property ref Material material()
 	{
 		return mat;
 	}
@@ -92,6 +85,11 @@ class Sphere : Renderable
 		Vectorf d = (center - point).normalized;
 		U = 0.5 + atan2(d.z, d.x)/2*PI;
 		V = 0.5 - asin(d.y)/PI;
+	}
+
+	override string toString() 
+	{
+		return format("C:%s R:%f M:%s", center, radius, mat);
 	}
 
 }

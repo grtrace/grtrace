@@ -34,9 +34,13 @@ __gshared
 	string cfgOutputFile = "raytrace.png";
 
 	Renderable[string] cfgObjects;
+	string[] cfgObjectsMaterialNames;
+
 	Light[string] cfgLights;
 	Image[string] cfgTextures;
+
 	Material[string] cfgMaterials;
+	string[] cfgMaterialsTextureNames;
 }
 
 // physical constants

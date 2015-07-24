@@ -4,8 +4,11 @@ import std.string, std.array, std.stdio, std.variant, std.conv, std.getopt;
 import tcltk.tcl;
 import config;
 import scene.objects;
+import scene.materials.material;
 import image.memory;
 import image.imgio;
+import image.color;
+import std.uni, std.range, std.algorithm;
 //import tcltk.tk;
 
 alias ConfigValue = Algebraic!(inump,unump,fpnump,string*);
@@ -21,6 +24,7 @@ void InitScripting(string arg0)
 	Tcl_CreateObjCommand(tcl, "configset", &tclConfigSet, null, null);
 	Tcl_CreateObjCommand(tcl, "addobject", &tclAddObject, null, null);
 	Tcl_CreateObjCommand(tcl, "loadTexture", &tclLoadTexture, null, null);
+	Tcl_CreateObjCommand(tcl, "addMaterial", &tclAddMaterial, null, null);
 
 	mixin(ConfigMixin("ResolutionX"));
 	mixin(ConfigMixin("ResolutionY"));
@@ -51,6 +55,7 @@ void DoScript(string path)
 	{
 		throw new Exception("Tcl error "~text(Tcl_GetErrorLine(tcl))~" "~Tcl_GetStringResult(tcl).text());
 	}
+	FininalizeObjects();
 }
 
 extern(C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
@@ -143,12 +148,24 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 	}
 	try
 	{
+		string mat_name;
 		string otype,oname;
 		bool isTransformed=false;
 		oname = args[0];
 		getopt(args,std.getopt.config.passThrough,std.getopt.config.caseSensitive,
 			"type|t",&otype,
-			"transformed|T", &isTransformed);
+			"transformed|T", &isTransformed,
+			"material|m", &mat_name);
+
+		writeln(mat_name);
+		if(mat_name == "" && otype != "pointlight") 
+			throw new Exception("Objects must have materials! ");
+		if(mat_name != "" && otype == "pointlight")
+			throw new Exception("Lights can't have materials!");
+
+		if(otype != "pointlight")
+			cfgObjectsMaterialNames ~= mat_name;
+
 		if(oname in cfgObjects)
 		{
 			throw new Exception("Object named "~oname~" already exists in the object list!");
@@ -238,4 +255,123 @@ extern(C) int tclLoadTexture(ClientData clientData, Tcl_Interp* interp, int objc
 		return TCL_ERROR;
 	}
 	return TCL_OK;
+}
+
+Color colorString(string str)
+{
+	return str.toLower().predSwitch!("a==b")(
+		"", Colors.Black,
+		"black", Colors.Black,
+		"white", Colors.White,
+		"red", Colors.Red,
+		"green", Colors.Green,
+		"blue", Colors.Blue,
+		"cyan", Colors.Cyan,
+		"magneta", Colors.Magneta,
+		"yellow", Colors.Yellow,
+		{
+			fpnum[] components = [0.0,0.0,0.0];
+			str.filter!( (c)=>((!isWhite(c))) )().array().splitter(',').map!((a)=>to!fpnum(a)).copy(components);
+			return Color(components[0],components[1],components[2]);
+		}());
+}
+
+extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	string tar;
+	string[] args;
+	const(char)* tarcs;
+	int tarcl;
+	if(objc<2)
+	{
+		Tcl_WrongNumArgs(interp, objc, objv, "addMaterial needs at least 1 argument!");
+		return TCL_ERROR;
+	}
+
+	for(int i=1; i<objc; i++)
+	{
+		tarcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[i],&tarcl);
+		args ~= [tarcs[0..tarcl].idup];
+	}
+
+	string mname = args[0];
+
+	try
+	{
+		if(mname in cfgMaterials)
+		{
+			throw new Exception("Material named "~mname~" already exists in the material list!");
+		}
+
+		Material newMat = new Material();
+
+		string textureName;
+		string texturePath;
+		string diffuseString;
+		string emissionString;
+		dchar filtering;
+		bool isDiffuse;
+
+		getopt(args, 
+			std.getopt.config.passThrough, std.getopt.config.caseSensitive,
+			"texture_name|t", &textureName,
+			"texture_filtering|f", &filtering,
+			"is_diffuse|D", &isDiffuse,
+			"diffuse_color|d", &diffuseString,
+			"emision_color|e", &emissionString);
+			
+		newMat.is_diffuse = isDiffuse;
+
+		newMat.diffuse_color = colorString(diffuseString);
+		newMat.emission_color = colorString(emissionString);
+
+		newMat.setFiltering(
+			filtering.toLower.predSwitch!("a==b")
+			(
+				'n', FilteringTypes.NearestNeightbour,
+				'b', FilteringTypes.BilinearFiltering,
+				{
+					throw new Exception("Filtering mode "~cast(char)filtering~" not supported");
+				}()
+			));
+
+		cfgMaterialsTextureNames ~= textureName;
+		cfgMaterials[mname] = newMat;
+
+	}
+	catch(Exception e)
+	{
+		Tcl_AppendResult(interp, ("D exception "~e.msg~"0").ptr, null);
+		return TCL_ERROR;
+	}
+	return TCL_OK;
+}
+
+void FininalizeObjects()
+in
+{
+	assert(cfgMaterials.length == cfgMaterialsTextureNames.length);
+	assert(cfgObjects.length == cfgObjectsMaterialNames.length);
+}
+body
+{
+	int i = 0;
+	foreach(mat; cfgMaterials)
+	{
+		if(cfgMaterialsTextureNames[i] != "" && cfgMaterialsTextureNames[i] in cfgTextures)
+		{
+			mat.texture = cfgTextures[cfgMaterialsTextureNames[i]];
+		}
+		i++;
+	}
+
+	i=0;
+	foreach(obj; cfgObjects)
+	{
+		if(cfgObjectsMaterialNames[i] != "" && cfgObjectsMaterialNames[i] in cfgMaterials)
+		{
+			obj.material = cfgMaterials[cfgObjectsMaterialNames[i]];
+		}
+		i++;
+	}
 }

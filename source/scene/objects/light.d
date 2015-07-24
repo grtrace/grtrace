@@ -1,7 +1,7 @@
 ﻿module scene.objects.light;
 
 import scene.objects.interfaces;
-import std.getopt;
+import std.getopt, std.string;
 import image.color;
 import math.vector;
 import config;
@@ -50,5 +50,9 @@ class PointLight : Light
 		return color;
 	}
 
-}
+	override string toString()
+	{
+		return format("P:%s C:%s", position, color);
+	}
 
+}
