@@ -7,6 +7,7 @@ import scene.materials.material;
 import config;
 import std.math;
 import image.color;
+import scriptconfig;
 
 interface Renderable
 {

@@ -226,13 +226,11 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 			"type|t",&otype,
 			"transformed|T", &isTransformed,
 			"material|m", &mat_name);
+
 		if(mat_name == "" && otype != "pointlight") 
 			throw new Exception("Objects must have materials! ");
 		if(mat_name != "" && otype == "pointlight")
 			throw new Exception("Lights can't have materials!");
-
-		if(otype != "pointlight")
-			cfgObjectsMaterialNames ~= mat_name;
 
 		if(oname in cfgObjects)
 		{
@@ -272,11 +270,13 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 			Renderable o2 = new Transformed(obj);
 			o2.setupFromOptions(args);
 			cfgObjects[oname] = o2;
+			cfgObjectsMaterialNames[o2] = mat_name;
 		}
 		else
 		{
 			obj.setupFromOptions(args);
 			cfgObjects[oname] = obj;
+			cfgObjectsMaterialNames[obj] = mat_name;
 		}
 	}
 	catch(Exception e)
@@ -310,7 +310,9 @@ extern(C) int tclLoadTexture(ClientData clientData, Tcl_Interp* interp, int objc
 		else
 		{
 			cfgTextures[args[0]] = ReadImage(args[1]);
-			writeln("Loaded texture "~args[0]~" from: "~args[1]);
+
+			if(cfgVerbose)
+				writeln("Loaded texture "~args[0]~" from: "~args[1]);
 		}
 	}
 	catch(Exception e)
@@ -413,8 +415,11 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 				}()
 			));
 
-		cfgMaterialsTextureNames ~= textureName;
 		cfgMaterials[mname] = newMat;
+		cfgMaterialsTextureNames[newMat] = textureName;
+
+		if(cfgVerbose)
+			writeln("Added material: "~mname);
 
 	}
 	catch(Exception e)
@@ -433,23 +438,19 @@ in
 }
 body
 {
-	int i = 0;
 	foreach(mat; cfgMaterials)
 	{
-		if(cfgMaterialsTextureNames[i] != "" && cfgMaterialsTextureNames[i] in cfgTextures)
+		if(cfgMaterialsTextureNames[mat] != "" && cfgMaterialsTextureNames[mat] in cfgTextures)
 		{
-			mat.texture = cfgTextures[cfgMaterialsTextureNames[i]];
+			mat.texture = cfgTextures[cfgMaterialsTextureNames[mat]];
 		}
-		i++;
 	}
 
-	i=0;
 	foreach(obj; cfgObjects)
 	{
-		if(cfgObjectsMaterialNames[i] != "" && cfgObjectsMaterialNames[i] in cfgMaterials)
+		if(cfgObjectsMaterialNames[obj] != "" && cfgObjectsMaterialNames[obj] in cfgMaterials)
 		{
-			obj.material = cfgMaterials[cfgObjectsMaterialNames[i]];
+			obj.material = cfgMaterials[cfgObjectsMaterialNames[obj]];
 		}
-		i++;
 	}
 }
