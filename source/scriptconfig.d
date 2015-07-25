@@ -11,20 +11,35 @@ import image.color;
 import math.vector;
 import scene.scenemgr, scene.camera;
 import std.uni, std.range, std.algorithm;
-//import tcltk.tk;
+import tcltk.tk;
+import std.concurrency : send;
+import core.thread : Thread;
+import core.time : dur;
+import core.atomic;
 
 alias ConfigValue = Algebraic!(inump,unump,fpnump,string*);
 private ConfigValue[string] cfgOptions;
 public __gshared Tcl_Interp* tcl;
 
+private string tclToStr(const(Tcl_Obj*) o) nothrow
+{
+	const(char)* cstr;
+	int len;
+	cstr = Tcl_GetStringFromObj(cast(Tcl_Obj*)o,&len);
+	return cstr[0..len].idup;
+}
 
 void InitScripting(string arg0)
 {
 	Tcl_FindExecutable(arg0.toStringz());
 	tcl = Tcl_CreateInterp();
 	Tcl_Init(tcl);
-	Tcl_CreateObjCommand(tcl, "configset", &tclConfigSet, null, null);
-	Tcl_CreateObjCommand(tcl, "addobject", &tclAddObject, null, null);
+	Tcl_CreateObjCommand(tcl, "loadGUI", &tclLoadGUI, null, null);
+	Tcl_CreateObjCommand(tcl, "makeScene", &tclMakeScene, null, null);
+	Tcl_CreateObjCommand(tcl, "doTrace", &tclDoTrace, null, null);
+	Tcl_CreateObjCommand(tcl, "waitForTrace", &tclFinishTrace, null, null);
+	Tcl_CreateObjCommand(tcl, "configSet", &tclConfigSet, null, null);
+	Tcl_CreateObjCommand(tcl, "addObject", &tclAddObject, null, null);
 	Tcl_CreateObjCommand(tcl, "loadTexture", &tclLoadTexture, null, null);
 	Tcl_CreateObjCommand(tcl, "addMaterial", &tclAddMaterial, null, null);
 
@@ -58,21 +73,79 @@ void DoScript(string path)
 	{
 		throw new Exception("Tcl error "~text(Tcl_GetErrorLine(tcl))~" "~Tcl_GetStringResult(tcl).text());
 	}
-	FininalizeObjects();
+}
+
+extern(C) int tclLoadGUI(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	Tk_Init(interp);
+	return TCL_OK;
+}
+
+extern(C) int tclMakeScene(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	try
+	{
+		auto space = CreateSpace(cfgWorldSpace);
+		SetupCamera(cfgCameraType, vectorf(cfgCameraX,cfgCameraY,cfgCameraZ), cfgCameraPitch, cfgCameraYaw, cfgCameraRoll, cfgCameraOptions);
+		foreach(name,object;cfgObjects)
+		{
+			space.AddObject(object);
+			if(cfgVerbose)
+				writeln("Added "~name~" ",object);
+		}
+		foreach(name,object;cfgLights)
+		{
+			space.AddLight(object);
+			if(cfgVerbose)
+				writeln("Added "~name);
+		}
+		cfgSpace = cast(shared(WorldSpace))(space);
+		FinalizeObjects();
+	}
+	catch(Exception e)
+	{
+		Tcl_AppendResult(interp, ("D exception "~e.msg~"\0").ptr,null);
+		return TCL_ERROR;
+	}
+	return TCL_OK;
+}
+
+extern(C) int tclDoTrace(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	try
+	{
+		if(cfgTraceStart==cfgTraceEnd)
+		{
+			atomicOp!"+="(cfgTraceStart,1);
+			send(renderTid, true);
+		}
+	}
+	catch(Exception e)
+	{
+		Tcl_AppendResult(interp, ("D exception "~e.msg~"\0").ptr,null);
+		return TCL_ERROR;
+	}
+	return TCL_OK;
+}
+
+extern(C) int tclFinishTrace(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	while(cfgTraceStart>cfgTraceEnd)
+	{
+		Thread.sleep(dur!"msecs"(90));
+	}
+	return TCL_OK;
 }
 
 extern(C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
 {
 	string tar;
-	const(char)* tarcs;
-	int tarcl;
 	if(objc!=3)
 	{
 		Tcl_WrongNumArgs(interp, objc, objv, "configset has only 2 arguments!");
 		return TCL_ERROR;
 	}
-	tarcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[1],&tarcl);
-	tar = tarcs[0..tarcl].idup;
+	tar = tclToStr(objv[1]);
 	ConfigValue* cvp = tar in cfgOptions;
 	if(cvp is null)
 	{
@@ -84,10 +157,7 @@ extern(C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc, 
 	{
 		if(cv.peek!(string*)()!is null)
 		{
-			const(char)* valcs;
-			int valcl;
-			valcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[2],&valcl);
-			*(cv.get!(string*)) = cast(string)(valcs[0..valcl].idup);
+			*(cv.get!(string*)) = tclToStr(objv[2]);
 		}
 		else if(cv.peek!(fpnump)()!is null)
 		{
@@ -137,8 +207,6 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 {
 	string[] args;
 	string tar;
-	const(char)* tarcs;
-	int tarcl;
 	if(objc<2)
 	{
 		Tcl_WrongNumArgs(interp, objc, objv, "Needs at least 1 argument!");
@@ -146,8 +214,7 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 	}
 	for(int i=1;i<objc;i++)
 	{
-		tarcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[i],&tarcl);
-		args ~= [tarcs[0..tarcl].idup];
+		args ~= tclToStr(objv[i]);
 	}
 	try
 	{
@@ -222,10 +289,7 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 
 extern(C) int tclLoadTexture(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
 {
-	string tar;
 	string[] args;
-	const(char)* tarcs;
-	int tarcl;
 	if(objc!=3)
 	{
 		Tcl_WrongNumArgs(interp, objc, objv, "loadTexture has only 2 arguments!");
@@ -234,8 +298,7 @@ extern(C) int tclLoadTexture(ClientData clientData, Tcl_Interp* interp, int objc
 
 	for(int i=1;i<objc;i++)
 	{
-		tarcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[i],&tarcl);
-		args ~= [tarcs[0..tarcl].idup];
+		args ~= tclToStr(objv[i]);
 	}
 
 	try
@@ -268,7 +331,7 @@ Color colorString(string str)
 		"green", Colors.Green,
 		"blue", Colors.Blue,
 		"cyan", Colors.Cyan,
-		"magneta", Colors.Magneta,
+		"magenta", Colors.Magenta,
 		"yellow", Colors.Yellow,
 		{
 			fpnum[] components = [0.0,0.0,0.0];
@@ -297,10 +360,7 @@ Vectorf vectorString(string str)
 
 extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
 {
-	string tar;
 	string[] args;
-	const(char)* tarcs;
-	int tarcl;
 	if(objc<2)
 	{
 		Tcl_WrongNumArgs(interp, objc, objv, "addMaterial needs at least 1 argument!");
@@ -309,8 +369,7 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 
 	for(int i=1; i<objc; i++)
 	{
-		tarcs = Tcl_GetStringFromObj(cast(Tcl_Obj*)objv[i],&tarcl);
-		args ~= [tarcs[0..tarcl].idup];
+		args ~= tclToStr(objv[i]);
 	}
 
 	string mname = args[0];
@@ -366,7 +425,7 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 	return TCL_OK;
 }
 
-void FininalizeObjects()
+void FinalizeObjects()
 in
 {
 	assert(cfgMaterials.length == cfgMaterialsTextureNames.length);

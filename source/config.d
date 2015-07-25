@@ -2,7 +2,9 @@
 
 import scene.objects.interfaces;
 import scene.materials.material;
+import scene.scenemgr, scene.camera;
 import image.memory;
+import std.concurrency;
 
 alias fpnum = double;
 alias inum = long;
@@ -42,6 +44,16 @@ __gshared
 
 	Material[string] cfgMaterials;
 	string[] cfgMaterialsTextureNames;
+
+	Tid renderTid;
+}
+
+public shared
+{
+	WorldSpace cfgSpace;
+	ICamera cfgCamera;
+	long cfgTraceStart=0;
+	long cfgTraceEnd=0;
 }
 
 // physical constants

@@ -100,5 +100,5 @@ enum Colors : Color
 	Blue = Color(0,0,1),
 	Yellow = Red+Green,
 	Cyan = Green+Blue,
-	Magneta = Red+Blue
+	Magenta = Red+Blue
 }

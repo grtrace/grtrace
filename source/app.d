@@ -6,6 +6,9 @@ import scriptconfig;
 import config;
 import scene.scenemgr;
 import math.vector;
+import std.concurrency;
+import core.thread : Thread;
+import core.time : dur;
 
 enum string HelpStr = `
 General Relativity rayTracer usage:
@@ -16,6 +19,23 @@ Options:
 --help|-h     - Displays this text
 --threads|-t  - Thread number to use
 `;
+
+void RenderSpawner(Tid owner)
+{
+	while(true)
+	{
+		if(receiveOnly!bool())
+		{
+			WorldSpace sp = cast(WorldSpace)(cfgSpace);
+			sp.StartTracing(cfgOutputFile);
+			cfgTraceEnd = cfgTraceStart;
+		}
+		else
+		{
+			return;
+		}
+	}
+}
 
 void main(string[] args)
 {
@@ -33,26 +53,8 @@ void main(string[] args)
 		writef(HelpStr, arg0);
 		return;
 	}
+	renderTid = spawn(&RenderSpawner, thisTid);
 	DoScript(cfgScript);
-	writefln("Rendering to an %dx%d image",cfgResolutionX,cfgResolutionY);
-	auto space = CreateSpace(cfgWorldSpace);
-	SetupCamera(cfgCameraType, vectorf(cfgCameraX,cfgCameraY,cfgCameraZ), cfgCameraPitch, cfgCameraYaw, cfgCameraRoll, cfgCameraOptions);
-	int cntO=0, cntL=0;
-	foreach(name,object;cfgObjects)
-	{
-		space.AddObject(object);
-		cntO++;
-		if(cfgVerbose)
-			writeln("Added "~name~" ",object);
-	}
-	foreach(name,object;cfgLights)
-	{
-		space.AddLight(object);
-		cntL++;
-		if(cfgVerbose)
-			writeln("Added "~name);
-	}
-	if(!cfgVerbose)
-		writefln("Added %d objects and %d lights.",cntO,cntL);
-	space.StartTracing(cfgOutputFile);
+	renderTid.send(false);
+	Thread.sleep(dur!"msecs"(50));
 }
