@@ -5,6 +5,7 @@ import math.geometric;
 import math.vector;
 import scene.materials.material;
 import config;
+import scriptconfig;
 import std.string, std.getopt, std.array, std.range, std.math, std.algorithm, std.uni;
 
 class Plane : Renderable
@@ -34,41 +35,31 @@ class Plane : Renderable
 
 		if(mode == 'a')
 		{
-			Vectorf orig; fpnum OXZ_deg_angle; fpnum OXY_deg_angle;
+			string origStr; fpnum OXZ_deg_angle; fpnum OXY_deg_angle;
 			
 			getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
-				"origin_x|x", &orig.x,
-				"origin_y|y", &orig.y,
-				"origin_z|z", &orig.z,
+				"origin|o", &origStr,
 				"OXZ_deg_angle|a", &OXZ_deg_angle,
 				"OXY_deg_angle|b", &OXY_deg_angle);
-			plane = PlaneAngles(OXZ_deg_angle, OXY_deg_angle, orig);
+			plane = PlaneAngles(OXZ_deg_angle, OXY_deg_angle, vectorString(origStr));
 		}
 		else if(mode == 'v' || mode =='p')
 		{
-			Vectorf orig; Vectorf v1; Vectorf v2;
+			string origStr; string vStr1; string vStr2;
 			
 			getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
-				"first_x|a", &orig.x,
-				"first_y|b", &orig.y,
-				"first_z|c", &orig.z,
-				
-				"second_x|d", &v1.x,
-				"second_y|e", &v1.y,
-				"second_z|f", &v1.z,
-				
-				"third_x|g", &v2.x,
-				"third_y|h", &v2.y,
-				"third_z|i", &v2.z);
+				"origin|o", &origStr,
+				"first|f", &vStr1,
+				"second|s", &vStr2);
 
 			if(mode == 'v')
-				plane = PlaneVectors(orig, v1, v2);
+				plane = PlaneVectors(vectorString(origStr), vectorString(vStr1), vectorString(vStr2));
 			else //mode p
-				plane = PlanePoints(orig, v1, v2);
+				plane = PlanePoints(vectorString(origStr), vectorString(vStr1), vectorString(vStr2));
 		}
 		else
 		{
-			assert(0, "invalid rivateplane construction mode: "~cast(char)mode);
+			throw new Exception("Invalid plane construction mode: "~cast(char)mode);
 		}
 	}
 
@@ -158,23 +149,18 @@ class TexturablePlane : Plane
 	{
 		super.setupFromOptions(a);
 
-		Vectorf first; Vectorf second;
+		string firstStr; string secondStr;
 
 		getopt(a,std.getopt.config.caseSensitive , std.getopt.config.passThrough,
-			"tex_vector_first_x|A", &first.x,
-			"tex_vector_first_y|B", &first.y,
-			"tex_vector_first_z|C", &first.z,
-			
-			"tex_vector_second_x|D", &second.x,
-			"tex_vector_second_y|E", &second.y,
-			"tex_vector_second_z|F", &second.z,
-			
+			"tex_vector_first|F", &firstStr,
+			"tex_vector_second|S", &secondStr,
+
 			"tex_crd_first_u|G", &tex_a_u,
 			"tex_crd_first_v|H", &tex_a_v,
 			"tex_crd_second_u|I", &tex_d_u,
 			"tex_crd_second_v|J", &tex_d_v);
 
-		setCache(first, second);
+		setCache(vectorString(firstStr), vectorString(secondStr));
 	}
 
 	override void getUVMapping(Vectorf point, out fpnum u, out fpnum v) const
@@ -190,6 +176,7 @@ class TexturablePlane : Plane
 		V = (B*tmp)/(len2);
 		V = fmod(V, 1.0);
 		V = V*(tex_d_v-tex_a_v) + tex_a_v;
+
 		if(U<0)
 			U = 1.0+U;
 		if(V<0)
@@ -202,7 +189,7 @@ class TexturablePlane : Plane
 
 	override string toString()
 	{
-		return super.toString()~format(" TO:%s TA:%s TB:%s TAU:%f TAV%f TBU:%f TBV%f", origin, A, B, tex_a_u,
+		return super.toString()~format(" TO:%s TA:%s TB:%s TAU: %f TAV %f TBU: %f TBV %f", origin, A, B, tex_a_u,
 			tex_a_v, tex_d_u, tex_d_v);
 	}
 }

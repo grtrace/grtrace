@@ -43,14 +43,14 @@ void main(string[] args)
 		space.AddObject(object);
 		cntO++;
 		if(cfgVerbose)
-			writeln("Added "~name~" ",object);
+			writeln("Added object: "~name~" ",object);
 	}
 	foreach(name,object;cfgLights)
 	{
 		space.AddLight(object);
 		cntL++;
 		if(cfgVerbose)
-			writeln("Added "~name);
+			writeln("Added light: "~name);
 	}
 	if(!cfgVerbose)
 		writefln("Added %d objects and %d lights.",cntO,cntL);

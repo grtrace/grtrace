@@ -5,6 +5,7 @@ import math.geometric;
 import math.vector;
 import scene.materials.material;
 import config;
+import scriptconfig;
 import std.math;
 import std.getopt, std.string;
 
@@ -26,13 +27,11 @@ class Sphere : Renderable
 
 	void setupFromOptions(string[] a)
 	{
-		fpnum x,y,z;
+		string centerStr;
 		getopt(a,std.getopt.config.caseSensitive,
-			"x",&x,
-			"y",&y,
-			"z",&z,
+			"center|c",&centerStr,
 			"radius|r",&radius);
-		center = vectorf(x,y,z);
+		center = vectorString(centerStr);
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const

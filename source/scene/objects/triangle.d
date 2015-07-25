@@ -5,6 +5,7 @@ import math.geometric;
 import math.vector;
 import scene.materials.material;
 import config;
+import scriptconfig;
 import std.math;
 static import scene.objects.plane;
 import std.string, std.getopt, std.array, std.range, std.math, std.algorithm;
@@ -26,25 +27,17 @@ class Triangle : Renderable
 
 	void setupFromOptions(string[] a)
 	{
-		Vectorf A; Vectorf B; Vectorf C;
+		string A; string B; string C;
 
 		getopt(a, 
 			std.getopt.config.passThrough,
 			std.getopt.config.caseSensitive,
 
-			"first_x|d", &A.x,
-			"first_y|e", &A.y,
-			"first_z|f", &A.z,
-			
-			"second_x|g", &B.x,
-			"second_y|h", &B.y,
-			"second_z|i", &B.z,
-			
-			"third_x|j", &C.x,
-			"third_y|k", &C.y,
-			"third_z|l", &C.z);
+			"first|a", &A,
+			"second|b", &B,
+			"third|c", &C);
 
-		triangle = TrianglePoints(A, B, B);
+		triangle = TrianglePoints(vectorString(A), vectorString(B), vectorString(C));
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -199,7 +192,7 @@ class TexturableTriangle : Triangle
 
 	override string toString()
 	{
-		return super.toString()~format("TAU:%f TAV:%f TBU:%f TBV:%f TCU:%f TCV:%f", 
+		return super.toString()~format("TAU: %f TAV: %f TBU: %f TBV: %f TCU: %f TCV: %f", 
 			tex_u_a, tex_v_a, 
 			tex_u_b, tex_v_b, 
 			tex_u_c, tex_v_c);

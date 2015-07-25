@@ -4,6 +4,7 @@ import scene.objects.interfaces;
 import std.getopt, std.string;
 import image.color;
 import math.vector;
+import scriptconfig;
 import config;
 
 class PointLight : Light
@@ -17,17 +18,14 @@ class PointLight : Light
 
 	void setupFromOptions(string[] a)
 	{
-		fpnum x,y,z;
-		float r,g,b;
+		string positionStr;
+		string colorStr;
 		getopt(a,std.getopt.config.caseSensitive,
-			"x",&x,
-			"y",&y,
-			"z",&z,
-			"r",&r,
-			"g",&g,
-			"b",&b);
-		position = vectorf(x,y,z);
-		color = Color(r,g,b);
+			"position|p", &positionStr,
+			"color|c", &colorStr);
+
+		position = vectorString(positionStr);
+		color = colorString(colorStr);
 	}
 
 	Vectorf getPosition()
