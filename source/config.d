@@ -37,13 +37,13 @@ __gshared
 	string cfgOutputFile = "raytrace.png";
 
 	Renderable[string] cfgObjects;
-	string[] cfgObjectsMaterialNames;
+	string[Renderable] cfgObjectsMaterialNames;
 
 	Light[string] cfgLights;
 	Image[string] cfgTextures;
 
 	Material[string] cfgMaterials;
-	string[] cfgMaterialsTextureNames;
+	string[Material] cfgMaterialsTextureNames;
 
 	Tid renderTid;
 }
