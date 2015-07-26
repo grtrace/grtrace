@@ -69,7 +69,7 @@ abstract class WorldSpace
 		writeln("Starting raytrace...");
 		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s\n Camera up: %s", cam.origin, cam.lookdir, cam.rightdir, cam.updir);
 		auto tdg = function(Tid owner, unum y0, unum y1, int tnum, RayFunc DoRay)
-		{
+		{try{
 			Xorshift192 rnd = Xorshift192(1);
 			rnd.seed(unpredictableSeed());
 			Image im = cast(Image)(WorldSpace.fullray);
@@ -114,7 +114,7 @@ abstract class WorldSpace
 				}
 			}
 			send(owner,Message.Finish);
-		};
+		}catch(shared(Exception)e){owner.send(e);}};
 		int threads = cast(int)(cfgThreads);
 		writeln("Rendering using ",threads," CPU threads");
 		int perthr = cast(int)pixelsy/threads;
@@ -123,10 +123,10 @@ abstract class WorldSpace
 		int lasty = 0;
 		for(int i=0;i<threads-1;i++)
 		{
-			tasks[i] = spawn(tdg, thisTid, cast(unum)lasty, cast(unum)(lasty+perthr), i+1, GetRayFunc());
+			tasks[i] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)(lasty+perthr), i+1, GetRayFunc());
 			lasty+=perthr;
 		}
-		tasks[$-1] = spawn(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
+		tasks[$-1] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
 		//tdg(thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
 		int running = threads;
 		while(running>0)
@@ -144,11 +144,14 @@ abstract class WorldSpace
 								stdout.flush();
 							}
 						}
-						else if(m==Message.Finish)
-						{
-							running--;
-						}
+					},
+					(shared(Exception)e){
+						writefln("\nThread dead with exception: %s",e.msg);
 					});
+			}
+			catch(LinkTerminated e)
+			{
+				running--;
 			}
 			catch(Exception e)
 			{
