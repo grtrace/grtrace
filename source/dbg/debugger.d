@@ -75,6 +75,17 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 			{
 				VisualDebugger.inst.rays = [];
 				VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
+				VisualDebugger vd = VisualDebugger.inst;
+				for(int i=1;i<vd.rays.length;i++)
+				{
+					SavedRay r0,r1;
+					r0 = vd.rays[i-1];
+					r1 = vd.rays[i];
+					Vectorf d1,d2;
+					d1 = (r0.destination - r0.origin).normalized;
+					d2 = (r1.destination - r1.origin).normalized;
+					writefln("Angle #1->#2: %s",acos(d1*d2)*180.0/PI);
+				}
 			}
 		}
 	}
