@@ -138,7 +138,7 @@ struct Vector(T)
 		return this;
 	}
 
-	bool opEquals()(auto ref const S s) const
+	bool opEquals()(auto ref const Vector!T s) const
 	{
 		return (x==s.x)&&(y==s.y)&&(z==s.z)&&(w==s.w);
 	}

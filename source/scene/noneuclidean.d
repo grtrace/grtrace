@@ -43,7 +43,7 @@ class PlaneDeflectSpace : WorldSpace
 		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
 	}
 	
-	protected static fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
+	protected static fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
 	{
 		static if(doP)
 		{
@@ -75,34 +75,71 @@ class PlaneDeflectSpace : WorldSpace
 				}
 			}
 		}
-		RPlane def = cast(RPlane)(pln);
-		if(def.getClosestIntersection(ray,dist,normal))
+		static if(doD)
 		{
-			if((mdist>dist)&&(mdist>0.1))
+			RPlane def = cast(RPlane)(pln);
+			if(def.getClosestIntersection(ray,dist,normal))
 			{
-				mdist = dist;
-				static Vectorf newPos;
-				static fpnum R;
-				static fpnum Phi;
-				static Vectorf axis;
-				static Vectorf newDir;
-				static math.Plane rpl;
-				rpl = PlanePoints(def.plane.origin, ray.origin, ray.origin+(ray.direction*100));
-				newPos = ray.origin + ray.direction*mdist;
-				R = ~(newPos-def.plane.origin);
-				enum Mass = 1000.0;
-				if(R<=2*Mass)
+				if((mdist>dist)&&(dist>0.1))
 				{
-					*didHit=false;
-					return float.infinity;
+					mdist = dist;
+					static Vectorf newPos;
+					static fpnum R;
+					static fpnum Phi;
+					static Vectorf axis;
+					static Vectorf newDir;
+					static math.Plane rpl;
+
+					//calculate rotation plane
+					rpl = PlanePoints(def.plane.origin, ray.origin, ray.origin+(ray.direction*100));
+
+					//check if we had hit the event horizont
+					newPos = ray.origin + ray.direction*mdist; //newPos contains the position of the ray intersection with the deflection plane
+					R = ~(newPos-def.plane.origin);
+
+					enum Mass = 1;
+
+					if(R<=2*Mass)
+					{
+						*didHit=false;
+						return float.infinity;
+					}
+
+					//calculate the deflection angle
+					Phi = 4.0*Mass/R;
+					Phi = fmod(Phi,2*PI);
+					axis = rpl.normal;
+					axis.w = 0.0;
+					newDir = Matrix4f.RotateV(axis.normalized,Phi,ray.direction).normalized;
+				
+					//check if we had rotated the ray.direction in the right way 
+					fpnum tmp = 100;
+					Vectorf a = ray.direction*tmp;
+					Vectorf b = (a%(def.plane.origin-newPos));
+					Vectorf c = (a%(newDir*tmp));
+
+					b = b.normalized;
+					c = c.normalized;
+
+					bool inline = fabs(b.x-c.x)<eps && fabs(b.y-c.y)<eps && fabs(b.z-c.z)<eps;
+
+					//if not rotate the ray,direction in the corect wayll
+					if(!inline)
+						newDir = Matrix4f.RotateV(axis.normalized,-Phi,ray.direction).normalized;
+
+					//calculate new position
+					//TODO: WTF
+
+					fpnum radius = sqrt((*(ray.origin-def.plane.origin))*(*(newPos-def.plane.origin))/(*(ray.origin-newPos)));
+
+					Vectorf orthogonal = (newDir%rpl.normal); 
+					newPos = def.plane.origin - orthogonal*radius;
+
+					//if(!(def.plane.origin==newPos+orthogonal*radius))
+
+					//cast deflected ray
+					return Raytrace!(doP,doN,doO,false)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit,cnt+1);
 				}
-				Phi = 4.0*Mass/R;
-				Phi = fmod(Phi,2*PI);
-				axis = rpl.normal;
-				axis.w = 0.0;
-				newDir = Matrix4f.RotateV(axis,Phi,ray.direction);
-				newDir = newDir.normalized;
-				return Raytrace!(doP,doN,doO)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit);
 			}
 		}
 		if(dh){*didHit=true;}
@@ -133,47 +170,53 @@ class PlaneDeflectSpace : WorldSpace
 		Vectorf normal;
 		Renderable closest;
 		bool hit=false;
-		Raytrace!(true,true,true)(ray, &hit, &rayhit, &normal, &closest);
+		Raytrace!(true,true,true,true)(ray, &hit, &rayhit, &normal, &closest);
 		if(hit)
 		{
 			tmpc = closest.material.emission_color;
-			
-			Color textureColor = Colors.White;
-			
-			if(closest.material.hasTexture())
+			if(lights.length)
 			{
-				fpnum U,V;
-				closest.getUVMapping(rayhit, U, V);
-				textureColor = closest.material.peekUV(U,V);
-			}
-			
-			if(closest.material.is_diffuse)
-			{
-				Color diffuseColor = closest.material.diffuse_color;
+				Color textureColor = Colors.White;
 				
-				foreach(shared(Light) l;lights)
+				if(closest.material.hasTexture())
 				{
-					Line hitRay = LinePoints(rayhit,l.getPosition());
-					hitRay.ray = true;
-					bool unlit=false;
-					fpnum dst = Raytrace!(false,false,false)(hitRay,&unlit);
-					if(unlit)
+					fpnum U,V;
+					closest.getUVMapping(rayhit, U, V);
+					textureColor = closest.material.peekUV(U,V);
+				}
+				
+				if(closest.material.is_diffuse)
+				{
+					Color diffuseColor = closest.material.diffuse_color;
+					
+					foreach(shared(Light) l;lights)
 					{
-						fpnum dLO = *(l.getPosition()-rayhit);
-						if(dLO<(dst*dst))
+						Line hitRay = LinePoints(rayhit,l.getPosition());
+						hitRay.ray = true;
+						bool unlit=false;
+						fpnum dst = Raytrace!(false,false,false,false)(hitRay,&unlit);
+						if(unlit)
 						{
-							unlit = false;
+							fpnum dLO = *(l.getPosition()-rayhit);
+							if(dLO<(dst*dst))
+							{
+								unlit = false;
+							}
+						}
+						if(unlit==false) // lit
+						{
+							fpnum DP = normal*(hitRay.direction);
+							if(DP>0)
+								tmpc = tmpc + diffuseColor*l.getColor()*(DP);
 						}
 					}
-					if(unlit==false) // lit
-					{
-						fpnum DP = normal*(hitRay.direction);
-						if(DP>0)
-							tmpc = tmpc + diffuseColor*l.getColor()*(DP);
-					}
 				}
+				tmpc *= textureColor;
 			}
-			tmpc *= textureColor;
+			else
+			{
+				tmpc = NormalToColor(ray.direction);
+			}
 		}
 		return tmpc;
 	}
