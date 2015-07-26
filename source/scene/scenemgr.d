@@ -69,7 +69,7 @@ abstract class WorldSpace
 		writeln("Starting raytrace...");
 		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s\n Camera up: %s", cam.origin, cam.lookdir, cam.rightdir, cam.updir);
 		auto tdg = function(Tid owner, unum y0, unum y1, int tnum, RayFunc DoRay)
-		{
+		{try{
 			Xorshift192 rnd = Xorshift192(1);
 			rnd.seed(unpredictableSeed());
 			Image im = cast(Image)(WorldSpace.fullray);
@@ -114,7 +114,7 @@ abstract class WorldSpace
 				}
 			}
 			send(owner,Message.Finish);
-		};
+		}catch(shared(Exception)e){owner.send(e);}};
 		int threads = cast(int)(cfgThreads);
 		writeln("Rendering using ",threads," CPU threads");
 		int perthr = cast(int)pixelsy/threads;
@@ -144,6 +144,9 @@ abstract class WorldSpace
 								stdout.flush();
 							}
 						}
+					},
+					(shared(Exception)e){
+						writefln("\nThread dead with exception: %s",e.msg);
 					});
 			}
 			catch(LinkTerminated e)
