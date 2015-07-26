@@ -44,7 +44,7 @@ class PlaneDeflectSpace : WorldSpace
 		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
 	}
 	
-	protected static fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
+	protected static fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null,int cnt=0)
 	{
 		static if(doP)
 		{
@@ -76,10 +76,10 @@ class PlaneDeflectSpace : WorldSpace
 				}
 			}
 		}
-		RPlane def = cast(RPlane)(pln);
-		if(def.getClosestIntersection(ray,dist,normal))
+		static if(doD)
 		{
-			if((mdist>dist)&&(mdist>0.1))
+			RPlane def = cast(RPlane)(pln);
+			if(def.getClosestIntersection(ray,dist,normal))
 			{
 				mdist = dist;
 				static Vectorf newPos;
@@ -88,24 +88,58 @@ class PlaneDeflectSpace : WorldSpace
 				static Vectorf axis;
 				static Vectorf newDir;
 				static math.Plane rpl;
+				
+				//calculate rotation plane
 				rpl = PlanePoints(def.plane.origin, ray.origin, ray.origin+(ray.direction*100));
-				newPos = ray.origin + ray.direction*mdist;
+				
+				//check if we had hit the event horizont
+				newPos = ray.origin + ray.direction*mdist; //newPos contains the position of the ray intersection with the deflection plane
 				R = ~(newPos-def.plane.origin);
-				enum Mass = 1000.0;
+				
+				enum Mass = 1;
+				
 				if(R<=2*Mass)
 				{
 					VisualDebugger.SaveRay(ray, newPos);
 					*didHit=false;
 					return float.infinity;
 				}
+				
+				//calculate the deflection angle
 				Phi = 4.0*Mass/R;
 				Phi = fmod(Phi,2*PI);
 				axis = rpl.normal;
 				axis.w = 0.0;
-				newDir = Matrix4f.RotateV(axis,Phi,ray.direction);
-				newDir = newDir.normalized;
+				newDir = Matrix4f.RotateV(axis.normalized,Phi,ray.direction).normalized;
+				
+				//check if we had rotated the ray.direction in the right way 
+				fpnum tmp = 100;
+				Vectorf a = ray.direction*tmp;
+				Vectorf b = (a%(def.plane.origin-newPos));
+				Vectorf c = (a%(newDir*tmp));
+				
+				b = b.normalized;
+				c = c.normalized;
+				
+				bool inline = fabs(b.x-c.x)<eps && fabs(b.y-c.y)<eps && fabs(b.z-c.z)<eps;
+				
+				//if not rotate the ray,direction in the corect wayll
+				if(!inline)
+					newDir = Matrix4f.RotateV(axis.normalized,-Phi,ray.direction).normalized;
+				
+				//calculate new position
+				//TODO: WTF
+				
+				fpnum radius = sqrt((*(ray.origin-def.plane.origin))*(*(newPos-def.plane.origin))/(*(ray.origin-newPos)));
+				
+				Vectorf orthogonal = (newDir%rpl.normal); 
+				newPos = def.plane.origin - orthogonal*radius;
+				
+				//if(!(def.plane.origin==newPos+orthogonal*radius))
+				
+				//cast deflected ray
 				VisualDebugger.SaveRay(ray, newPos);
-				return Raytrace!(doP,doN,doO)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit);
+				return Raytrace!(doP,doN,doO,false)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit,cnt+1);
 			}
 		}
 		VisualDebugger.SaveRay(ray, mdist);
@@ -137,7 +171,7 @@ class PlaneDeflectSpace : WorldSpace
 		Vectorf normal;
 		Renderable closest;
 		bool hit=false;
-		Raytrace!(true,true,true)(ray, &hit, &rayhit, &normal, &closest);
+		Raytrace!(true,true,true,true)(ray, &hit, &rayhit, &normal, &closest);
 		if(hit)
 		{
 			tmpc = closest.material.emission_color;
@@ -160,7 +194,7 @@ class PlaneDeflectSpace : WorldSpace
 					Line hitRay = LinePoints(rayhit,l.getPosition());
 					hitRay.ray = true;
 					bool unlit=false;
-					fpnum dst = Raytrace!(false,false,false)(hitRay,&unlit);
+					fpnum dst = Raytrace!(false,false,false,false)(hitRay,&unlit);
 					if(unlit)
 					{
 						fpnum dLO = *(l.getPosition()-rayhit);
