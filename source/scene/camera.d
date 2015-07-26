@@ -6,6 +6,7 @@ import math.geometric;
 import math.matrix;
 import math.util;
 import std.string, std.getopt, std.array, std.range, std.math, std.algorithm;
+import glad.gl.all;
 
 interface ICamera
 {
@@ -74,7 +75,6 @@ class LinearPerspectiveCamera : ICamera
 {
 	private Vectorf orig, dir, righ, up, dirm;
 	private fpnum yx=1.0;
-	private fpnum xdim=1.0;
 	private fpnum FOVM=1.0;
 	private fpnum FOV=45.0;
 	/// set camera origin
@@ -106,7 +106,7 @@ class LinearPerspectiveCamera : ICamera
 	@property void options(string opts)
 	{
 		string[] oa = ["0"]~opts.split();
-		getopt(oa, std.getopt.config.passThrough, "xsize|x", &xdim,"fov|f", &FOV);
+		getopt(oa, std.getopt.config.passThrough,"fov|f", &FOV);
 		up = -dir%righ;
 		FOVM = 1.0/tan(FOV*PI/180.0);
 		dirm = dir*FOVM;
@@ -130,7 +130,7 @@ void SetCameraAngles(ICamera cam, fpnum pitch, fpnum yaw, fpnum roll)
 	cam.options = "";
 }
 
-private void anglesToAxes(Vectorf angles, ref Vectorf left, ref Vectorf forward)
+public void anglesToAxes(Vectorf angles, ref Vectorf left, ref Vectorf forward)
 {
 	enum fpnum DEG2RAD = PI/180.0;
 	fpnum sx, sy, sz, cx, cy, cz, theta;

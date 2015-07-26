@@ -8,7 +8,8 @@
 	"targetType": "executable",
 	"targetPath": "bin/",
 	"dependencies": {
-		"tcltk": "~>8.6.5"
+		"tcltk": "~>8.6.5",
+		"derelict-glfw3": ">=1.1.0"
 	},
 	"mainSourceFile": "source/app.d"
 }

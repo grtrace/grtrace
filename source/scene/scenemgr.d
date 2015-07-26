@@ -19,6 +19,7 @@ import scene.camera;
 import core.cpuid;
 import std.algorithm;
 import std.random;
+import dbg.debugger;
 
 import scene.noneuclidean;
 
@@ -41,7 +42,7 @@ abstract class WorldSpace
 	
 	//public void DoRay(Tid owner, Line ray, unum x, unum y, int tnum);
 	alias RayFunc = Color function(Tid owner, Line ray, unum x, unum y, int tnum);
-	protected RayFunc GetRayFunc();
+	public RayFunc GetRayFunc();
 
 	public void AddObject(Renderable obj)
 	{
@@ -205,6 +206,7 @@ class EuclideanSpace : WorldSpace
 				}
 			}
 		}
+		VisualDebugger.SaveRay(ray, mdist);
 		if(dh){*didHit=true;}
 		static if(doO)
 		{
@@ -269,6 +271,7 @@ class EuclideanSpace : WorldSpace
 						}
 						if(unlit==false) // lit
 						{
+							VisualDebugger.FoundLight(l.getPosition());
 							fpnum DP = normal*(hitRay.direction);
 							if(DP>0)
 								tmpc = tmpc + diffuseColor*l.getColor()*(DP);

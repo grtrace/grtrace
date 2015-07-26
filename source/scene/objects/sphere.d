@@ -91,4 +91,9 @@ class Sphere : Renderable
 		return format("C:%s R:%f M:%s", center, radius, mat);
 	}
 
+	DebugDraw getDebugDraw()
+	{
+		return DebugDraw(DrawType.Sphere, radius, new Plane(center,vectorf(0,0,0)), null);
+	}
+
 }

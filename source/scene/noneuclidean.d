@@ -20,6 +20,7 @@ import core.cpuid;
 import std.algorithm, std.array, std.string;
 import std.random, std.getopt;
 import scene.scenemgr;
+import dbg.debugger;
 private alias RPlane = scene.objects.plane.Plane;
 
 class PlaneDeflectSpace : WorldSpace
@@ -93,6 +94,7 @@ class PlaneDeflectSpace : WorldSpace
 				enum Mass = 1000.0;
 				if(R<=2*Mass)
 				{
+					VisualDebugger.SaveRay(ray, newPos);
 					*didHit=false;
 					return float.infinity;
 				}
@@ -102,9 +104,11 @@ class PlaneDeflectSpace : WorldSpace
 				axis.w = 0.0;
 				newDir = Matrix4f.RotateV(axis,Phi,ray.direction);
 				newDir = newDir.normalized;
+				VisualDebugger.SaveRay(ray, newPos);
 				return Raytrace!(doP,doN,doO)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit);
 			}
 		}
+		VisualDebugger.SaveRay(ray, mdist);
 		if(dh){*didHit=true;}
 		static if(doO)
 		{
@@ -167,6 +171,7 @@ class PlaneDeflectSpace : WorldSpace
 					}
 					if(unlit==false) // lit
 					{
+						VisualDebugger.FoundLight(l.getPosition());
 						fpnum DP = normal*(hitRay.direction);
 						if(DP>0)
 							tmpc = tmpc + diffuseColor*l.getColor()*(DP);

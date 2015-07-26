@@ -17,6 +17,7 @@ alias unump = unum*;
 __gshared
 {
 	bool cfgVerbose = false;
+	bool cfgDebug = false;
 	string cfgScript = "raytrace.tcl";
 	inum cfgResolutionX = 320;
 	inum cfgResolutionY = 240;

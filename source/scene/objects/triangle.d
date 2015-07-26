@@ -109,6 +109,11 @@ class Triangle : Renderable
 			triangle.plane.origin, triangle.b, triangle.c,
 			triangle.plane.normal, mat);
 	}
+
+	DebugDraw getDebugDraw()
+	{
+		return DebugDraw(DrawType.Triangle, 0, null, &this.triangle);
+	}
 }
 
 class TexturableTriangle : Triangle

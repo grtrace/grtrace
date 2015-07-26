@@ -8,6 +8,7 @@ import config;
 import std.math;
 import image.color;
 import scriptconfig;
+public import dbg.draws;
 
 interface Renderable
 {
@@ -22,6 +23,8 @@ interface Renderable
 	@property ref Material material();
 
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const;
+
+	DebugDraw getDebugDraw();
 }
 
 interface Light
@@ -93,5 +96,10 @@ class Transformed : Renderable
 	{
 		//calculate U,V values in localSpace
 		object.getUVMapping(invTransform*point, U, V);
+	}
+
+	DebugDraw getDebugDraw()
+	{
+		return object.getDebugDraw();
 	}
 }

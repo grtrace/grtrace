@@ -18,6 +18,7 @@ Options:
 --script|-s   - Script to load the configuration from (default raytrace.tcl)
 --help|-h     - Displays this text
 --threads|-t  - Thread number to use
+--debug|-d    - Launches the visual debugger
 `;
 
 void RenderSpawner(Tid owner)
@@ -46,7 +47,8 @@ void main(string[] args)
 		"verbose|v", &cfgVerbose,
 		"script|s", &cfgScript,
 		"help|h", &doHelp,
-		"threads|t", &cfgThreads
+		"threads|t", &cfgThreads,
+		"debug|d", &cfgDebug
 		);
 	if(doHelp)
 	{
@@ -57,4 +59,10 @@ void main(string[] args)
 	DoScript(cfgScript);
 	renderTid.send(false);
 	Thread.sleep(dur!"msecs"(50));
+	if(cfgDebug)
+	{
+		import dbg.debugger;
+		VisualDebugger vdbg = new VisualDebugger();
+		vdbg.Run();
+	}
 }

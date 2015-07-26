@@ -52,11 +52,27 @@ struct Vector(T)
 		return this/(~this);
 	}
 
-	Vector!T opOpAssign(string op)(T rhs) if(op=="*=")
+	Vector!T opOpAssign(string op)(T rhs) if(op=="*")
 	{
 		x*=rhs;
 		y*=rhs;
 		z*=rhs;
+		return this;
+	}
+
+	Vector!T opOpAssign(string op)(Vector!T rhs) if(op=="+")
+	{
+		x+=rhs.x;
+		y+=rhs.y;
+		z+=rhs.z;
+		return this;
+	}
+
+	Vector!T opOpAssign(string op)(Vector!T rhs) if(op=="-")
+	{
+		x-=rhs.x;
+		y-=rhs.y;
+		z-=rhs.z;
 		return this;
 	}
 

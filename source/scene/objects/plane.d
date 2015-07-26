@@ -79,6 +79,11 @@ class Plane : Renderable
 		U=V=0;
 	}
 
+	DebugDraw getDebugDraw()
+	{
+		return DebugDraw(DrawType.Plane, 0, &this.plane, null);
+	}
+
 	override string toString()
 	{
 		return format("O:%s N:%s M:%s", plane.origin, plane.normal, mat);
