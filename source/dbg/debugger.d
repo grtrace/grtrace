@@ -284,6 +284,7 @@ class VisualDebugger
 		glLineWidth(2.0f);
 		glPointSize(2.0f);
 		glEnable(GL_LINE_SMOOTH);
+		//glEnable(GL_LINE);
 		glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
 		glfwSwapBuffers(w);
 		return w;
