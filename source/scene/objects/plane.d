@@ -147,7 +147,7 @@ class TexturablePlane : Plane
 		origin = a;
 		A = b-a;
 		len2 = (*A);
-		B = ((A%plane.normal).normalized)*len2;
+		B = ((A%plane.normal).normalized)*len2.sqrt();
 	}
 
 	override void setupFromOptions(string[] a)

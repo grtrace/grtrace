@@ -63,7 +63,10 @@ void InitScripting(string arg0)
 
 shared static ~this()
 {
-	Tcl_DeleteInterp(tcl);
+	if(tcl !is null)
+	{
+		Tcl_DeleteInterp(tcl);
+	}
 }
 
 void DoScript(string path)

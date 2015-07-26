@@ -50,12 +50,12 @@ struct Plane
 	Vectorf normal;
 }
 
-Plane PlaneVectors(Point origin, Vectorf v1, Vectorf v2)
+Plane PlaneVectors(const Point origin, const Vectorf v1, const Vectorf v2)
 {
 	return Plane(origin, (v1%v2).normalized);
 }
 
-Plane PlanePoints(Point p1, Point p2, Point p3)
+Plane PlanePoints(const Point p1, const Point p2, const Point p3)
 {
 	return PlaneVectors(p1, p2-p1, p3-p1);
 }
