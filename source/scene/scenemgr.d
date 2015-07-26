@@ -123,10 +123,10 @@ abstract class WorldSpace
 		int lasty = 0;
 		for(int i=0;i<threads-1;i++)
 		{
-			tasks[i] = spawn(tdg, thisTid, cast(unum)lasty, cast(unum)(lasty+perthr), i+1, GetRayFunc());
+			tasks[i] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)(lasty+perthr), i+1, GetRayFunc());
 			lasty+=perthr;
 		}
-		tasks[$-1] = spawn(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
+		tasks[$-1] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
 		//tdg(thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
 		int running = threads;
 		while(running>0)
@@ -144,11 +144,11 @@ abstract class WorldSpace
 								stdout.flush();
 							}
 						}
-						else if(m==Message.Finish)
-						{
-							running--;
-						}
 					});
+			}
+			catch(LinkTerminated e)
+			{
+				running--;
 			}
 			catch(Exception e)
 			{
