@@ -121,7 +121,7 @@ class PlaneDeflectSpace : WorldSpace
 				b = b.normalized;
 				c = c.normalized;
 				
-				bool inline = fabs(b.x-c.x)<eps && fabs(b.y-c.y)<eps && fabs(b.z-c.z)<eps; //TODO:Not working...
+				bool inline = (1.0-fabs(b*c))<eps;//fabs(b.x-c.x)<eps && fabs(b.y-c.y)<eps && fabs(b.z-c.z)<eps; //Not working...
 				
 				//if not rotate the ray,direction in the corect wayll
 				if(!inline)

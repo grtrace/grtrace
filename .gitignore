@@ -160,3 +160,5 @@ __dummy.html
 *.obj
 bin/grtrace
 *.png
+*.jpg
+*.bmp

@@ -80,8 +80,8 @@ class MemImage(T)
 	public Color PeekUV(fpnum U, fpnum V)
 	{
 		fpnum u,v;
-		u = U*(w-1).fmod(width).round();
-		v = V*(h-1).fmod(height).round();
+		u = U*(w-1).round().fmod(width).round();
+		v = V*(h-1).round().fmod(height).round();
 		return Peek(cast(size_t)u, cast(size_t)v);
 	}
 

@@ -114,6 +114,8 @@ class TexturablePlane : Plane
 	private Vectorf A;
 	private Vectorf B;
 
+	bool texture_single=false;
+
 	fpnum tex_a_u; fpnum tex_a_v;
 	fpnum tex_d_u; fpnum tex_d_v;
 
@@ -163,7 +165,8 @@ class TexturablePlane : Plane
 			"tex_crd_first_u|G", &tex_a_u,
 			"tex_crd_first_v|H", &tex_a_v,
 			"tex_crd_second_u|I", &tex_d_u,
-			"tex_crd_second_v|J", &tex_d_v);
+			"tex_crd_second_v|J", &tex_d_v,
+			"tex_single|Q", &texture_single);
 
 		setCache(vectorString(firstStr), vectorString(secondStr));
 	}
@@ -175,11 +178,11 @@ class TexturablePlane : Plane
 		fpnum U,V;
 
 		U = (A*tmp)/(len2);
-		U = fmod(U, 1.0);
+		U = (texture_single)?clamp(U,0.0,1.0):fmod(U, 1.0);
 		U = U*(tex_d_u-tex_a_u) + tex_a_u;
 
 		V = (B*tmp)/(len2);
-		V = fmod(V, 1.0);
+		V = (texture_single)?clamp(V,0.0,1.0):fmod(V, 1.0);
 		V = V*(tex_d_v-tex_a_v) + tex_a_v;
 
 		if(U<0)
