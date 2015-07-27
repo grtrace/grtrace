@@ -107,7 +107,7 @@ class PlaneDeflectSpace : WorldSpace
 				
 				//calculate the deflection angle
 				Phi = 4.0*Mass/R;
-				Phi = fmod(Phi,2*PI);
+				Phi = fmod(Phi,PI);
 				axis = rpl.normal;
 				axis.w = 0.0;
 				newDir = Matrix4f.RotateV(axis.normalized,Phi,ray.direction).normalized;
@@ -121,7 +121,7 @@ class PlaneDeflectSpace : WorldSpace
 				b = b.normalized;
 				c = c.normalized;
 				
-				bool inline = fabs(b.x-c.x)<eps && fabs(b.y-c.y)<eps && fabs(b.z-c.z)<eps;
+				bool inline = fabs(b.x-c.x)<eps && fabs(b.y-c.y)<eps && fabs(b.z-c.z)<eps; //TODO:Not working...
 				
 				//if not rotate the ray,direction in the corect wayll
 				if(!inline)
@@ -132,13 +132,15 @@ class PlaneDeflectSpace : WorldSpace
 				
 				fpnum radius = sqrt((*(ray.origin-def.plane.origin))*(*(newPos-def.plane.origin))/(*(ray.origin-newPos)));
 				
-				Vectorf orthogonal = (newDir%rpl.normal); 
+				Vectorf orthogonal = -(newDir%rpl.normal); 
 				newPos = def.plane.origin - orthogonal*radius;
 				
 				//if(!(def.plane.origin==newPos+orthogonal*radius))
 				
 				//cast deflected ray
-				VisualDebugger.SaveRay(ray, newPos);
+				//writeln(Phi);
+				VisualDebugger.SaveRay(ray, mdist);
+				VisualDebugger.SaveRay(Line(ray.origin+ray.direction*mdist, (newPos-ray.origin-ray.direction*mdist).normalized, true), newPos);
 				return Raytrace!(doP,doN,doO,false)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit,cnt+1);
 			}
 		}
