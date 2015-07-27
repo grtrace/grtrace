@@ -55,38 +55,62 @@ private struct SavedRay
 	}
 }
 
+bool rayMode=false;
+
 extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int modkeys) nothrow
 {
 	try
 	{
-		double xd, yd;
-		glfwGetCursorPos(w, &xd, &yd);
-		int x = cast(int) xd, y = cast(int) yd;
-		double xR = xd/cfgResolutionX;
-		double yR = yd/cfgResolutionY;
-		xR*=2.0;
-		yR*=2.0;
-		xR-=1.0;
-		yR-=1.0;
-		if (type == GLFW_PRESS)
+		if(btn==GLFW_MOUSE_BUTTON_1)
 		{
-			Line ray;
-			if(VisualDebugger.inst.camera.fetchRay(xR,yR,ray))
+			double xd, yd;
+			glfwGetCursorPos(w, &xd, &yd);
+			int x = cast(int) xd, y = cast(int) yd;
+			double xR = xd/cfgResolutionX;
+			double yR = yd/cfgResolutionY;
+			xR*=2.0;
+			yR*=2.0;
+			xR-=1.0;
+			yR-=1.0;
+			if (type == GLFW_PRESS)
 			{
-				VisualDebugger.inst.rays = [];
-				VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
-				VisualDebugger vd = VisualDebugger.inst;
-				for(int i=1;i<vd.rays.length;i++)
+				rayMode = true;
+				Line ray;
+				if(VisualDebugger.inst.camera.fetchRay(xR,yR,ray))
 				{
-					SavedRay r0,r1;
-					r0 = vd.rays[i-1];
-					r1 = vd.rays[i];
-					Vectorf d1,d2;
-					d1 = (r0.destination - r0.origin).normalized;
-					d2 = (r1.destination - r1.origin).normalized;
-					writefln("Angle #%d->#%d: %s",i,i+1,acos(d1*d2)*180.0/PI);
+					VisualDebugger.inst.rays = [];
+					VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
+					VisualDebugger vd = VisualDebugger.inst;
+					for(int i=1;i<vd.rays.length;i++)
+					{
+						SavedRay r0,r1;
+						r0 = vd.rays[i-1];
+						r1 = vd.rays[i];
+						Vectorf d1,d2;
+						d1 = (r0.destination - r0.origin).normalized;
+						d2 = (r1.destination - r1.origin).normalized;
+						writefln("Angle #%d->#%d: %s",i,i+1,acos(d1*d2)*180.0/PI);
+					}
 				}
 			}
+			else if(type==GLFW_RELEASE)
+			{
+				rayMode = false;
+			}
+		}
+	}
+	catch (Throwable o)
+	{
+	}
+}
+
+extern (C) void coreRayMove(GLFWwindow* w, double x, double y) nothrow
+{
+	try
+	{
+		if(rayMode)
+		{
+			coreMouseButton(w,GLFW_MOUSE_BUTTON_1,GLFW_PRESS,0);
 		}
 	}
 	catch (Throwable o)
@@ -243,6 +267,7 @@ class VisualDebugger
 		dwin = makeWin("grtrace showrays",rwin);
 		glfwSetMouseButtonCallback(rwin, &coreMouseButton);
 		glfwSetMouseButtonCallback(dwin, &coreMouseCamera);
+		glfwSetCursorPosCallback(rwin, &coreRayMove);
 		glfwSetCursorPosCallback(dwin, &coreCameraMove);
 		glfwSetKeyCallback(dwin, &coreKey);
 	}
@@ -282,8 +307,9 @@ class VisualDebugger
 		glEnable(GL_BLEND);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glLineWidth(2.0f);
-		glPointSize(2.0f);
+		glPointSize(3.5f);
 		glEnable(GL_LINE_SMOOTH);
+		glEnable(GL_POINT_SMOOTH);
 		//glEnable(GL_LINE);
 		glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
 		glfwSwapBuffers(w);
@@ -467,6 +493,7 @@ class VisualDebugger
 				glPopMatrix();
 			}
 			glColor3f(1.0f,0.0f,0.0f);
+			glLoadIdentity();
 			glBegin(GL_POINTS);
 			glVertex3d(camera.origin.x,camera.origin.y,camera.origin.z);
 			glEnd();
