@@ -1,6 +1,6 @@
 ﻿module image.memory;
 
-import std.range, std.array, std.math;
+import std.range, std.array, std.math, std.algorithm;
 import config;
 import image.color;
 
@@ -87,6 +87,8 @@ class MemImage(T)
 
 	public Color Peek(size_t x, size_t y)
 	{
+		x = clamp(x,0,width-1);
+		y = clamp(y,0,height-1);
 		static if(is(T==ubyte))
 		{
 			return Color(data[(y*width + x)*3]/255.0f, data[(y*width + x)*3 + 1]/255.0f, data[(y*width + x)*3 + 2]/255.0f);

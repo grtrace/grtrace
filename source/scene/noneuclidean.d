@@ -92,12 +92,15 @@ class PlaneDeflectSpace : WorldSpace
 				//calculate rotation plane
 				rpl = PlanePoints(def.plane.origin, ray.origin, ray.origin+(ray.direction*100));
 				
-				//check if we had hit the event horizont
-				newPos = ray.origin + ray.direction*mdist; //newPos contains the position of the ray intersection with the deflection plane
-				R = ~(newPos-def.plane.origin);
+				//newPos contains the position of the ray intersection with the deflection plane
+				newPos = ray.origin + ray.direction*mdist;
+
+				//the distance from the point of closest aproach and the center of the black hole
+				R = sqrt((*(ray.origin-def.plane.origin))*(*(newPos-def.plane.origin))/(*(ray.origin-newPos)));
 				
 				enum Mass = 1;
-				
+
+				//check if we had hit the event horizont
 				if(R<=2*Mass)
 				{
 					VisualDebugger.SaveRay(ray, newPos);
@@ -107,7 +110,7 @@ class PlaneDeflectSpace : WorldSpace
 				
 				//calculate the deflection angle
 				Phi = 4.0*Mass/R;
-				Phi = fmod(Phi,PI);
+				Phi = fmod(Phi,2*PI);
 				axis = rpl.normal;
 				axis.w = 0.0;
 				newDir = Matrix4f.RotateV(axis.normalized,Phi,ray.direction).normalized;
@@ -115,30 +118,34 @@ class PlaneDeflectSpace : WorldSpace
 				//check if we had rotated the ray.direction in the right way 
 				fpnum tmp = 100;
 				Vectorf a = ray.direction*tmp;
-				Vectorf b = (a%(def.plane.origin-newPos));
-				Vectorf c = (a%(newDir*tmp));
+				Vectorf b = (a%(def.plane.origin-newPos)).normalized;
+				Vectorf c = (a%(newDir*tmp)).normalized;
 				
-				b = b.normalized;
-				c = c.normalized;
+				bool inline = (1.0-(b*c))<eps;
 				
-				bool inline = (1.0-fabs(b*c))<eps;//fabs(b.x-c.x)<eps && fabs(b.y-c.y)<eps && fabs(b.z-c.z)<eps; //Not working...
-				
-				//if not rotate the ray,direction in the corect wayll
+				//if not rotate the ray,direction in the corect way
 				if(!inline)
 					newDir = Matrix4f.RotateV(axis.normalized,-Phi,ray.direction).normalized;
 				
 				//calculate new position
 				//TODO: WTF
+
+				Vectorf orthogonal = (newDir%rpl.normal);
+				newPos = def.plane.origin - orthogonal*R;
+
+				a = def.plane.origin-ray.origin;
+				b = (a%(ray.direction*mdist)).normalized;
+				c = (a%(newPos-ray.origin)).normalized;
 				
-				fpnum radius = sqrt((*(ray.origin-def.plane.origin))*(*(newPos-def.plane.origin))/(*(ray.origin-newPos)));
-				
-				Vectorf orthogonal = -(newDir%rpl.normal); 
-				newPos = def.plane.origin - orthogonal*radius;
-				
-				//if(!(def.plane.origin==newPos+orthogonal*radius))
-				
+				inline = (1.0-(b*c))<eps;
+
+				if(!inline)
+				{
+					orthogonal = -(newDir%rpl.normal); 
+					newPos = def.plane.origin - orthogonal*R;
+				}
+
 				//cast deflected ray
-				//writeln(Phi);
 				VisualDebugger.SaveRay(ray, mdist);
 				VisualDebugger.SaveRay(Line(ray.origin+ray.direction*mdist, (newPos-ray.origin-ray.direction*mdist).normalized, true), newPos);
 				return Raytrace!(doP,doN,doO,false)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit,cnt+1);
