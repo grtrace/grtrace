@@ -8,4 +8,4 @@ public import math.quaternion;
 public import math.geometric;
 
 public import math.interpolation;
-
+public import math.metric;
