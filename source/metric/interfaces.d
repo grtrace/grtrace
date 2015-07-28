@@ -2,20 +2,46 @@
 
 import math;
 
-interface Initiator
+interface Initiator(T)
 {
-	Metric4 getMetricAt(Vectorf point);
+	static assert(is(T==Matrix4f) || is(T== Metric4));
+
+	T getMetricAt(Vectorf point);
+	T[3] getDerivativesAt(Vectorf point);
+	T[4] getChristoffelSymbolsAt(Vectorf point);
+
+	bool hasFunction(string f);
 }
 
 interface MetricContainer
 {
-	void InitializeMetric();
-	@property ref Initiator initiator();
-
 	fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null);
 }
 
-Line returnDeflectedRay(const Line incoming, const Vectorf hitPoint, const Matrix4f g, const Matrix4f[3] dgs)
+interface DiscreteMetricContainer : MetricContainer
+{
+	@property ref Initiator!Metric4 initiator();
+	void InitializeMetric();
+}
+
+interface AnaliticMetricContainer : MetricContainer
+{
+	@property Initiator!Matrix4f getInitiator();
+
+	@property void setInitiator(Initiator!Matrix4f init)
+	in
+	{
+		assert(init.hasFunction("derivatives"));
+		assert(init.hasFunction("christoffels"));
+	}
+}
+
+
+
+
+
+//TODO: NOT CHECKED
+Matrix4f[4] returnChristoffelsSymbols(const Matrix4f g, const Matrix4f[3] dgs)
 {
 	Matrix4f[4] dg = Matrix4f.Zero~dgs;
 
@@ -31,14 +57,12 @@ Line returnDeflectedRay(const Line incoming, const Vectorf hitPoint, const Matri
 			{
 				for(size_t p = 0; p<4; p++)
 				{
-					christoffel_symbols[y][a*4+b] += inv_g[p*4+y]*(dg[a][b*4+p] + dg[b][a*4+p] - dg[p][a*4+b]);
+					christoffel_symbols[y][a*4+b] = christoffel_symbols[y][a*4+b]+inv_g[p*4+y]*(dg[a][b*4+p] + dg[b][a*4+p] - dg[p][a*4+b]);
 				}
-				christoffel_symbols[y][a*4+b] /= 2;
+				christoffel_symbols[y][a*4+b] = christoffel_symbols[y][a*4+b]/2;
 			}
 		}
 	}
 
-
-
-	assert(0);
+	return christoffel_symbols;
 }

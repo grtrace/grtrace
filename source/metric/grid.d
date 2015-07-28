@@ -4,9 +4,9 @@ import math;
 import metric.interfaces;
 import config;
 
-class Grid : MetricContainer
+class Grid : DiscreteMetricContainer
 {
-	private Initiator init;
+	private Initiator!Metric4 init = null;
 	//probingParam tells us that we will be getting probingParam^3 samples inside the given box;
 	private AABB box; //TODO: for now we assume that box is a cube, better change that
 	private size_t probingParam;
@@ -35,7 +35,7 @@ class Grid : MetricContainer
 				}
 	}
 
-	@property ref Initiator initiator()
+	@property ref Initiator!Metric4 initiator()
 	{
 		return init;
 	}

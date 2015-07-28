@@ -40,4 +40,6 @@ struct Metric4
 	{
 		return cast(Matrix4f)this;
 	}
+
+	alias vals this;
 }
