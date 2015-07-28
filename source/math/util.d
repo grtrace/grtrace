@@ -6,6 +6,8 @@ import std.functional;
 alias msin = sin;
 alias mcos = cos;
 
+enum double DEG2RAD = 3.14159265 / 180.0;
+
 T fsin(T)(T x)
 {
 	return cast(T)msin(cast(real)x);

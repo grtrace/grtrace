@@ -15,6 +15,11 @@ struct Polynomial
 		coeffs[0..$] = 0;
 	}
 
+	this(fpnum[] coef)
+	{
+		coeffs = coef;
+	}
+
 	this(ref Polynomial p)
 	{
 		coeffs = p.coeffs.dup;
@@ -113,5 +118,36 @@ struct Polynomial
 		cfs.length = coeffs.length;
 		cfs[] = cast(real[])coeffs[];
 		return cast(fpnum)(poly(cast(real)x, cfs));
+	}
+
+	@property Polynomial deriv() const
+	{
+		fpnum[] cfs;
+		cfs.length = coeffs.length - 1;
+		for(int i=1;i<size;i++)
+		{
+			cfs[i-1] = coeffs[i]*i;
+		}
+		return Polynomial(cfs);
+	}
+
+	Polynomial integr(fpnum C) const
+	{
+		fpnum[] cfs;
+		cfs.length = coeffs.length + 1;
+		for(int i=0;i<size;i++)
+		{
+			cfs[i+1] = coeffs[i]/(i+1);
+		}
+		cfs[0] = C;
+		return Polynomial(cfs);
+	}
+
+	/// Integral such that P(x)=val
+	Polynomial integr(fpnum x, fpnum val) const
+	{
+		Polynomial P = integr(0);
+		P.coeffs[0] = val-P.value(x);
+		return P;
 	}
 }

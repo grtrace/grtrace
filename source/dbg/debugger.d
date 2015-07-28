@@ -158,10 +158,14 @@ extern (C) void coreCameraMove(GLFWwindow* w, double x, double y) nothrow
 			if(!isNaN(lastX))
 			{
 				double dx,dy;
-				dx = x-lastX;
-				dy = y-lastY;
-				VisualDebugger.inst.rot.x += dy;
-				VisualDebugger.inst.rot.y += dx;
+				enum double sens = 0.01;
+				dx = (x-lastX)*sens;
+				dy = (y-lastY)*sens;
+				Vectorf right = vectorf(-1,0,0);
+				right = (VisualDebugger.inst.rot * right);
+				VisualDebugger.inst.rot = new Quaternion(right,dy)*VisualDebugger.inst.rot;
+				VisualDebugger.inst.rot = new Quaternion(vectorf(0,-1,0),dx)*VisualDebugger.inst.rot;
+				VisualDebugger.inst.rot.normalize;
 			}
 			lastX = x;
 			lastY = y;
@@ -172,40 +176,46 @@ extern (C) void coreCameraMove(GLFWwindow* w, double x, double y) nothrow
 	}
 }
 
+Vectorf vel = Vectorf(0,0,0,1);
+
 extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) nothrow
 {
 	try
 	{
-		enum double spd = 2.0f;
-		enum double rspd = 2.0f;
+		double spd = 0.2;
 		VisualDebugger vd = VisualDebugger.inst;
-		Vectorf fwd,left,down;
-		anglesToAxes(vd.rot, left, fwd);
-		down = fwd%left;
-		left *= spd;
+		Vectorf fwd = vectorf(0,0,-1),right = vectorf(1,0,0),up = vectorf(0,-1,0);
 		fwd *= spd;
-		down *= spd;
-		if (state == GLFW_PRESS || state==GLFW_REPEAT)
+		right *= spd;
+		up *= spd;
+		if(mods && GLFW_MOD_SHIFT)
 		{
-			switch(id)
-			{
-				case GLFW_KEY_A:
-					vd.pos-=left;break;
-				case GLFW_KEY_D:
-					vd.pos+=left;break;
-				case GLFW_KEY_W:
-					vd.pos+=fwd;break;
-				case GLFW_KEY_S:
-					vd.pos-=fwd;break;
-				case GLFW_KEY_Q:
-					vd.pos-=down;break;
-				case GLFW_KEY_E:
-					vd.pos+=down;break;
-				case GLFW_KEY_1:
-					vd.ResetCamera();break;
-				default:
-					break;
-			}
+			spd *= 3.0;
+		}
+		vel = vectorf(0,0,0,1);
+		if(glfwGetKey(w,GLFW_KEY_W))
+		{
+			vel += fwd*spd;
+		}
+		if(glfwGetKey(w,GLFW_KEY_S))
+		{
+			vel -= fwd*spd;
+		}
+		if(glfwGetKey(w,GLFW_KEY_A))
+		{
+			vel -= right*spd;
+		}
+		if(glfwGetKey(w,GLFW_KEY_D))
+		{
+			vel += right*spd;
+		}
+		if(glfwGetKey(w,GLFW_KEY_Q))
+		{
+			vel += up*spd;
+		}
+		if(glfwGetKey(w,GLFW_KEY_E))
+		{
+			vel -= up*spd;
 		}
 	}
 	catch (Throwable o)
@@ -225,7 +235,8 @@ class VisualDebugger
 	static bool glLoaded = false;
 	float aspect;
 	SavedRay[] rays;
-	Vectorf pos,rot;
+	Vectorf pos;
+	Quaternion rot;
 
 	static void SaveRay(Line ray, fpnum dist)
 	{
@@ -310,7 +321,6 @@ class VisualDebugger
 		glPointSize(3.5f);
 		glEnable(GL_LINE_SMOOTH);
 		glEnable(GL_POINT_SMOOTH);
-		//glEnable(GL_LINE);
 		glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
 		glfwSwapBuffers(w);
 		return w;
@@ -328,8 +338,8 @@ class VisualDebugger
 
 	void ResetCamera()
 	{
-		pos = -camera.origin;
-		rot = vectorf(cfgCameraPitch, cfgCameraYaw+180.0, cfgCameraRoll, 0);
+		pos = camera.origin;
+		rot = new Quaternion();//Quaternion.lookAt(pos, vectorf(0,0,0));
 	}
 
 	void LoadTex()
@@ -378,7 +388,6 @@ class VisualDebugger
 
 	void makeFrustum(double fovY, double aspectRatio, double front, double back)
 	{
-		enum double DEG2RAD = 3.14159265 / 180.0;
 		
 		double tangent = tan(fovY/2 * DEG2RAD);   // tangent of half fovY
 		double height = front * tangent;          // half height of near plane
@@ -396,6 +405,8 @@ class VisualDebugger
 		ResetCamera();
 		Vectorf camo = camera.origin;
 		LoadTex();
+		double dt = glfwGetTime();
+		glfwSetTime(0.0);
 		while(!(glfwWindowShouldClose(rwin)||glfwWindowShouldClose(dwin)))
 		{
 			// rwin
@@ -418,19 +429,11 @@ class VisualDebugger
 			glLoadIdentity();
 			makeFrustum(60.0,aspect,1.0,2000.0);
 
-			Vectorf fwd,left,down,right,up;
-			anglesToAxes(rot, left, fwd);
-			down = fwd%left;
-			up = -down.normalized;
-			right = -left;
-			Matrix4f rotm = Matrix4f(
-				right.x,up.x,fwd.x,0,
-				right.y,up.y,fwd.y,0,
-				right.z,up.z,fwd.z,0,
-				0,0,0,1
-				);
-			glMultMatrixd(rotm.transposed.vals.ptr);
-			glTranslated(pos.x,pos.y,pos.z);
+			Vectorf camAx;fpnum camAn;
+			rot.toAxisAngle(camAx,camAn);
+			camAn /= -DEG2RAD;
+			glRotated(camAn,camAx.x,camAx.y,camAx.z);
+			glTranslated(-pos.x,-pos.y,-pos.z);
 
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
@@ -479,7 +482,7 @@ class VisualDebugger
 			}
 			glEnd();
 			glColor3f(0.1f,0.1f,1.0f);
-			enum double BScale=15.0;
+			enum double BScale=1.0;
 			glScaled(1.0/BScale,1.0/BScale,1.0/BScale);
 			foreach(SavedRay ray;rays)
 			{
@@ -498,8 +501,31 @@ class VisualDebugger
 			glVertex3d(camera.origin.x,camera.origin.y,camera.origin.z);
 			glEnd();
 
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
+			glTranslated(-0.75,-0.75,0);
+			glScaled(0.1,0.1*aspect,0.1);
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+			glRotated(camAn,camAx.x,camAx.y,camAx.z);
+			Matrix4f tmat;
+			glGetDoublev(GL_TRANSPOSE_PROJECTION_MATRIX, tmat.vals.ptr);
+			glMatrixMode(GL_MODELVIEW);
+
 			glfwSwapBuffers(dwin);
 			glfwPollEvents();
+
+			pos += ((tmat.inverse)*vel)/dt;
+
+			dt = glfwGetTime();
+			glfwSetTime(0.0);
+			if(dt>0)
+			{
+				string T = "grtrace showrays %.1f FPS".format(1/dt);
+				//glfwSetWindowTitle(dwin,T.toStringz());
+			}
 		}
 	}
 }

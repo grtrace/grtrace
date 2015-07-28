@@ -65,10 +65,20 @@ class Quaternion
 
 	@property Matrix4f matrix()
 	{
+		Vectorf axi;
+		fpnum an;
+		toAxisAngle(axi,an);
+		fpnum s,c,t,ax,ay,az;
+		s = sin(an);
+		c = cos(an);
+		t = 1.0-c;
+		ax = axi.x;
+		ay = axi.y;
+		az = axi.z;
 		return Matrix4f(
-			1-2*(y*y-z*z), 2*(x*y-w*z), 2*(x*z+w*y), 0,
-			2*(x*y+w*z), 1-2*(x*x-z*z), 2*(y*z+w*x), 0,
-			2*(x*z-w*y), 2*(y*z-w*x), 1-2*(x*x-y*y), 0,
+			c+ax*ax*t, ax*ay*t-az*s, ax*az*t+ay*s,0,
+			ay*ax*t+az*s,c+ay*ay*t,ay*az*t-ax*s,0,
+			az*ax*t-ay*s,az*ay*t+ax*s,c+az*az*t,0,
 			0,0,0,1);
 	}
 
@@ -77,29 +87,57 @@ class Quaternion
 		return "Q[ %f ; %f ; %f ; %f ]".format(w,x,y,z);
 	}
 
-	Quaternion opOpAssign(string op)(const Quaternion rhs) if(op=="*")
+	Quaternion opOpAssign(string op)(Quaternion rhs) if(op=="*")
 	{
-		fpnum ww,yy,zz,xx,qq;
-		ww = (z + x) * (rhs.x + rhs.y);
-		yy = (w - y) * (rhs.w + rhs.z);
-		zz = (w + y) * (rhs.w - rhs.z);
-		xx = ww + yy + zz;
-		qq = 0.5 * (xx + (z - x)*(rhs.x - rhs.y));
-
-		vals[0] = qq - ww + (z - y) * (rhs.y - rhs.z);
-		vals[1] = qq - xx + (x + w) * (rhs.x + rhs.w);
-		vals[2] = qq - yy + (w - x) * (rhs.y + rhs.z);
-		vals[3] = qq - zz + (z + y) * (rhs.w - rhs.x);
+		fpnum A,B,C,D;
+		A = vals[0]*rhs.vals[0] - vals[1]*rhs.vals[1] - vals[2]*rhs.vals[2] - vals[3]*rhs.vals[3];
+		B = vals[0]*rhs.vals[1] + vals[1]*rhs.vals[0] + vals[2]*rhs.vals[3] - vals[3]*rhs.vals[2];
+		C = vals[0]*rhs.vals[2] - vals[1]*rhs.vals[3] + vals[2]*rhs.vals[0] + vals[3]*rhs.vals[1];
+		D = vals[0]*rhs.vals[3] + vals[1]*rhs.vals[2] - vals[2]*rhs.vals[1] + vals[3]*rhs.vals[0];
+		this.vals[0] = A;
+		this.vals[1] = B;
+		this.vals[2] = C;
+		this.vals[3] = D;
+		return this;
 	}
 
-	Quaternion opBinary(string op)(const Quaternion rhs)
+	Quaternion opBinary(string op)(Quaternion rhs)
 	{
-		return (Quaternion(this).opOpAssign!op(rhs));
+		return (new Quaternion(this).opOpAssign!op(rhs));
 	}
 
-	Quaternion opBinary(string op)(Vectorf rhs) if (op=="*")
+	Vectorf opBinary(string op)(Vectorf rhs) if (op=="*")
 	{
 		return this.matrix*rhs;
+	}
+
+	void toAxisAngle(ref Vectorf axis, ref fpnum angle)
+	{
+		angle = 2.0 * acos(w);
+		fpnum dv = sqrt(1.0-w*w);
+		if(dv==0)
+			axis = vectorf(0,1,0);
+		else
+			axis = vectorf(x/dv,y/dv,z/dv).normalized;
+	}
+
+	public static Quaternion lookAt(Vectorf sourcePoint, Vectorf destPoint)
+	{
+		Vectorf forwardVector = (destPoint - sourcePoint).normalized;
+		fpnum dot = vectorf(0,0,-1)*forwardVector;
+		
+		if (fabs(dot - (-1.0)) < 0.000001)
+		{
+			return new Quaternion(0, -1, 0, 3.1415926535897932f);
+		}
+		if (fabs(dot - (1.0)) < 0.000001)
+		{
+			return new Quaternion();
+		}
+		
+		fpnum rotAngle = cast(fpnum)acos(dot);
+		Vectorf rotAxis = (vectorf(0,0,-1)%forwardVector).normalized;
+		return new Quaternion(rotAxis, rotAngle);
 	}
 }
 
