@@ -19,6 +19,7 @@ Options:
 --help|-h     - Displays this text
 --threads|-t  - Thread number to use
 --debug|-d    - Launches the visual debugger
+--noimage|-n  - Doesn't run the main rendering loop
 `;
 
 void RenderSpawner(Tid owner)
@@ -48,7 +49,8 @@ void main(string[] args)
 		"script|s", &cfgScript,
 		"help|h", &doHelp,
 		"threads|t", &cfgThreads,
-		"debug|d", &cfgDebug
+		"debug|d", &cfgDebug,
+		"noimage|n", &cfgNoImage
 		);
 	if(doHelp)
 	{

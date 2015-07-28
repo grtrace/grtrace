@@ -115,52 +115,55 @@ abstract class WorldSpace
 			}
 			send(owner,Message.Finish);
 		}catch(shared(Exception)e){owner.send(e);}};
-		int threads = cast(int)(cfgThreads);
-		writeln("Rendering using ",threads," CPU threads");
-		int perthr = cast(int)pixelsy/threads;
-		Tid[] tasks;
-		tasks.length = threads;
-		int lasty = 0;
-		for(int i=0;i<threads-1;i++)
+		if(!cfgNoImage)
 		{
-			tasks[i] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)(lasty+perthr), i+1, GetRayFunc());
-			lasty+=perthr;
-		}
-		tasks[$-1] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
-		//tdg(thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
-		int running = threads;
-		while(running>0)
-		{
-			try
+			int threads = cast(int)(cfgThreads);
+			writeln("Rendering using ",threads," CPU threads");
+			int perthr = cast(int)pixelsy/threads;
+			Tid[] tasks;
+			tasks.length = threads;
+			int lasty = 0;
+			for(int i=0;i<threads-1;i++)
 			{
-				receiveTimeout(dur!"msecs"(10), (Message m){
-						if(m==Message.Pixel100)
-						{
-							dstep++;
-							if(dstep==prostep)
+				tasks[i] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)(lasty+perthr), i+1, GetRayFunc());
+				lasty+=perthr;
+			}
+			tasks[$-1] = spawnLinked(tdg, thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
+			//tdg(thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
+			int running = threads;
+			while(running>0)
+			{
+				try
+				{
+					receiveTimeout(dur!"msecs"(10), (Message m){
+							if(m==Message.Pixel100)
 							{
-								dstep = 0;done++;
-								writef("\r                                   \r Done %4d/%4d...",done,prosteps);
-								stdout.flush();
+								dstep++;
+								if(dstep==prostep)
+								{
+									dstep = 0;done++;
+									writef("\r                                   \r Done %4d/%4d...",done,prosteps);
+									stdout.flush();
+								}
 							}
-						}
-					},
-					(shared(Exception)e){
-						writefln("\nThread dead with exception: %s",e.msg);
-					});
+						},
+						(shared(Exception)e){
+							writefln("\nThread dead with exception: %s",e.msg);
+						});
+				}
+				catch(LinkTerminated e)
+				{
+					running--;
+				}
+				catch(Exception e)
+				{
+					writeln(e.msg);
+					return;
+				}
 			}
-			catch(LinkTerminated e)
-			{
-				running--;
-			}
-			catch(Exception e)
-			{
-				writeln(e.msg);
-				return;
-			}
+			writeln();writeln("Finished!");
+			im.WriteImage(outfile);
 		}
-		writeln();writeln("Finished!");
-		im.WriteImage(outfile);
 	}
 
 }
@@ -313,6 +316,11 @@ WorldSpace CreateSpace(string name)
 	else if(name=="deflect")
 	{
 		R = new PlaneDeflectSpace();
+	}
+	else if(name=="kex")
+	{
+		import metric.kexmetric;
+		R = new KexMetric();
 	}
 	else
 	{

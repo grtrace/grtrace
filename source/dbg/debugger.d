@@ -185,13 +185,21 @@ extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) no
 		double spd = 0.2;
 		VisualDebugger vd = VisualDebugger.inst;
 		Vectorf fwd = vectorf(0,0,-1),right = vectorf(1,0,0),up = vectorf(0,-1,0);
-		fwd *= spd;
-		right *= spd;
-		up *= spd;
-		if(mods && GLFW_MOD_SHIFT)
+		if(mods & GLFW_MOD_SHIFT)
 		{
 			spd *= 3.0;
 		}
+		if(mods & GLFW_MOD_CONTROL)
+		{
+			spd *= 9.0;
+		}
+		if(mods & GLFW_MOD_ALT)
+		{
+			spd /= 3.0;
+		}
+		fwd *= spd;
+		right *= spd;
+		up *= spd;
 		vel = vectorf(0,0,0,1);
 		if(glfwGetKey(w,GLFW_KEY_W))
 		{
@@ -471,7 +479,7 @@ class VisualDebugger
 				}
 			}
 			glLoadIdentity();
-			glDisable(GL_DEPTH_TEST);
+			//glDisable(GL_DEPTH_TEST);
 			glBegin(GL_LINES);
 			foreach(SavedRay ray;rays)
 			{
@@ -517,7 +525,7 @@ class VisualDebugger
 			glfwSwapBuffers(dwin);
 			glfwPollEvents();
 
-			pos += ((tmat.inverse)*vel)/dt;
+			pos += ((tmat.inverse)*vel)*dt*1000.0;
 
 			dt = glfwGetTime();
 			glfwSetTime(0.0);

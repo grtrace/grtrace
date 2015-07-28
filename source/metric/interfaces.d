@@ -31,9 +31,9 @@ Line returnDeflectedRay(const Line incoming, const Vectorf hitPoint, const Matri
 			{
 				for(size_t p = 0; p<4; p++)
 				{
-					christoffel_symbols[y][a*4+b] += inv_g[p*4+y]*(dg[a][b*4+p] + dg[b][a*4+p] - dg[p][a*4+b]);
+					christoffel_symbols[y][a*4+b] = christoffel_symbols[y][a*4+b] + inv_g[p*4+y]*(dg[a][b*4+p] + dg[b][a*4+p] - dg[p][a*4+b]);
 				}
-				christoffel_symbols[y][a*4+b] /= 2;
+				christoffel_symbols[y][a*4+b] = christoffel_symbols[y][a*4+b] / 2;
 			}
 		}
 	}
