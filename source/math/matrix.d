@@ -14,7 +14,7 @@ private:
 	T det3(	
 		T a0, T a1, T a2,
 		T a3, T a4, T a5,
-		T a6, T a7, T a8)
+		T a6, T a7, T a8) const
 	{
 		return a0*(a4*a8-a5*a7) + a1*(a5*a6-a3*a8) + a2*(a3*a7-a4*a6);
 	}
@@ -158,7 +158,7 @@ public:
 		return res;
 	}
 
-	@property T determinant()
+	@property T determinant() const
 	{
 		return vals[12] * vals[9] * vals[6] * vals[3] - vals[8] * vals[13] * vals[6] * vals[3] - vals[12] * vals[5] * vals[10] * vals[3] + vals[
 			4] * vals[13] * vals[10] * vals[3] + vals[8] * vals[5] * vals[14] * vals[3] - vals[4] * vals[9] * vals[14] * vals[3] - vals[12] * vals[
@@ -170,7 +170,7 @@ public:
 			1] * vals[10] * vals[15] + vals[0] * vals[5] * vals[10] * vals[15];
 	}
 
-	@property Matrix4!T inverse()
+	@property Matrix4!T inverse() const
 	in
 	{
 		assert(this.determinant != 0);

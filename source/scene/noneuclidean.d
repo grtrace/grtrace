@@ -128,18 +128,18 @@ class PlaneDeflectSpace : WorldSpace
 					newDir = Matrix4f.RotateV(axis.normalized,-Phi,ray.direction).normalized;
 				
 				//calculate new position
-				//TODO: WTF
 
 				Vectorf orthogonal = (newDir%rpl.normal);
 				newPos = def.plane.origin - orthogonal*R;
 
+				//check if orthogonal is oriented in the rigth way
 				a = def.plane.origin-ray.origin;
 				b = (a%(ray.direction*mdist)).normalized;
 				c = (a%(newPos-ray.origin)).normalized;
 				
 				inline = (1.0-(b*c))<eps;
 
-				if(!inline)
+				if(!inline) //if not pick the corect one
 				{
 					orthogonal = -(newDir%rpl.normal); 
 					newPos = def.plane.origin - orthogonal*R;
