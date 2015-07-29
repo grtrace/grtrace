@@ -3,10 +3,11 @@
 import math;
 import metric.interfaces;
 import config;
+import scene;
 
 class Grid : DiscreteMetricContainer
 {
-	private Initiator!Metric4 init = null;
+	private Initiator init = null;
 	//probingParam tells us that we will be getting probingParam^3 samples inside the given box;
 	private AABB box; //TODO: for now we assume that box is a cube, better change that
 	private size_t probingParam;
@@ -35,12 +36,17 @@ class Grid : DiscreteMetricContainer
 				}
 	}
 
-	@property ref Initiator!Metric4 initiator()
+	@property ref Initiator initiator()
 	{
 		return init;
 	}
 
-	fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
+	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null,int cnt=0)
+	{
+		assert(0);
+	}
+
+	fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null,int cnt=0)
 	{
 		//TODO:DO NOT USE
 		//find the cube in with the ray origin is contained

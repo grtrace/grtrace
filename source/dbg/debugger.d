@@ -490,7 +490,7 @@ class VisualDebugger
 			}
 			glEnd();
 			glColor3f(0.1f,0.1f,1.0f);
-			enum double BScale=1.0;
+			/*enum double BScale=1.0;
 			glScaled(1.0/BScale,1.0/BScale,1.0/BScale);
 			foreach(SavedRay ray;rays)
 			{
@@ -502,7 +502,7 @@ class VisualDebugger
 				glTranslated(ray.destination.x*BScale, ray.destination.y*BScale, ray.destination.z*BScale);
 				glCallList(drawSphere);
 				glPopMatrix();
-			}
+			}*/
 			glColor3f(1.0f,0.0f,0.0f);
 			glLoadIdentity();
 			glBegin(GL_POINTS);

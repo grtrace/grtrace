@@ -5,53 +5,35 @@ import math.metric;
 import math.matrix;
 import math.vector;
 
-class Flat(T) : Initiator!T
+class Flat : Initiator
 {
-	T getMetricAt(Vectorf point) const
+	Metric4 getMetricAt(Vectorf point)
 	{
-		static if(is(T==Metric4))
-		{
-			return T(Matrix4f(
-					1,0,0,0,
-					0,-1,0,0,
-					0,0,-1,0,
-					0,0,0,-1
-					));
-		}
-		static if(is(T==Matrix4f))
-		{
-			return T(
-				1,0,0,0,
-				0,-1,0,0,
-				0,0,-1,0,
-				0,0,0,-1
-				);
-		}
+		static auto tmp = Metric4(
+						  1,0,0,0,
+						   -1,0,0,
+						     -1,0,
+						       -1);
+		return tmp;
 	}
 
-	T[3] getDerivativesAt(Vectorf point)
+	Metric4[3] getDerivativesAt(Vectorf point)
 	{
-		static if(is(T==Metric4))
-		{
-			auto tmp = T(Matrix4f.Zero);
-		}
-		static if(is(T==Matrix4f))
-		{
-			auto tmp = T.Zero;
-		}
+		static auto tmp = Metric4(
+						  0,0,0,0,
+							0,0,0,
+							  0,0,
+								0);
 		return [tmp,tmp,tmp];
 	}
 
-	T[4] getChristoffelSymbolsAt(Vectorf point)
+	Metric4[4] getChristoffelSymbolsAt(Vectorf point)
 	{
-		static if(is(T==Metric4))
-		{
-			auto tmp = T(Matrix4f.Zero);
-		}
-		static if(is(T==Matrix4f))
-		{
-			auto tmp = T.Zero;
-		}
+		static auto tmp = Metric4(
+						  0,0,0,0,
+						    0,0,0,
+						      0,0,
+						        0);
 		return [tmp,tmp,tmp,tmp];
 	}
 
@@ -67,5 +49,3 @@ class Flat(T) : Initiator!T
 		}
 	}
 }
-
-alias DoCompile = Flat!Matrix4f;

@@ -16,6 +16,7 @@ import std.concurrency : send;
 import core.thread : Thread;
 import core.time : dur;
 import core.atomic;
+import metric;
 
 alias ConfigValue = Algebraic!(inump,unump,fpnump,string*);
 private ConfigValue[string] cfgOptions;

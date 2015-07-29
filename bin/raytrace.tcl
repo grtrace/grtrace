@@ -1,19 +1,18 @@
 configSet "ResolutionX" 800
 configSet "ResolutionY" 600
 configSet "Samples" 1
-configSet "WorldSpace" "kex"
+configSet "WorldSpace" "test"
 configSet "SpaceConfig" ""
 configSet "CameraType" "linear"
 configSet "CameraX" 0
 configSet "CameraY" 0
-configSet "CameraZ" -300
+configSet "CameraZ" -3000
 configSet "CameraPitch" 0
 configSet "CameraYaw" 0
 configSet "CameraRoll" 0
-configSet "CameraOptions" "-x 10 -f 2"
+configSet "CameraOptions" "-x 10 -f 30"
 
-loadTexture .tex1 textures/milkyway.jpg
-#textures/checkerBoard.png
+loadTexture .tex1 textures/checkerBoard.png
 
 addMaterial .mat1 -D -e 1.0,1.0,1.0 -t .tex1 -f b
 

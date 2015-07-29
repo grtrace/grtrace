@@ -3,5 +3,8 @@
 public import metric.interfaces;
 public import metric.grid;
 public import metric.analitic;
+public import metric.wrapper;
+public import metric.kexmetric;
 
 public import metric.initiators.flat;
+public import metric.initiators.schwarzschild;
