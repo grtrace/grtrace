@@ -20,6 +20,7 @@ import core.cpuid;
 import std.algorithm;
 import std.random;
 import dbg.debugger;
+import metric;
 
 import scene.noneuclidean;
 
@@ -319,8 +320,15 @@ WorldSpace CreateSpace(string name)
 	}
 	else if(name=="kex")
 	{
-		import metric.kexmetric;
 		R = new KexMetric();
+	}
+	else if(name=="test")
+	{
+		auto A = new Analitic;
+		A.setInitiator(new Schwarzschild(1, vectorf(0,0,0)));
+		A.paramStep = 0.01;
+		A.maxNumberOfSteps = 500;
+		R = new WorldSpaceWrapper(A);
 	}
 	else
 	{

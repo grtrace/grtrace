@@ -2,6 +2,7 @@
 
 import config;
 import math.matrix;
+import std.range,std.traits;
 
 struct Metric4
 {
@@ -38,7 +39,21 @@ struct Metric4
 		vals[9] = mat[15];
 	}
 
-	Matrix4f opCast(U)() if (is(U==Matrix4f))
+	this(fpnum e0,fpnum e1,fpnum e2,fpnum e3,fpnum e4,fpnum e5,fpnum e6,fpnum e7,fpnum e8,fpnum e9)
+	{
+		vals[0] = e0;
+		vals[1] = e1;
+		vals[2] = e2;
+		vals[3] = e3;
+		vals[4] = e4;
+		vals[5] = e5;
+		vals[6] = e6;
+		vals[7] = e7;
+		vals[8] = e8;
+		vals[9] = e9;
+	}
+
+	Matrix4f opCast(U)() const if (is(U==Matrix4f))
 	{
 		return Matrix4f(
 			vals[0], vals[1], vals[2], vals[3],
@@ -48,7 +63,7 @@ struct Metric4
 			);
 	}
 
-	Matrix4f opCall()
+	Matrix4f opCall() const
 	{
 		return cast(Matrix4f)this;
 	}

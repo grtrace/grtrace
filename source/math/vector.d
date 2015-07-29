@@ -14,7 +14,7 @@ struct Vector(T)
 	T z;
 	T w;
 
-	auto ref T opIndex()(int idx) const
+	auto ref T opIndex()(int idx)
 	{
 		switch(idx)
 		{
