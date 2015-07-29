@@ -1,5 +1,5 @@
 {
-	"name": "grtrace",
+	"name": "grtrace", 
 	"description": "General Relativity Tracer",
 	"copyright": "Copyright © 2015, ICM UW",
 	"authors": ["Jakub Szewczyk", "Grzegorz Uriasz"],
@@ -9,7 +9,8 @@
 	"targetPath": "bin/",
 	"dependencies": {
 		"tcltk": "~>8.6.5",
-		"derelict-glfw3": ">=1.1.0"
+		"derelict-glfw3": ">=1.1.0",
+		"derelict-cl": ">=2.0.0"
 	},
 	"mainSourceFile": "source/app.d"
 }
