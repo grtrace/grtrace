@@ -5,6 +5,18 @@ import math.matrix;
 
 struct Metric4
 {
+	enum int[4][4] rcmap = [
+		[ 0, 1, 2, 3 ],
+		[ 1, 4, 5, 6 ],
+		[ 2, 5, 7, 8 ],
+		[ 3, 6, 8, 9 ]
+	];
+	/**
+	 * [ 0, 1, 2, 3 ]
+	 * [ 1, 4, 5, 6 ]
+	 * [ 2, 5, 7, 8 ]
+	 * [ 3, 6, 8, 9 ]
+	 */
 	fpnum[10] vals;
 
 	this(Matrix4f mat)
@@ -39,6 +51,11 @@ struct Metric4
 	Matrix4f opCall()
 	{
 		return cast(Matrix4f)this;
+	}
+
+	ref fpnum opIndex(int row, int col)
+	{
+		return vals[rcmap[row][col]];
 	}
 
 	alias vals this;

@@ -5,10 +5,8 @@ import core.time;
 import std.concurrency;
 import std.stdio, std.math;
 import std.functional;
-import math.vector;
-import math.geometric;
+import math;
 import scene.objects.plane;
-import math.matrix;
 import image.memory;
 import image.imgio;
 import image.color;
@@ -26,7 +24,10 @@ private alias RPlane = scene.objects.plane.Plane;
 class KexMetric : WorldSpace
 {
 	static shared(RPlane) pln;
-	
+
+	enum fpnum Mass = 1.0;
+	enum fpnum Rad = 2*Mass;
+
 	this()
 	{
 		string[] args = ["0"]~cfgSpaceConfig.split();
@@ -43,7 +44,32 @@ class KexMetric : WorldSpace
 	{
 		return Color( (N.x+1.0f)/2.0f, (N.y+1.0f)/2.0f, (N.z+1.0f)/2.0f );
 	}
-	
+
+	static Metric4 getMetFromPoint(Vectorf p)
+	{
+		fpnum R = ~p;
+		fpnum STh = sqrt(1.0-((p.z / R)^^2));
+		fpnum rsr = Rad/R;
+		return Metric4(Matrix4f(
+				-1.0-rsr,0,0,0,
+				0,-1.0/(1-rsr),0,0,
+				0,0,-R*R,0,
+				0,0,0,-R*R*STh*STh
+				));
+	}
+
+	static Vectorf metCartToLocal(Vectorf v)
+	{
+		fpnum R = ~v;
+		return vectorf(R, acos(v.z/R), atan2(v.y,v.x));
+	}
+
+	static Vectorf metLocalToCart(Vectorf v)
+	{
+		fpnum r = v.x;
+		return vectorf(r*sin(v.y)*cos(v.z),r*sin(v.y)*sin(v.z),r*cos(v.y));
+	}
+
 	protected static fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null,int cnt=0)
 	{
 		static if(doP)
@@ -85,7 +111,7 @@ class KexMetric : WorldSpace
 		{
 			Line newRay;
 			newRay.origin= ray.origin + ray.direction*5.0;
-			newRay.direction = Matrix4f.RotateV(vectorf(1,0,0),clamp(~ray.origin,-0.2,0.2),ray.direction);
+			Metric4 M = getMetFromPoint(newRay.origin);
 			newRay.ray = true;
 			VisualDebugger.SaveRay(ray, newRay.origin);
 			return Raytrace!(doP,doN,doO,doD)(newRay,didHit,hitpoint, hitnormal,hit,cnt+1);

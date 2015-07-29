@@ -5,6 +5,7 @@ import std.math;
 import std.traits;
 import std.format, std.string;
 import std.algorithm;
+import math.metric;
 
 struct Vector(T)
 {
@@ -162,6 +163,37 @@ struct Vector(T)
 	string toString()
 	{
 		return format("( %.4f ; %.4f ; %.4f ; %.0f )",x,y,z,w);
+	}
+	static if(is(T==fpnum))
+	{
+		fpnum mDot(Metric4 m, Vectorf o)
+		{
+			return
+				this.x*o.x*m[1,1] + 
+				this.x*o.y*m[1,2] + 
+				this.x*o.z*m[1,3] + 
+				this.y*o.x*m[2,1] + 
+				this.y*o.y*m[2,2] + 
+				this.y*o.z*m[2,3] + 
+				this.z*o.x*m[3,1] + 
+				this.z*o.y*m[3,2] + 
+				this.z*o.z*m[3,3];
+		}
+
+		fpnum mLenSq(Metric4 m)
+		{
+			return mDot(m,this);
+		}
+
+		fpnum mLen(Metric4 m)
+		{
+			return sqrt(mDot(m,this));
+		}
+
+		fpnum mCrossLenSq(Metric4 m, Vectorf o)
+		{
+			return this.mLenSq(m)*o.mLenSq(m) - this.mDot(m,o)^^2;
+		}
 	}
 }
 
