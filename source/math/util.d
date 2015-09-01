@@ -1,5 +1,6 @@
 ﻿module math.util;
 
+import config;
 import std.math;
 import std.functional;
 

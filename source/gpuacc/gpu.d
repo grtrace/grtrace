@@ -8,13 +8,13 @@ public void assertCl()
 	clLoaded || assert(0,"OpenCL not initialized yet used");
 }
 
-class ClException : Exception
+/*class ClException : Exception
 {
 	@nogc @safe pure nothrow this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null)
 	{
 		super(msg, file, line, next);
 	}
-}
+}*/
 
 enum string[] clErrorCodes = [
 "CL_SUCCESS"                                  //   0
@@ -92,7 +92,7 @@ public void clerr(cl_int e, string file=__FILE__, size_t line=__LINE__)
 	if(e<0)
 	{
 		int ei=clamp(-e, 0, 64);
-		throw new ClException("OpenCL error #%d (%s)".format(e,clErrorCodes[ei]));
+		//throw new ClException("OpenCL error #%d (%s)".format(e,clErrorCodes[ei]));
 	}
 }
 

@@ -78,6 +78,7 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 				Line ray;
 				if(VisualDebugger.inst.camera.fetchRay(xR,yR,ray))
 				{
+					//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
 					VisualDebugger.inst.rays = [];
 					VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
 					VisualDebugger vd = VisualDebugger.inst;
@@ -89,7 +90,15 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 						Vectorf d1,d2;
 						d1 = (r0.destination - r0.origin).normalized;
 						d2 = (r1.destination - r1.origin).normalized;
-						writefln("Angle #%d->#%d: %s",i,i+1,acos(d1*d2)*180.0/PI);
+						auto dot = d1*d2;
+						/*if((-1<=dot)&&(dot<=1)) //TODO:COMMENTED
+						{
+							writefln("Angle #%d->#%d: %s",i,i+1,acos(dot)*180.0/PI);
+						}
+						else
+						{
+							writefln("Xxxxx #%d->#%d: %s",i,i+1,dot);
+						}*/
 					}
 				}
 			}
