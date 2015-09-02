@@ -9,8 +9,7 @@
 	"targetPath": "bin/",
 	"dependencies": {
 		"tcltk": "~>8.6.5",
-		"derelict-glfw3": ">=1.1.0",
-		"derelict-cl": ">=2.0.0"
+		"derelict-glfw3": ">=1.1.0"
 	},
 	"mainSourceFile": "source/app.d"
 }

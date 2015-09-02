@@ -12,6 +12,7 @@ import std.concurrency;
 import core.thread : Thread;
 import core.time : dur;
 import math;
+import gpuacc.gpu;
 
 enum string HelpStr = `
 General Relativity rayTracer usage:
@@ -68,6 +69,7 @@ void main(string[] args)
 
 	//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
 	string arg0 = args[0].idup;
+  InitGPU();
 	InitScripting(arg0);
 	bool doHelp;
 	getopt(args,
