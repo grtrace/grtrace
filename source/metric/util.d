@@ -1,6 +1,7 @@
 ﻿module metric.util;
 
 import math;
+import metric.interfaces;
 import std.math;
 import std.algorithm.comparison;
 import config;
@@ -17,6 +18,32 @@ fpnum returnTimeDerivativeFromSpacialDerivatives(Metric4 g, const fpnum[4] v)
 	fpnum dt_2 = (-B + s_det)/(2*A);
 
 	return max(dt_1, dt_2);
+}
+
+Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, CoordinateChanger coords, Metric4 metric, Metric4[4] christoffels)
+{
+	fpnum[4] dr = coords.transformForwardSpacialFirstDerivatives(point, direction);
+	dr[0] = returnTimeDerivativeFromSpacialDerivatives(metric, dr);
+
+	fpnum[4] d2r = [0,0,0,0];
+	
+	//calculate the second derivatives
+	for(byte i = 0; i<4; i++)
+	{
+		for(byte a = 0; a<4; a++)
+		{
+			for(byte b = 0; b<4; b++)
+			{
+				d2r[i] += christoffels[i][a,b]*dr[a]*dr[b];
+			}
+		}
+		
+		d2r[i] = -d2r[i];
+	}
+	
+	Vectorf second = coords.transformBackSpacialSecondDerivatives(coords.transformForwardPosition(point), dr, d2r);
+
+	return second;
 }
 
 

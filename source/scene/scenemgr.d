@@ -325,10 +325,10 @@ WorldSpace CreateSpace(string name)
 	else if(name=="test")
 	{
 		auto A = new Analitic;
-		A.setInitiator(new Schwarzschild(1,vectorf(0,0,0)));
+		A.setInitiator(new Schwarzschild(100,vectorf(0,0,0)));
 		A.paramStep = 0.1;
 		A.travelDist = 0.1;
-		A.maxNumberOfSteps = 1000;
+		A.maxNumberOfSteps = 10000;
 		R = new WorldSpaceWrapper(A);
 	}
 	else

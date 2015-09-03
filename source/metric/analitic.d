@@ -44,7 +44,7 @@ class Analitic : AnaliticMetricContainer
 
 	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
 	{
-		ray.data = 1;
+		//ray.data = 1;
 		return Raytrace!(true,true,true)(ray, didHit, hitpoint, hitnormal, hit, cnt);
 	}
 
@@ -88,27 +88,15 @@ class Analitic : AnaliticMetricContainer
 		}
 		if(mdist>(travelDist+param_step))
 		{
-			import std.stdio;
 			//calculate deflected ray
 			Line newRay;
 			newRay.origin = ray.origin + ray.direction*travel_dist;
 			newRay.ray = true;
 
-			//writeln(initiator.coordinate_system);
+			//get metric at point
+			Metric4 metric = initiator.getMetricAt(newRay.origin);
 
-			fpnum[4] dr = initiator.coordinate_system.transformForwardSpacialFirstDerivatives(newRay.origin, ray.direction*ray.data);
-
-			dr[0] = returnTimeDerivativeFromSpacialDerivatives(initiator.getMetricAt(newRay.origin), dr);
-
-			/*Metric4 tmp = initiator.getMetricAt(newRay.origin);
-			writeln(tmp[0,0]*dr[0]*dr[0] + tmp[1,1]*dr[1]*dr[1] + tmp[2,2]*dr[2]*dr[2] + tmp[3,3]*dr[3]*dr[3]);*/
-
-			if(cfgVerbose)
-			{
-				writeln("BEGIN DEBUG ENTRY");
-				writeln(__LINE__,":","ray.direction->dr: ", ray.direction, " -> " ,dr);
-			}
-			//get christoffels symbols
+			//get christoffels symbols at point
 			Metric4[4] christoffel_symbols;
 
 			if(initiator.hasFunction("christoffels"))
@@ -118,44 +106,18 @@ class Analitic : AnaliticMetricContainer
 			else
 			{
 				christoffel_symbols = returnChristoffelsSymbols(
-					initiator.getMetricAt(newRay.origin), 
+					metric, 
 					initiator.getDerivativesAt(newRay.origin));
 			}
 
-			fpnum[4] d2r = [0,0,0,0];
+			auto second = returnSecondDerivativeOfGeodescis(newRay.origin, ray.direction, initiator.coordinate_system, metric, christoffel_symbols);
 
-			//calculate the second derivatives
-			for(byte i = 0; i<4; i++)
-			{
-				for(byte a = 0; a<4; a++)
-				{
-					for(byte b = 0; b<4; b++)
-					{
-						d2r[i] += christoffel_symbols[i][a,b]*dr[a]*dr[b];
-					}
-				}
-
-				d2r[i] = -d2r[i];
-			}
-
-			if(cfgVerbose)writeln(__LINE__,":", "d2r: ",d2r);
-
-			//dr[] = (dr[] + d2r[]*param_step);
-
-			Vectorf second = initiator.coordinate_system.transformBackSpacialSecondDerivatives(initiator.coordinate_system.transformForwardPosition(newRay.origin), dr, d2r);
-
-			writeln(second);
-
-			newRay.direction = (ray.direction*ray.data)+second*param_step;
-			newRay.data = (~newRay.direction);
-			newRay.direction = newRay.direction / newRay.data;
+			newRay.direction = ((ray.direction)+second*param_step).normalized;
+			//newRay.data = (~newRay.direction);
+			//newRay.direction = newRay.direction / newRay.data;
 
 			newRay.direction.w = 0; //be sure it's zero
 			newRay.origin = ray.origin + ray.direction*(travel_dist+param_step);
-
-			if(cfgVerbose)writeln(__LINE__,":","ray.direction->newRay.direction: ",ray.direction,"->",newRay.direction);
-
-			if(cfgVerbose)writeln("END DEBUG ENTRY\n");
 
 			VisualDebugger.SaveRay(ray, newRay.origin);
 			return Raytrace!(doP,doN,doO)(newRay,didHit,hitpoint, hitnormal,hit,cnt+1);
