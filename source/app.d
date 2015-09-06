@@ -24,6 +24,7 @@ Options:
 --threads|-t  - Thread number to use
 --debug|-d    - Launches the visual debugger
 --noimage|-n  - Doesn't run the main rendering loop
+--nogpu|-g    - Force-disable GPU acceleration
 `;
 
 void RenderSpawner(Tid owner)
@@ -78,8 +79,10 @@ void main(string[] args)
 		"help|h", &doHelp,
 		"threads|t", &cfgThreads,
 		"debug|d", &cfgDebug,
-		"noimage|n", &cfgNoImage
+		"noimage|n", &cfgNoImage,
+		"nogpu|g", &cfgGpuAcc
 		);
+	cfgGpuAcc = !cfgGpuAcc;
 	if(doHelp)
 	{
 		writef(HelpStr, arg0);
