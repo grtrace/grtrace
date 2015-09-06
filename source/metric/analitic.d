@@ -144,7 +144,7 @@ class Analitic : AnaliticMetricContainer
 
 			Vectorf second = initiator.coordinate_system.transformBackSpacialSecondDerivatives(initiator.coordinate_system.transformForwardPosition(newRay.origin), dr, d2r);
 
-			writeln(second);
+			if(cfgVerbose)writeln(second);
 
 			newRay.direction = (ray.direction*ray.data)+second*param_step;
 			newRay.data = (~newRay.direction);
