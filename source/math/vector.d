@@ -182,17 +182,22 @@ struct Vector(T)
 
 		fpnum mLenSq(Metric4 m)
 		{
-			return mDot(m,this);
+			return mDot(m,this).fabs();
 		}
 
 		fpnum mLen(Metric4 m)
 		{
-			return sqrt(mDot(m,this));
+			return sqrt(mLenSq(m));
 		}
 
 		fpnum mCrossLenSq(Metric4 m, Vectorf o)
 		{
 			return this.mLenSq(m)*o.mLenSq(m) - this.mDot(m,o)^^2;
+		}
+
+		fpnum mCosV(Metric4 m, Vectorf v)
+		{
+			return this.mDot(m,v)/( mLen(m)*v.mLen(m) );
 		}
 	}
 }
