@@ -1,6 +1,7 @@
 ﻿module metric.initiators.schwarzschild;
 
 import metric.interfaces;
+import metric.coordinates.radial;
 import math;
 import config;
 import std.math;
@@ -10,18 +11,20 @@ class Schwarzschild : Initiator
 	private Vectorf origin;
 	private fpnum schwarzschild_radius;
 	private fpnum mass;
+	private Radial cord;
 
 	this(fpnum m, Vectorf orig)
 	{
 		origin = orig;
+		cord = new Radial(orig);
 		schwarzschild_radius = 2*m;
 		mass = m;
 	}
 
 	Metric4 getMetricAt(Vectorf point)
 	{
-		Vectorf v = point - origin;
-		fpnum r2 = *v;
+		Vectorf v = point-origin;
+		fpnum r2 = (*v);
 		fpnum r = sqrt(r2);
 		fpnum sin_theta = sin(acos(v.z/r));
 
@@ -42,9 +45,9 @@ class Schwarzschild : Initiator
 
 	Metric4[4] getChristoffelSymbolsAt(Vectorf point)
 	{
-		Vectorf v = point - origin;
+		Vectorf v = point-origin;
 		//FIXME:radial
-		fpnum r2 = *v;
+		fpnum r2 = (*v);
 		fpnum r = sqrt(r2);
 		fpnum inv_r = 1./r;
 		fpnum inv_r2 = 1./r2;
@@ -84,6 +87,11 @@ class Schwarzschild : Initiator
 			);
 
 		return [a, b, c, d];
+	}
+
+	@property CoordinateChanger coordinate_system()
+	{
+		return cord;
 	}
 
 	bool hasFunction(string f)

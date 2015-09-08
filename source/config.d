@@ -19,6 +19,7 @@ __gshared
 	bool cfgVerbose = false;
 	bool cfgDebug = false;
 	bool cfgNoImage = false;
+	bool cfgGpuAcc = false;
 	string cfgScript = "raytrace.tcl";
 	inum cfgResolutionX = 320;
 	inum cfgResolutionY = 240;

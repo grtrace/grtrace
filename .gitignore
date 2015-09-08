@@ -162,3 +162,5 @@ bin/grtrace
 *.png
 *.jpg
 *.bmp
+perf.data
+perf.data.old

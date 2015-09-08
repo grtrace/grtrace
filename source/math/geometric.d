@@ -26,7 +26,7 @@ struct Line
 	{
 		origin = p;
 		direction = dir;
-		invdirection = 1.0/dir;
+		invdirection = -dir;
 		ray = ry;
 		data = 0;
 	}
