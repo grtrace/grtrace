@@ -164,3 +164,7 @@ bin/grtrace
 *.bmp
 perf.data
 perf.data.old
+*.7z
+*.zip
+*.tar
+*.tar.gz
