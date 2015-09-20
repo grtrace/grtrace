@@ -9,6 +9,7 @@ public import metric.util;
 
 public import metric.initiators.flat;
 public import metric.initiators.schwarzschild;
+public import metric.initiators.kerr;
 
 public import metric.coordinates.cartesian;
 public import metric.coordinates.radial;

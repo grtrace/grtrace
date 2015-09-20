@@ -80,7 +80,16 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 				{
 					//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
 					VisualDebugger.inst.rays = [];
-					VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
+					//TODO:remove
+					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,0.01,0).normalized);
+					//writeln(ray);
+					for(double h = -0.5; h<=0.5; h+=0.01)
+					{
+						ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,h,0).normalized);
+						writeln(h);
+						VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
+					}
+
 					VisualDebugger vd = VisualDebugger.inst;
 					for(int i=1;i<vd.rays.length;i++)
 					{

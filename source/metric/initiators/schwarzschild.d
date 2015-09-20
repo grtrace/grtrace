@@ -13,6 +13,16 @@ class Schwarzschild : Initiator
 	private fpnum mass;
 	private Radial cord;
 
+	//Cache
+	private fpnum r2;
+	private fpnum r;
+	private fpnum inv_r;
+	private fpnum inv_r2;
+	private fpnum theta;
+	private fpnum sin_theta;
+	private fpnum tmp;
+	private fpnum inv_tmp;
+
 	this(fpnum m, Vectorf orig)
 	{
 		origin = orig;
@@ -21,43 +31,49 @@ class Schwarzschild : Initiator
 		mass = m;
 	}
 
-	Metric4 getMetricAt(Vectorf point)
+	void prepareForRequest(Vectorf point)
 	{
 		Vectorf v = point-origin;
-		fpnum r2 = (*v);
-		fpnum r = sqrt(r2);
-		fpnum sin_theta = sin(acos(v.z/r));
 
-		fpnum tmp = (1.-schwarzschild_radius/r);
+		r2 = (*v);
+		r = sqrt(r2);
+		inv_r = 1./r;
+		inv_r2 = 1./r2;
 
+		theta = acos(v.z/r);
+		sin_theta = sin(theta);
+		
+		tmp = (1.-schwarzschild_radius*inv_r);
+		inv_tmp = 1./tmp;
+	}
+
+	@property Metric4 getMetricAtPoint() const
+	{
 		return Metric4(
 			-tmp,  0,    0,           0,
-			     1./tmp, 0,           0,
+			     inv_tmp, 0,           0,
 			             r2,          0,
 			                r2*sin_theta*sin_theta
 			);
 	}
 
-	Metric4[3] getDerivativesAt(Vectorf point)
+	@property Metric4 getLocalMetricAtPoint() const
+	{
+		return Metric4(
+			-1,  0,    0,          0,
+			     1,    0,          0,
+			           r2,         0,
+			               r2*sin_theta*sin_theta
+			);
+	}
+
+	@property Metric4[3] getDerivativesAtPoint() const
 	{
 		assert(0);
 	}
 
-	Metric4[4] getChristoffelSymbolsAt(Vectorf point)
+	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
-		Vectorf v = point-origin;
-		//FIXME:radial
-		fpnum r2 = (*v);
-		fpnum r = sqrt(r2);
-		fpnum inv_r = 1./r;
-		fpnum inv_r2 = 1./r2;
-
-		fpnum theta = acos(v.z/r);
-		fpnum sin_theta = sin(theta);
-
-		fpnum tmp = (1.-schwarzschild_radius*inv_r);
-		fpnum inv_tmp = 1./tmp;
-
 		auto a = Metric4(
 			0, mass*inv_tmp*inv_r2, 0, 0,
 			           0,           0, 0,
@@ -89,20 +105,28 @@ class Schwarzschild : Initiator
 		return [a, b, c, d];
 	}
 
-	@property CoordinateChanger coordinate_system()
+	@property Matrix4f getTetradsElementsAtPoint() const
 	{
-		return cord;
+		auto res = Matrix4f(
+			sqrt(inv_tmp),    0,      0,   0,
+			      0,       sqrt(tmp), 0,   0,
+			      0,          0,      1,   0,
+			      0,          0,      0,   1);
+		return res;
 	}
 
-	bool hasFunction(string f)
+	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		if(f=="christoffels")
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		auto res = Matrix4f(
+			sqrt(tmp),      0,        0, 0,
+			   0,      sqrt(inv_tmp), 0, 0,
+			   0,           0,        1, 0,
+			   0,           0,        0, 1);
+		return res;
+	}
+
+	@property CoordinateChanger coordinate_system() const
+	{
+		return cast(CoordinateChanger) cord;
 	}
 }

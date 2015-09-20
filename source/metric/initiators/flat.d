@@ -11,7 +11,14 @@ import config;
 
 class FlatCartesian : Initiator
 {
-	Metric4 getMetricAt(Vectorf point)
+	private static const Cartesian cord = new Cartesian();
+
+	void prepareForRequest(Vectorf point)
+	{
+		return;
+	}
+
+	@property Metric4 getMetricAtPoint() const
 	{
 		static auto tmp = Metric4(
 						  1,0,0,0,
@@ -21,7 +28,12 @@ class FlatCartesian : Initiator
 		return tmp;
 	}
 
-	Metric4[3] getDerivativesAt(Vectorf point)
+	@property Metric4 getLocalMetricAtPoint() const
+	{
+		return getMetricAtPoint;
+	}
+
+	@property Metric4[3] getDerivativesAtPoint() const
 	{
 		static auto tmp = Metric4(
 						  0,0,0,0,
@@ -31,7 +43,7 @@ class FlatCartesian : Initiator
 		return [tmp,tmp,tmp];
 	}
 
-	Metric4[4] getChristoffelSymbolsAt(Vectorf point)
+	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
 		static auto tmp = Metric4(
 						  0,0,0,0,
@@ -41,55 +53,76 @@ class FlatCartesian : Initiator
 		return [tmp,tmp,tmp,tmp];
 	}
 
-	@property CoordinateChanger coordinate_system()
+	@property Matrix4f getTetradsElementsAtPoint() const
 	{
-		return new Cartesian();
+		static auto tmp = Matrix4f(
+						  1,0,0,0,
+						  0,1,0,0,
+						  0,0,1,0,
+						  0,0,0,1);
+		return tmp;
 	}
 
-	bool hasFunction(string f)
+	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		if(f=="derivatives" || f=="christoffels")
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		static auto tmp = Matrix4f(
+						  1,0,0,0,
+						  0,1,0,0,
+						  0,0,1,0,
+						  0,0,0,1);
+		return tmp;
+	}
+
+	@property CoordinateChanger coordinate_system() const
+	{
+		return cast(CoordinateChanger)cord;
 	}
 }
 
 class FlatRadial : Initiator
 {
-	Metric4 getMetricAt(Vectorf point)
+	private static const Radial cord = new Radial;
+
+	//Cached data
+	private fpnum r2;
+	private fpnum r;
+	private fpnum inv_r;
+	private fpnum inv_r2;
+	private fpnum theta;
+	private fpnum sin_theta;
+
+	void prepareForRequest(Vectorf point)
 	{
-		fpnum r2 = (*point);
-		fpnum r = sqrt(r2);
-		fpnum sin_theta = sin(acos(point.z/r));
-		
+		r2 = (*point);
+		r = sqrt(r2);
+		inv_r = 1./r;
+		inv_r2 = 1./r2;
+		theta = acos(point.z/r);
+		sin_theta = sin(theta);
+	}
+
+	@property Metric4 getMetricAtPoint() const
+	{
 		return Metric4(
-			-1,  0,    0,           0,
-			     1,    0,           0,
-			           r2,          0,
-			                r2*sin_theta*sin_theta
+			-1,  0,    0,          0,
+			     1,    0,          0,
+			           r2,         0,
+			               r2*sin_theta*sin_theta
 			);
 	}
+
+	@property Metric4 getLocalMetricAtPoint() const
+	{
+		return getMetricAtPoint;
+	}
 	
-	Metric4[3] getDerivativesAt(Vectorf point)
+	@property Metric4[3] getDerivativesAtPoint() const
 	{
 		assert(0);
 	}
 	
-	Metric4[4] getChristoffelSymbolsAt(Vectorf point)
+	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
-		fpnum r2 = (*point);
-		fpnum r = sqrt(r2);
-		fpnum inv_r = 1./r;
-		fpnum inv_r2 = 1./r2;
-		
-		fpnum theta = acos(point.z/r);
-		fpnum sin_theta = sin(theta);
-		
 		static auto a = Metric4(
 			0, 0, 0, 0,
 			0,           0, 0,
@@ -117,24 +150,32 @@ class FlatRadial : Initiator
 			      0, 1./tan(theta),
 			              0 
 			);
-		
+
 		return [a, b, c, d];
 	}
-	
-	@property CoordinateChanger coordinate_system()
+
+	@property Matrix4f getTetradsElementsAtPoint() const
 	{
-		return new Radial();
+		auto tmp = Matrix4f(
+				   1,0,0,0,
+				   0,1,0,0,
+				   0,0,1,0,
+				   0,0,0,1);
+		return tmp;
+	}
+
+	@property Matrix4f getInverseTetradsElementsAtPoint() const
+	{
+		auto tmp = Matrix4f(
+				   1,0,0,0,
+				   0,1,0,0,
+				   0,0,1,0,
+				   0,0,0,1);
+		return tmp;
 	}
 	
-	bool hasFunction(string f)
+	@property CoordinateChanger coordinate_system() const
 	{
-		if(f=="christoffels")
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return cast(CoordinateChanger) cord;
 	}
 }

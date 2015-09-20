@@ -6,13 +6,15 @@ import config;
 
 interface Initiator
 {
-	Metric4 getMetricAt(Vectorf point);
-	Metric4[3] getDerivativesAt(Vectorf point);
-	Metric4[4] getChristoffelSymbolsAt(Vectorf point);
+	void prepareForRequest(Vectorf point);
+	@property Metric4 getMetricAtPoint() const;
+	@property Metric4 getLocalMetricAtPoint() const;
+	@property Metric4[3] getDerivativesAtPoint() const; //we assume that the metric doesn't depend on time
+	@property Metric4[4] getChristoffelSymbolsAtPoint() const;
+	@property Matrix4f getTetradsElementsAtPoint() const;
+	@property Matrix4f getInverseTetradsElementsAtPoint() const;
 
-	@property CoordinateChanger coordinate_system();
-
-	bool hasFunction(string f);
+	@property CoordinateChanger coordinate_system() const;
 }
 
 interface CoordinateChanger
@@ -36,11 +38,5 @@ interface DiscreteMetricContainer : MetricContainer
 
 interface AnaliticMetricContainer : MetricContainer
 {
-	@property Initiator getInitiator();
-
-	@property void setInitiator(Initiator init)
-	in
-	{
-		assert((init.hasFunction("derivatives") || init.hasFunction("christoffels")));
-	}
+	@property ref Initiator initiator();
 }

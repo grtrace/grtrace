@@ -20,13 +20,39 @@ fpnum returnTimeDerivativeFromSpacialDerivatives(Metric4 g, const fpnum[4] v)
 	return max(dt_1, dt_2);
 }
 
-Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, CoordinateChanger coords, Metric4 metric, Metric4[4] christoffels)
+Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Initiator init)
 {
+	init.prepareForRequest(point);
+
+	CoordinateChanger coords = init.coordinate_system;
+
+	//get metric at point
+	Metric4 metric = init.getMetricAtPoint;
+	Metric4 local_metric = init.getLocalMetricAtPoint;
+	
+	//get christoffels symbols at point
+	Metric4[4] christoffels = init.getChristoffelSymbolsAtPoint;
+	
+	Matrix4f tetrad = init.getTetradsElementsAtPoint;
+	Matrix4f inv_tetrad = init.getInverseTetradsElementsAtPoint;
+
 	fpnum[4] dr = coords.transformForwardSpacialFirstDerivatives(point, direction);
-	dr[0] = returnTimeDerivativeFromSpacialDerivatives(metric, dr);
+
+	dr[0] = returnTimeDerivativeFromSpacialDerivatives(local_metric, dr);
+
+	fpnum[4] local_dr = [dr[0], dr[1], dr[2], dr[3]];
+
+	for(byte i = 0; i<4; i++)
+	{
+		dr[i] = 0;
+		for(byte j = 0; j<4; j++)
+		{
+			dr[i] += tetrad[j*4+i]*local_dr[j];
+		}
+	}
 
 	fpnum[4] d2r = [0,0,0,0];
-	
+
 	//calculate the second derivatives
 	for(byte i = 0; i<4; i++)
 	{
@@ -37,15 +63,25 @@ Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Coor
 				d2r[i] += christoffels[i][a,b]*dr[a]*dr[b];
 			}
 		}
-		
+
 		d2r[i] = -d2r[i];
 	}
-	
-	Vectorf second = coords.transformBackSpacialSecondDerivatives(coords.transformForwardPosition(point), dr, d2r);
+
+	fpnum[4] local_d2r = [0,0,0,0];
+	//fpnum[4] local_d2r = [d2r[0], d2r[1], d2r[2], d2r[3]];
+
+	for(byte i = 0; i<4; i++)
+	{
+		for(byte j = 0; j<4; j++)
+		{
+			local_d2r[i] += inv_tetrad[j*4+i]*d2r[j];
+		}
+	}
+
+	Vectorf second = coords.transformBackSpacialSecondDerivatives(coords.transformForwardPosition(point), local_dr, local_d2r);
 
 	return second;
 }
-
 
 //TODO: NOT CHECKED
 Metric4[4] returnChristoffelsSymbols(const Metric4 g, const Metric4[3] dgs)

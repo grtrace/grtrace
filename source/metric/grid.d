@@ -31,7 +31,8 @@ class Grid : DiscreteMetricContainer
 						(cast(fpnum)y/cast(fpnum)probingParam)*(box.max.y-box.max.y)+box.min.y,
 						(cast(fpnum)z/cast(fpnum)probingParam)*(box.max.z-box.max.z)+box.min.z);
 
-					storage[x+y*probingParam+z*probingParam*probingParam] = init.getMetricAt(pos);
+					init.prepareForRequest(pos);
+					storage[x+y*probingParam+z*probingParam*probingParam] = init.getMetricAtPoint;
 
 				}
 	}
