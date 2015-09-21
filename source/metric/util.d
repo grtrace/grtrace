@@ -27,7 +27,7 @@ Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Init
 	CoordinateChanger coords = init.coordinate_system;
 
 	//get metric at point
-	Metric4 metric = init.getMetricAtPoint;
+	//Metric4 metric = init.getMetricAtPoint;
 	Metric4 local_metric = init.getLocalMetricAtPoint;
 	
 	//get christoffels symbols at point
