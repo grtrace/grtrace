@@ -54,10 +54,10 @@ class Kerr : Initiator
 	@property Metric4 getLocalMetricAtPoint() const
 	{
 		return Metric4(
-			-1,  0,    0,          0,
-			     1,    0,          0,
-			           r2,         0,
-			               r2*sin_theta*sin_theta
+			-1,  0,                           0,                 0,
+			     (r2+a2*cos2_theta)/(r2+a2), 0,                 0,
+			                                  r2+a2*cos2_theta, 0,
+			                                                     (r2+a2)*sin2_theta
 			);
 	}
 
