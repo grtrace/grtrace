@@ -1,14 +1,14 @@
 ﻿module metric.initiators.kerr;
 
 import metric.interfaces;
-import metric.coordinates.radial;
+import metric.coordinates.boyer;
 import math;
 import config;
 
 class Kerr : Initiator
 {
 	private Vectorf origin;
-	private Radial coord; //TODO:Should be Boyer Linguist not radial
+	private BoyerLinguist coord; //TODO:Werify
 	private fpnum m;
 	private fpnum j;
 
@@ -24,6 +24,7 @@ class Kerr : Initiator
 	private fpnum sin2_theta;
 	private fpnum sin3_theta;
 	private fpnum cos_theta;
+	private fpnum cos2_theta;
 	private fpnum delta;
 	private fpnum p;
 	private fpnum p2;
@@ -33,9 +34,9 @@ class Kerr : Initiator
 	this(fpnum mass, fpnum angular_momentum, Vectorf orig)
 	{
 		origin = orig;
-		coord = new Radial(origin);
 		j = angular_momentum;
 		a = angular_momentum/m;
+		coord = new BoyerLinguist(origin, a);
 		a2 = a*a;
 		m = mass;
 		Rs = 2*m;
