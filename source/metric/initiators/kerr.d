@@ -3,6 +3,7 @@
 import metric.interfaces;
 import metric.coordinates.boyer;
 import math;
+import std.math;
 import config;
 
 class Kerr : Initiator
@@ -26,6 +27,7 @@ class Kerr : Initiator
 	private fpnum cos_theta;
 	private fpnum cos2_theta;
 	private fpnum delta;
+	private fpnum sigma;
 	private fpnum p;
 	private fpnum p2;
 	private fpnum p4;
@@ -96,15 +98,28 @@ class Kerr : Initiator
 		return [time,radius,theta,phi];
 	}
 
+	//locally nonrotating frame
 	@property Matrix4f getTetradsElementsAtPoint() const //localy nonrotating frame
 	{
-		//TODO: Calculate that
-		assert(0, "NIY");
+		auto res = Matrix4f(
+			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
+			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
+			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
+			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
+
+		return res;
 	}
 
 	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		assert(0, "NIY");
+		//TODO:Optimize
+		auto res = Matrix4f(
+			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
+			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
+			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
+			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
+
+		return (res.inverse);
 	}
 	
 	@property CoordinateChanger coordinate_system() const
