@@ -46,7 +46,30 @@ class Kerr : Initiator
 
 	void prepareForRequest(Vectorf point)
 	{
-		assert(0, "NIY");
+		Vectorf tmp = point-origin;
+		fpnum A = (*tmp) - a2;
+		fpnum C = a2*tmp.z*tmp.z;
+		
+		r = sqrt((A + sqrt(A*A + 4*C))/2);
+		theta = acos(tmp.z/r);
+
+		r2 = r*r;
+
+		sin_theta = sin(theta);
+		sin2_theta = sin_theta*sin_theta;
+		sin3_theta = sin2_theta*sin_theta;
+
+		cos_theta = cos(theta);
+		cos2_theta = cos_theta*cos_theta;
+
+		delta = r2 - Rs*r + a2;
+
+		sigma = (r2+a2)*(r2+a2) - a2*delta*sin2_theta;
+
+		p = sqrt(p2);
+		p2 = r2 + a2*cos2_theta;
+		p4 = p2*p2;
+		p6 = p4*p2;
 	}
 
 	@property Metric4 getMetricAtPoint() const
