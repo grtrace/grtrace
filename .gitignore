@@ -168,3 +168,6 @@ perf.data.old
 *.zip
 *.tar
 *.tar.gz
+*.cubin
+.project
+.workspace
