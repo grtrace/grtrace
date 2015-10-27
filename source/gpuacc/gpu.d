@@ -200,23 +200,26 @@ public void InitGPU()
 		}
 		writeln("CUDA driver API initialized.");
 		
-		double[10] A, B, C;
-		A[] = [1,2,3,4,5,6,7,8,9,10.0];
-		B[] = [5,6,6,1,2,7,4,1,9,3.0];
-		auto gA = gpuMalloc!double(A.length);
-		auto gB = gpuMalloc!double(A.length);
-		auto gC = gpuMalloc!double(A.length);
-		gpuCopyToG(gA, A[]);
-		gpuCopyToG(gB, B[]);
-		GPUFunction vadd = GPUFunction("vectorAdd");
-		vadd.Call(GPUGridSz(1,1,1), GPUThreadSz(A.length,1,1), 32, &gA, &gB, &gC, cast(int)(A.length));
-		SynchronizeGPU();
-		gpuCopyToH!double(gC, C[]);
-		SynchronizeGPU();
-		writeln("GPU vector addition test:");
-		writeln(A);
-		writeln(B);
-		writeln(C);
+		static if(false) // Sample
+		{
+			double[10] A, B, C;
+			A[] = [1,2,3,4,5,6,7,8,9,10.0];
+			B[] = [5,6,6,1,2,7,4,1,9,3.0];
+			auto gA = gpuMalloc!double(A.length);
+			auto gB = gpuMalloc!double(A.length);
+			auto gC = gpuMalloc!double(A.length);
+			gpuCopyToG(gA, A[]);
+			gpuCopyToG(gB, B[]);
+			GPUFunction vadd = GPUFunction("vectorAdd");
+			vadd.Call(GPUGridSz(1,1,1), GPUThreadSz(A.length,1,1), 32, &gA, &gB, &gC, cast(int)(A.length));
+			SynchronizeGPU();
+			gpuCopyToH!double(gC, C[]);
+			SynchronizeGPU();
+			writeln("GPU vector addition test:");
+			writeln(A);
+			writeln(B);
+			writeln(C);
+		}
 	}
 	catch(Exception e)
 	{
