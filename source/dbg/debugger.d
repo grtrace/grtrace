@@ -48,6 +48,8 @@ private struct SavedRay
 {
 	Vectorf origin;
 	Vectorf destination;
+	Vectorf direction;
+	fpnum distance;
 	int seq;
 	string toString()
 	{
@@ -205,15 +207,15 @@ extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) no
 		Vectorf fwd = vectorf(0,0,-1),right = vectorf(1,0,0),up = vectorf(0,-1,0);
 		if(mods & GLFW_MOD_SHIFT)
 		{
-			spd *= 3.0;
+			spd /= 3.0;
 		}
 		if(mods & GLFW_MOD_CONTROL)
 		{
-			spd *= 9.0;
+			spd /= 9.0;
 		}
 		if(mods & GLFW_MOD_ALT)
 		{
-			spd /= 3.0;
+			spd /= 6.0;
 		}
 		fwd *= spd;
 		right *= spd;
@@ -242,6 +244,10 @@ extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) no
 		if(glfwGetKey(w,GLFW_KEY_E))
 		{
 			vel -= up*spd;
+		}
+		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F1))
+		{
+			vd.SaveCurRayToFile();
 		}
 	}
 	catch (Throwable o)
@@ -272,7 +278,7 @@ class VisualDebugger
 			{
 				dist = 100.0;
 			}
-			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,cast(int)(inst.rays.length%6));
+			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,ray.direction,dist,cast(int)(inst.rays.length%6));
 			writefln("Saved ray %s",inst.rays[$-1]);
 		}
 	}
@@ -291,10 +297,30 @@ class VisualDebugger
 	{
 		if(inst)
 		{
-			inst.rays ~= SavedRay(ray.origin,newp,cast(int)inst.rays.length);
+			Vectorf dif = newp - ray.origin;
+			inst.rays ~= SavedRay(ray.origin,newp,ray.direction,~dif,cast(int)inst.rays.length);
 		}
 	}
-
+	
+	void SaveCurRayToFile(string path="aray.txt")
+	{
+		File fp = File(path,"w");
+		fp.write("id x y z dx dy dz len\n");
+		auto app = appender!string();
+		foreach(const ref SavedRay s; rays)
+		{
+			formattedWrite(app, "%d\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\n",
+				s.seq,
+				s.origin.x, s.origin.y, s.origin.z,
+				s.direction.x, s.direction.y, s.direction.z,
+				s.distance
+				);
+		}
+		fp.write(app.data);
+		fp.flush();
+		fp.close();
+	}
+	
 	this()
 	{
 		inst = this;
@@ -453,7 +479,8 @@ class VisualDebugger
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
-			makeFrustum(60.0,aspect,1.0,2000.0);
+			//makeFrustum(60.0,aspect,1.0,2000.0);
+			makeFrustum(60.0,aspect,0.00003,2000.0);
 
 			Vectorf camAx;fpnum camAn;
 			rot.toAxisAngle(camAx,camAn);
