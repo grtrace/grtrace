@@ -6,13 +6,14 @@ import math.interpolation;
 import core.simd;
 import std.math;
 
-enum FilteringTypes : Color function(Image,fpnum,fpnum)
+final class FilteringTypes
 {
-	NearestNeightbour = (im,U,V)
+	public alias FuncType = Color function(Image,fpnum,fpnum);
+	static Color NearestNeightbour(Image im,fpnum U,fpnum V)
 	{
 		return im.PeekUV(U,V);
-	},
-	BilinearFiltering = (im,U,V)
+	}
+	static Color BilinearFiltering(Image im,fpnum U,fpnum V)
 	{
 		fpnum u,v;
 
@@ -60,12 +61,12 @@ class Material
 	void loadTextureFromFile(string name)
 	{
 		im = ReadImage(name);
-		f = FilteringTypes.NearestNeightbour;
+		f = &FilteringTypes.NearestNeightbour;
 		isDiffuse = true;
 		diffuseColor = Colors.White;
 	}
 
-	void setFiltering(FilteringTypes filter)
+	void setFiltering(FilteringTypes.FuncType filter)
 	{
 		f = filter;
 	}

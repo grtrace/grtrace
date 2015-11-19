@@ -88,7 +88,15 @@ public:
 	{
 		return cast(ubyte)(round(b*255.0));
 	}
-
+	
+	static Color fromUint(uint v)
+	{
+		ubyte R = (v & 0xFF0000) >> 16;
+		ubyte G = (v & 0x00FF00) >> 8;
+		ubyte B = (v & 0x0000FF);
+		return Color(cast(fpnum)R,cast(fpnum)G,cast(fpnum)B);
+	}
+	
 }
 
 enum Colors : Color

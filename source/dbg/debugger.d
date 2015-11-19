@@ -10,6 +10,7 @@ import scene.camera;
 import scene.objects.interfaces;
 import math;
 import image.color;
+import metric;
 
 // Source: http://www.cburch.com/cs/490/sched/feb8/
 private void drawSphereGen(int lats, int longs) {
@@ -41,17 +42,19 @@ private void drawSphereGen(int lats, int longs) {
 	}
 }
 
-private Color[7] rayColors = [Colors.Red, Colors.Green, Colors.Blue,
+public Color[7] rayColors = [Colors.Red, Colors.Green, Colors.Blue,
 							Colors.Magenta, Colors.Yellow, Colors.Cyan, Colors.White];
 
 private struct SavedRay
 {
 	Vectorf origin;
 	Vectorf destination;
-	int seq;
+	Vectorf direction;
+	fpnum distance;
+	Color* col;
 	string toString()
 	{
-		return "#%-2d %s -> %s".format(seq,origin,destination);
+		return "#%-2d %s -> %s".format(&col,origin,destination);
 	}
 }
 
@@ -243,10 +246,84 @@ extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) no
 		{
 			vel -= up*spd;
 		}
+		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F1))
+		{
+			vd.SaveCurRayToFile();
+		}
+		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F2))
+		{
+			StartTest();
+		}
 	}
 	catch (Throwable o)
 	{
 	}
+}
+
+void StartTest()
+{
+	printf("Are you sure to start a calculation? (y/n): ");
+	char ans;
+	scanf("%c", &ans);
+	if(ans=='y')
+	{
+		printf("Chose Calculation to Perform: \n");
+		printf("1) Schwartchild photon sphere stability\n");
+		
+		int inp;
+		scanf("%d", &inp);
+		
+		if(inp == 1)
+		{
+			//BH_mass Timestep numOfCircles
+			double mass, timestep;
+			int numOfCircles;
+			do
+			{
+				printf("Enter: mass timestep numOfCircles: ");
+				scanf("%lf %lf %d", &mass, &timestep, &numOfCircles);
+			}while(((mass<=0. || timestep<=0. || numOfCircles<0)?(printf("Try Again\n"),1):0)); //RIP syntax
+			
+			PhotonSphereStability(mass, timestep, numOfCircles);
+		}
+	}
+}
+
+void PhotonSphereStability(fpnum mass, fpnum timestep, int numOfCircles)
+{
+	WorldSpaceWrapper s = cast(WorldSpaceWrapper) VisualDebugger.inst.space;
+	if(s is null)
+	{
+		printf("Change Space to Schwartschild!\n");
+		return;
+	}
+	
+	Analitic k = cast(Analitic) cast(AnaliticMetricContainer) s.smetric;
+	if(k is null)
+	{
+		printf("Change Space to Schwartschild\n");
+		return;
+	}
+	
+	Schwarzschild v = cast(Schwarzschild) k.initiator();
+	if(v is null)
+	{
+		printf("Change Space to Schwartschild\n");
+		return;
+	}
+	
+	v.origin = Vectorf(0,0,0);
+	v.cord = new Radial(Vectorf(0,0,0));
+	v.schwarzschild_radius = 2*mass;
+	v.mass = mass;
+	
+	k.paramStep() = timestep;
+	k.maxNumberOfSteps() = cast(int)(6*PI*mass*numOfCircles/timestep);
+	
+	VisualDebugger.inst.rays = [];
+	
+	Line ray = Line(vectorf(0, 3*mass, 0), vectorf(1,0,1).normalized);
+	VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,0,0,0);
 }
 
 class VisualDebugger
@@ -264,7 +341,7 @@ class VisualDebugger
 	Vectorf pos;
 	Quaternion rot;
 
-	static void SaveRay(Line ray, fpnum dist)
+	static void SaveRay(Line ray, fpnum dist, Color* col = null)
 	{
 		if(inst)
 		{
@@ -272,7 +349,8 @@ class VisualDebugger
 			{
 				dist = 100.0;
 			}
-			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,cast(int)(inst.rays.length%6));
+			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
+			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,ray.direction,dist,col);
 			writefln("Saved ray %s",inst.rays[$-1]);
 		}
 	}
@@ -282,19 +360,39 @@ class VisualDebugger
 		if(inst)
 		{
 			inst.rays[$-1].destination = pos;
-			inst.rays[$-1].seq = 6;
+			inst.rays[$-1].col = &rayColors[6];
 			writefln("Lit ray");
 		}
 	}
 
-	static void SaveRay(Line ray, Vectorf newp)
+	static void SaveRay(Line ray, Vectorf newp, Color* col = null)
 	{
 		if(inst)
 		{
-			inst.rays ~= SavedRay(ray.origin,newp,cast(int)inst.rays.length);
+			Vectorf dif = newp - ray.origin;
+			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
+			inst.rays ~= SavedRay(ray.origin,newp,ray.direction,~dif,col);
 		}
 	}
-
+	
+	void SaveCurRayToFile(string path="aray.txt")
+	{
+		File fp = File(path,"w");
+		fp.write("x y z dx dy dz len\n");
+		auto app = appender!string();
+		foreach(const ref SavedRay s; rays)
+		{
+			formattedWrite(app, "%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\n",
+				s.origin.x, s.origin.y, s.origin.z,
+				s.direction.x, s.direction.y, s.direction.z,
+				s.distance
+				);
+		}
+		fp.write(app.data);
+		fp.flush();
+		fp.close();
+	}
+	
 	this()
 	{
 		inst = this;
@@ -453,7 +551,8 @@ class VisualDebugger
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
-			makeFrustum(60.0,aspect,0.00001,2000.0);
+			//makeFrustum(60.0,aspect,1.0,2000.0);
+			makeFrustum(60.0,aspect,0.00003,2000.0);
 
 			Vectorf camAx;fpnum camAn;
 			rot.toAxisAngle(camAx,camAn);
@@ -501,8 +600,7 @@ class VisualDebugger
 			glBegin(GL_LINES);
 			foreach(SavedRay ray;rays)
 			{
-				Color c = rayColors[ray.seq%cast(int)(rayColors.length)];
-				glColor3f(c.r,c.g,c.b);
+				glColor3f(ray.col.r,ray.col.g,ray.col.b);
 				glVertex3d(ray.origin.x, ray.origin.y, ray.origin.z);
 				glVertex3d(ray.destination.x, ray.destination.y, ray.destination.z);
 			}

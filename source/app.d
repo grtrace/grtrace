@@ -10,7 +10,7 @@ import math.vector;
 import metric;
 import std.concurrency;
 import core.thread : Thread;
-import core.time : dur, MonoTime,Duration;
+import core.time;
 import math;
 import gpuacc.gpu;
 
@@ -101,4 +101,5 @@ void main(string[] args)
 		VisualDebugger vdbg = new VisualDebugger();
 		vdbg.Run();
 	}
+	FinalizeGPU();
 }

@@ -412,8 +412,8 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 		newMat.setFiltering(
 			filtering.toLower.predSwitch!("a==b")
 			(
-				'n', FilteringTypes.NearestNeightbour,
-				'b', FilteringTypes.BilinearFiltering,
+				'n', &FilteringTypes.NearestNeightbour,
+				'b', &FilteringTypes.BilinearFiltering,
 				{
 					throw new Exception("Filtering mode "~cast(char)filtering~" not supported");
 				}()

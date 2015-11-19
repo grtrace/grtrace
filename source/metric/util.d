@@ -3,7 +3,7 @@
 import math;
 import metric.interfaces;
 import std.math;
-import std.algorithm.comparison;
+import std.algorithm;
 import config;
 
 fpnum returnTimeDerivativeFromSpacialDerivatives(Metric4 g, const fpnum[4] v)

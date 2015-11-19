@@ -8,10 +8,10 @@ import std.math;
 
 class Schwarzschild : Initiator
 {
-	private Vectorf origin;
-	private fpnum schwarzschild_radius;
-	private fpnum mass;
-	private Radial cord;
+	public Vectorf origin;
+	public fpnum schwarzschild_radius;
+	public fpnum mass;
+	public Radial cord;
 
 	//Cache
 	private fpnum r2;
