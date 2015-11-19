@@ -85,7 +85,7 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 					//writeln(ray);
 					for(double h = -0.5; h<=0.5; h+=0.01)
 					{
-						ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,h,0).normalized);
+						ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,h,1).normalized);
 						writeln(h);
 						VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
 					}
@@ -205,15 +205,15 @@ extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) no
 		Vectorf fwd = vectorf(0,0,-1),right = vectorf(1,0,0),up = vectorf(0,-1,0);
 		if(mods & GLFW_MOD_SHIFT)
 		{
-			spd *= 3.0;
+			spd /= 3.0;
 		}
 		if(mods & GLFW_MOD_CONTROL)
 		{
-			spd *= 9.0;
+			spd /= 9.0;
 		}
 		if(mods & GLFW_MOD_ALT)
 		{
-			spd /= 3.0;
+			spd /= 6.0;
 		}
 		fwd *= spd;
 		right *= spd;
@@ -453,7 +453,7 @@ class VisualDebugger
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
-			makeFrustum(60.0,aspect,1.0,2000.0);
+			makeFrustum(60.0,aspect,0.00001,2000.0);
 
 			Vectorf camAx;fpnum camAn;
 			rot.toAxisAngle(camAx,camAn);

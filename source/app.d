@@ -69,7 +69,7 @@ void main(string[] args)
 	writeln("POS-RADIAL:",B,"DIR-RADIAL",C,"DIR-CARTESIAN",D);*/
 
 	//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
-	string arg0 = args[0].idup;
+	string arg0 = args[0].idup;//asds
 	InitGPU();
 	InitScripting(arg0);
 	bool doHelp;

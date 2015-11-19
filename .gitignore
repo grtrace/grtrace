@@ -41,6 +41,9 @@
 *.resources
 test-results/
 
+#Eclipse
+.settings/
+.project
 
 ### Windows ###
 # Windows image file caches
