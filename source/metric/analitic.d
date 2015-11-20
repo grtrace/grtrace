@@ -93,11 +93,11 @@ class Analitic : AnaliticMetricContainer
 		if(dh && mdist<=travel_dist)
 		{
 			*didHit=true;
-			VisualDebugger.SaveRay(ray, *hitpoint, &dbg.debugger.rayColors[6]);
+			VisualDebugger.DebugRayB(ray, *hitpoint, &dbg.debugger.rayColors[6]);
 			return mdist;
 		}
 
-		VisualDebugger.SaveRay(ray, to, &dbg.debugger.rayColors[6]);
+		VisualDebugger.DebugRayB(ray, to, &dbg.debugger.rayColors[6]);
 		return travel_dist;
 	}
 
@@ -166,7 +166,7 @@ class Analitic : AnaliticMetricContainer
 	{
 		fpnum totalDist = 0;
 		
-		for(size_t i = 0; i<max_number_of_steps; i++)
+		for(size_t i = 0; i<max_number_of_steps && isFinite(ray.origin.x); i++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
 			Line newRay;

@@ -213,7 +213,7 @@ class EuclideanSpace : WorldSpace
 				}
 			}
 		}
-		VisualDebugger.SaveRay(ray, mdist);
+		VisualDebugger.DebugRayA(ray, mdist, null);
 		if(dh){*didHit=true;}
 		static if(doO)
 		{

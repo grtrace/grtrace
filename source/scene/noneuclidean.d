@@ -103,7 +103,7 @@ class PlaneDeflectSpace : WorldSpace
 				//check if we had hit the event horizont
 				if(R<=2*Mass)
 				{
-					VisualDebugger.SaveRay(ray, newPos);
+					VisualDebugger.DebugRayB(ray, newPos, null);
 					*didHit=false;
 					return float.infinity;
 				}
@@ -146,12 +146,12 @@ class PlaneDeflectSpace : WorldSpace
 				}
 
 				//cast deflected ray
-				VisualDebugger.SaveRay(ray, mdist);
-				VisualDebugger.SaveRay(Line(ray.origin+ray.direction*mdist, (newPos-ray.origin-ray.direction*mdist).normalized, true), newPos);
+				VisualDebugger.DebugRayA(ray, mdist, null);
+				VisualDebugger.DebugRayB(Line(ray.origin+ray.direction*mdist, (newPos-ray.origin-ray.direction*mdist).normalized, true), newPos, null);
 				return Raytrace!(doP,doN,doO,false)(Line(newPos,newDir,true),didHit,hitpoint,hitnormal,hit,cnt+1);
 			}
 		}
-		VisualDebugger.SaveRay(ray, mdist);
+		VisualDebugger.DebugRayA(ray, mdist, null);
 		if(dh){*didHit=true;}
 		static if(doO)
 		{
