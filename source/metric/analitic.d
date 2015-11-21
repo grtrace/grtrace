@@ -166,7 +166,7 @@ class Analitic : AnaliticMetricContainer
 	{
 		fpnum totalDist = 0;
 		
-		for(size_t i = 0; i<max_number_of_steps && isFinite(ray.origin.x); i++) //TODO: ray hit not correct
+		for(size_t i = 0; i<max_number_of_steps; i++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
 			Line newRay;

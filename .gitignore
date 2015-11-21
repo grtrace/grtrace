@@ -45,6 +45,9 @@ test-results/
 .settings/
 .project
 
+#GrTrace
+*.res
+
 ### Windows ###
 # Windows image file caches
 Thumbs.db
