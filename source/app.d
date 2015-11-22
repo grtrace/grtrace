@@ -25,6 +25,7 @@ Options:
 --debug|-d    - Launches the visual debugger
 --noimage|-n  - Doesn't run the main rendering loop
 --nogpu|-g    - Force-disable GPU acceleration
+--addcalc|-c  - Do only additional calculations
 `;
 
 void RenderSpawner(Tid owner)
@@ -80,7 +81,8 @@ void main(string[] args)
 		"threads|t", &cfgThreads,
 		"debug|d", &cfgDebug,
 		"noimage|n", &cfgNoImage,
-		"nogpu|g", &cfgGpuAcc
+		"nogpu|g", &cfgGpuAcc,
+		"addcalc|c", &cfgAdditionalCalc
 		);
 	cfgGpuAcc = !cfgGpuAcc;
 	if(doHelp)
@@ -95,11 +97,15 @@ void main(string[] args)
 	Thread.sleep(dur!"msecs"(50));
 	Duration duration = (MonoTime.currTime - startTime);
 	writefln("Total rendering time: %s",duration);
-	if(cfgDebug)
+	if(cfgDebug || cfgAdditionalCalc)
 	{
 		import dbg.debugger;
 		VisualDebugger vdbg = new VisualDebugger();
 		vdbg.Run();
+		if(cfgAdditionalCalc && (!cfgDebug))
+		{
+			StartTest();
+		}
 	}
 	FinalizeGPU();
 }

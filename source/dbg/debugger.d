@@ -478,15 +478,18 @@ class VisualDebugger
 		DebugRayA = &SaveRay;
 		DebugRayB = &SaveRay;
 		inst = this;
-		DerelictGLFW3.load();
-		glfwInit();
-		rwin = makeWin("grtrace raytrace");
-		dwin = makeWin("grtrace showrays",rwin);
-		glfwSetMouseButtonCallback(rwin, &coreMouseButton);
-		glfwSetMouseButtonCallback(dwin, &coreMouseCamera);
-		glfwSetCursorPosCallback(rwin, &coreRayMove);
-		glfwSetCursorPosCallback(dwin, &coreCameraMove);
-		glfwSetKeyCallback(dwin, &coreKey);
+		if(cfgDebug)
+		{
+			DerelictGLFW3.load();
+			glfwInit();
+			rwin = makeWin("grtrace raytrace");
+			dwin = makeWin("grtrace showrays",rwin);
+			glfwSetMouseButtonCallback(rwin, &coreMouseButton);
+			glfwSetMouseButtonCallback(dwin, &coreMouseCamera);
+			glfwSetCursorPosCallback(rwin, &coreRayMove);
+			glfwSetCursorPosCallback(dwin, &coreCameraMove);
+			glfwSetKeyCallback(dwin, &coreKey);
+		}
 	}
 
 	GLFWwindow* makeWin(string title, GLFWwindow* share=null)
@@ -605,6 +608,7 @@ class VisualDebugger
 
 	void Run()
 	{
+		if(!cfgDebug)return;
 		glfwMakeContextCurrent(rwin);
 		space = cast(WorldSpace)(cfgSpace);
 		camera = cast(ICamera)(cfgSpace.camera);

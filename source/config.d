@@ -18,6 +18,7 @@ __gshared
 {
 	bool cfgVerbose = false;
 	bool cfgDebug = false;
+	bool cfgAdditionalCalc = false;
 	bool cfgNoImage = false;
 	bool cfgGpuAcc = false;
 	string cfgScript = "raytrace.tcl";
