@@ -35,13 +35,16 @@ class Kerr : Initiator
 
 	this(fpnum mass, fpnum angular_momentum, Vectorf orig)
 	{
-		origin = orig;
-		j = angular_momentum;
-		a = angular_momentum/m;
-		coord = new BoyerLinguist(origin, a);
-		a2 = a*a;
 		m = mass;
 		Rs = 2*m;
+		origin = orig;
+		j = angular_momentum;
+		if(mass == 0) 
+			a = 1;
+		else
+			a = angular_momentum/m;
+		a2 = a*a;
+		coord = new BoyerLinguist(origin, a);
 	}
 
 	void prepareForRequest(Vectorf point)
@@ -66,8 +69,8 @@ class Kerr : Initiator
 
 		sigma = (r2+a2)*(r2+a2) - a2*delta*sin2_theta;
 
-		p = sqrt(p2);
 		p2 = r2 + a2*cos2_theta;
+		p = sqrt(p2);
 		p4 = p2*p2;
 		p6 = p4*p2;
 	}
@@ -124,25 +127,37 @@ class Kerr : Initiator
 	//locally nonrotating frame
 	@property Matrix4f getTetradsElementsAtPoint() const //localy nonrotating frame
 	{
-		auto res = Matrix4f(
+		/*auto res = Matrix4f(
 			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
 			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
 			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
 			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
 
-		return res;
+		return res;*/
+		auto tmp = Matrix4f(
+			1,0,0,0,
+			0,1,0,0,
+			0,0,1,0,
+			0,0,0,1);
+		return tmp;
 	}
 
 	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		//TODO:Optimize
+		/*//TODO:Optimize
 		auto res = Matrix4f(
 			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
 			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
 			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
 			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
 
-		return (res.inverse);
+		return (res.inverse);*/
+			auto tmp = Matrix4f(
+				1,0,0,0,
+				0,1,0,0,
+				0,0,1,0,
+				0,0,0,1);
+		return tmp;
 	}
 	
 	@property CoordinateChanger coordinate_system() const

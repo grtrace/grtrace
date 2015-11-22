@@ -137,10 +137,10 @@ class KexMetric : WorldSpace
 			writeln(da);
 			newRay.direction = Matrix4f.RotateV(bhrp.normal,(-da),ray.direction);
 			newRay.ray = true;
-			VisualDebugger.SaveRay(ray, newRay.origin);
+			VisualDebugger.DebugRayB(ray, newRay.origin, null);
 			return Raytrace!(doP,doN,doO,doD)(newRay,didHit,hitpoint, hitnormal,hit,cnt+1);
 		}
-		VisualDebugger.SaveRay(ray, mdist);
+		VisualDebugger.DebugRayA(ray, mdist, null);
 		if(dh){*didHit=true;}
 		static if(doO)
 		{

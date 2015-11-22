@@ -34,7 +34,7 @@ class Analitic : AnaliticMetricContainer
 	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
 	{
 		//ray.data = 1;
-		return Raytrace!(true,true,true)(ray, didHit, hitpoint, hitnormal, hit, cnt);
+		return RaytraceI!(true,true,true)(ray, didHit, hitpoint, hitnormal, hit, cnt);
 	}
 
 	private fpnum TraceBetweenPoints(bool doP, bool doN, bool doO)(Vectorf from, Vectorf to, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null)
@@ -93,15 +93,16 @@ class Analitic : AnaliticMetricContainer
 		if(dh && mdist<=travel_dist)
 		{
 			*didHit=true;
-			VisualDebugger.SaveRay(ray, *hitpoint);
+			VisualDebugger.DebugRayB(ray, *hitpoint, &dbg.debugger.rayColors[6]);
 			return mdist;
 		}
 
-		VisualDebugger.SaveRay(ray, to);
+		VisualDebugger.DebugRayB(ray, to, &dbg.debugger.rayColors[6]);
 		return travel_dist;
 	}
 
-	private fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
+	//Recursive version
+	private fpnum RaytraceR(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
 	{
 		if(cnt == max_number_of_steps) return fpnum.infinity;
 
@@ -157,6 +158,51 @@ class Analitic : AnaliticMetricContainer
 
 		fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin, newRay.origin, didHit, hitpoint, hitnormal, hit);
 		if(*didHit) return m_dist;
-		return Raytrace!(doP, doN, doO)(newRay, didHit, hitpoint, hitnormal, hit, cnt+1) + m_dist; 
+		return RaytraceR!(doP, doN, doO)(newRay, didHit, hitpoint, hitnormal, hit, cnt+1) + m_dist; 
 	}
-}
+	
+	//Iterative version
+	private fpnum RaytraceI(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
+	{
+		fpnum totalDist = 0;
+		
+		for(size_t i = 0; i<max_number_of_steps; i++) //TODO: ray hit not correct
+		{
+			//calculate deflected ray
+			Line newRay;
+			newRay.ray = true;
+	
+			auto x1 = ray.origin;
+			auto v1 = ray.direction;
+			auto a1 = returnSecondDerivativeOfGeodescis(x1, v1, init);
+	
+			auto x2 = ray.origin + (v1*param_step*0.5);
+			auto v2 = ray.direction + (a1*param_step*0.5);
+			auto a2 = returnSecondDerivativeOfGeodescis(x2, v2, init);
+	
+			auto x3 = ray.origin + (v2*param_step*0.5);
+			auto v3 = ray.direction + (a2*param_step*0.5);
+			auto a3 = returnSecondDerivativeOfGeodescis(x3, v3, init);
+	
+			auto x4 = ray.origin + (v3*param_step);
+			auto v4 = ray.direction + (a3*param_step);
+			auto a4 = returnSecondDerivativeOfGeodescis(x4, v4, init);
+	
+			newRay.origin = ray.origin + ((v1 + (v2*2) + (v3*2) + v4)*(param_step/6.));
+			newRay.direction = ray.direction + ((a1 + (a2*2) + (a3*2) + a4)*(param_step/6.));
+	
+			newRay.direction = newRay.direction.normalized;
+			newRay.direction.w = 0; //be sure it's zero
+	
+			fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin, newRay.origin, didHit, hitpoint, hitnormal, hit);
+			
+			totalDist+=m_dist;
+			
+			if(*didHit) return totalDist;
+			
+			ray = newRay;
+		}
+		
+		return fpnum.infinity;
+	}
+	}
