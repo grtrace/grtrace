@@ -608,10 +608,10 @@ class VisualDebugger
 
 	void Run()
 	{
-		if(!cfgDebug)return;
-		glfwMakeContextCurrent(rwin);
 		space = cast(WorldSpace)(cfgSpace);
 		camera = cast(ICamera)(cfgSpace.camera);
+		if(!cfgDebug)return;
+		glfwMakeContextCurrent(rwin);
 		ResetCamera();
 		Vectorf camo = camera.origin;
 		LoadTex();
