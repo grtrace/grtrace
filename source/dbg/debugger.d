@@ -291,7 +291,7 @@ void StartTest()
 						mass<=0. || min_timestep<=0. || 
 						max_timestep<=0. || min_timestep>=max_timestep || 
 						step_timestep<=0. || numOfCircles<0)?(writefln("Try Again"),1):0)); //RIP syntax
-			writef(" %f %f %f %f %d", mass, min_timestep, max_timestep, step_timestep, numOfCircles);
+			//writef(" %f %f %f %f %d", mass, min_timestep, max_timestep, step_timestep, numOfCircles);
 			writefln("Enter file path to save results at:");
 
 			do

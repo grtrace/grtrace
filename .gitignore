@@ -7,6 +7,10 @@
 *.o
 *.obj
 
+##Archives
+*.gz
+*.xz
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -30,6 +34,11 @@
 *.out
 *.app
 
+# Eclipse
+.settings/
+
+#GrTrace
+*.res
 
 ### MonoDevelop ###
 #User Specific
