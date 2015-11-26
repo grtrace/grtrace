@@ -38,5 +38,6 @@ interface DiscreteMetricContainer : MetricContainer
 
 interface AnaliticMetricContainer : MetricContainer
 {
-	@property ref Initiator initiator();
+	@property Initiator initiator();
+	@property void initiator(Initiator inx);
 }

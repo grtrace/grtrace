@@ -12,9 +12,9 @@ import dbg.debugger;
 
 class Analitic : AnaliticMetricContainer
 {
-	private fpnum param_step;
-	private size_t max_number_of_steps;
-	private Initiator init = null;
+	private __gshared fpnum param_step;
+	private __gshared size_t max_number_of_steps;
+	private shared Initiator init = null;
 
 	@property ref fpnum paramStep()
 	{
@@ -26,9 +26,14 @@ class Analitic : AnaliticMetricContainer
 		return max_number_of_steps;
 	}
 
-	@property ref Initiator initiator()
+	@property Initiator initiator()
 	{
-		return init;
+		return cast(Initiator)init;
+	}
+	
+	@property void initiator(Initiator inx)
+	{
+		init = cast(shared Initiator)inx;
 	}
 
 	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
@@ -56,7 +61,7 @@ class Analitic : AnaliticMetricContainer
 		Vectorf normal,mnormal;
 		Renderable H = null;
 		bool dh=false;
-		foreach(shared(Renderable) o; WorldSpace.objects)
+		foreach(shared Renderable o; WorldSpace.objects)
 		{
 			Renderable O = cast(Renderable)(o);
 			if(O.getClosestIntersection(ray,dist,normal))
@@ -164,6 +169,7 @@ class Analitic : AnaliticMetricContainer
 	//Iterative version
 	private fpnum RaytraceI(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
 	{
+		auto init = cast(Initiator)this.init;
 		fpnum totalDist = 0;
 		
 		for(size_t i = 0; i<max_number_of_steps; i++) //TODO: ray hit not correct
