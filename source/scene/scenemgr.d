@@ -192,7 +192,7 @@ class EuclideanSpace : WorldSpace
 		Vectorf normal,mnormal;
 		Renderable H = null;
 		bool dh=false;
-		foreach(shared(Renderable) o; WorldSpace.objects)
+		foreach(shared Renderable o; WorldSpace.objects)
 		{
 			Renderable O = cast(Renderable)(o);
 			import std.math;
@@ -262,7 +262,7 @@ class EuclideanSpace : WorldSpace
 				{
 					Color diffuseColor = closest.material.diffuse_color;
 					
-					foreach(shared(Light) l;lights)
+					foreach(shared Light l;lights)
 					{
 						Line hitRay = LinePoints(rayhit,l.getPosition());
 						hitRay.ray = true;
