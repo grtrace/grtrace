@@ -83,18 +83,26 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 				{
 					//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
 					VisualDebugger.inst.rays = [];
+					VisualDebugger.DebugRayA = &VisualDebugger.SaveRay;
+					VisualDebugger.DebugRayB = &VisualDebugger.SaveRay;
+					VisualDebugger.inst.DebugRayA = &VisualDebugger.SaveRay;
+					VisualDebugger.inst.DebugRayB = &VisualDebugger.SaveRay;
 					//TODO:remove
 					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,0.01,0).normalized);
 					//writeln(ray);
-					for(double h = -0.5; h<=0.5; h+=0.01)
+					//double h = 0;
+					/*for(double h = -1; h<=1; h+=0.1)
 					{
-						ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,h,1).normalized);
-						writeln(h);
+						ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(h,0,1).normalized);
+						//writeln(h);
 						VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
-					}
+					}*/
+					
+					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(3,h,1).normalized);
+					VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
 
 					VisualDebugger vd = VisualDebugger.inst;
-					for(int i=1;i<vd.rays.length;i++)
+					/*for(int i=1;i<vd.rays.length;i++)
 					{
 						SavedRay r0,r1;
 						r0 = vd.rays[i-1];
@@ -102,16 +110,17 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 						Vectorf d1,d2;
 						d1 = (r0.destination - r0.origin).normalized;
 						d2 = (r1.destination - r1.origin).normalized;
+						//writeln(r0);
 						auto dot = d1*d2;
-						/*if((-1<=dot)&&(dot<=1)) //TODO:COMMENTED
+						if((-1<=dot)&&(dot<=1)) //TODO:COMMENTED
 						{
 							writefln("Angle #%d->#%d: %s",i,i+1,acos(dot)*180.0/PI);
 						}
 						else
 						{
 							writefln("Xxxxx #%d->#%d: %s",i,i+1,dot);
-						}*/
-					}
+						}
+					}*/
 				}
 			}
 			else if(type==GLFW_RELEASE)
@@ -395,8 +404,17 @@ class VisualDebugger
 	Vectorf pos;
 	Quaternion rot;
 
-	static public void function(Line, fpnum, Color*) DebugRayA;
-	static public void function(Line, Vectorf, Color*) DebugRayB;
+	static public void function(Line, fpnum, Color*) DebugRayA = &ign;
+	static public void function(Line, Vectorf, Color*) DebugRayB = &ign;
+
+	static public void ign(Line, fpnum, Color*)
+	{ 
+		return;
+	}
+	static public void ign(Line, Vectorf, Color*)
+	{ 
+		return;
+	}
 
 	static void FoundLight(Vectorf pos)
 	{
@@ -475,11 +493,13 @@ class VisualDebugger
 	
 	this()
 	{
-		DebugRayA = &SaveRay;
-		DebugRayB = &SaveRay;
 		inst = this;
 		if(cfgDebug)
-		{
+			{
+			DebugRayA = &SaveRay;
+			DebugRayB = &SaveRay;
+			VisualDebugger.DebugRayA = &SaveRay;
+			VisualDebugger.DebugRayB = &SaveRay;
 			DerelictGLFW3.load();
 			glfwInit();
 			rwin = makeWin("grtrace raytrace");
@@ -489,6 +509,13 @@ class VisualDebugger
 			glfwSetCursorPosCallback(rwin, &coreRayMove);
 			glfwSetCursorPosCallback(dwin, &coreCameraMove);
 			glfwSetKeyCallback(dwin, &coreKey);
+		}
+		else
+		{
+			DebugRayA = &ign;
+			DebugRayB = &ign;
+			VisualDebugger.DebugRayA = &ign;
+			VisualDebugger.DebugRayB = &ign;
 		}
 	}
 
