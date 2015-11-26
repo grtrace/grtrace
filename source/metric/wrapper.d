@@ -99,6 +99,8 @@ class WorldSpaceWrapper : WorldSpace
 				tmpc = Colors.Magenta;
 			}
 		}
+		if(hit)tmpc=Colors.Green;
+		else tmpc=Colors.Red;
 		return tmpc;
 	}
 }
