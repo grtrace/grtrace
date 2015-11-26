@@ -699,9 +699,9 @@ class VisualDebugger
 						glColor3f(1.0f,1.0f,0.0f);
 						glVertex3d(tr.plane.origin.x,tr.plane.origin.y,tr.plane.origin.z);
 						glColor3f(1.0f,0.0f,1.0f);
-						glVertex3d(tr.b.x,tr.b.y,tr.b.z);
+						glVertex3d(tr.b.x+tr.plane.origin.x,tr.b.y+tr.plane.origin.y,tr.b.z+tr.plane.origin.z);
 						glColor3f(0.0f,1.0f,1.0f);
-						glVertex3d(tr.c.x,tr.c.y,tr.c.z);
+						glVertex3d(tr.c.x+tr.plane.origin.x,tr.c.y+tr.plane.origin.y,tr.c.z+tr.plane.origin.z);
 						glEnd();
 						break;
 					default:
