@@ -136,7 +136,7 @@ struct Triangle
 Triangle TrianglePoints(Vectorf A, Vectorf B, Vectorf C)
 {
 	return Triangle(
-		Plane(A, (B%C).normalized),
+		Plane(A, ((B-A)%(C-A)).normalized),
 		B-A,
 		C-A);
 }
