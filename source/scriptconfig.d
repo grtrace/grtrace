@@ -413,7 +413,7 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 		
 		if(std.math.isFinite(lambda))
 		{
-			newMat.emission_wave_lenght = lambda;
+			newMat.emission_wave_length = lambda;
 			newMat.emission_color = GetSpectrumColor(lambda);
 		}
 		else
