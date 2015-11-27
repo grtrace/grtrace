@@ -37,6 +37,7 @@ class Material
 	private bool isDiffuse = false;
 
 	private Color emissionColor = Colors.Black;
+	private fpnum emissionWavelenght = fpnum.nan;
 	private Color diffuseColor = Colors.Black;
 
 	this()
@@ -56,6 +57,11 @@ class Material
 	@property ref Color emission_color()
 	{
 		return emissionColor;
+	}
+
+	@property ref fpnum emission_wave_lenght()
+	{
+		return emissionWavelenght;
 	}
 
 	void loadTextureFromFile(string name)

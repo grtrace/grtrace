@@ -8,6 +8,7 @@ import scene.materials.material;
 import image.memory;
 import image.imgio;
 import image.color;
+import image.spectrum;
 import math.vector;
 import scene.scenemgr, scene.camera;
 import std.uni, std.range, std.algorithm;
@@ -395,11 +396,13 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 		string emissionString;
 		dchar filtering;
 		bool isDiffuse;
+		fpnum lambda;
 
 		getopt(args, 
 			std.getopt.config.passThrough, std.getopt.config.caseSensitive,
 			"texture_name|t", &textureName,
 			"texture_filtering|f", &filtering,
+			"lambda|l", &lambda,
 			"is_diffuse|D", &isDiffuse,
 			"diffuse_color|d", &diffuseString,
 			"emision_color|e", &emissionString);
@@ -407,7 +410,16 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 		newMat.is_diffuse = isDiffuse;
 
 		newMat.diffuse_color = colorString(diffuseString);
-		newMat.emission_color = colorString(emissionString);
+		
+		if(std.math.isFinite(lambda))
+		{
+			newMat.emission_wave_lenght = lambda;
+			newMat.emission_color = GetSpectrumColor(lambda);
+		}
+		else
+		{
+			newMat.emission_color = colorString(emissionString);
+		}
 
 		newMat.setFiltering(
 			filtering.toLower.predSwitch!("a==b")
