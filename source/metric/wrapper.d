@@ -8,6 +8,7 @@ import config;
 import image;
 import std.algorithm;
 import dbg.debugger;
+import std.math;
 
 class WorldSpaceWrapper : WorldSpace
 {
@@ -55,13 +56,12 @@ class WorldSpaceWrapper : WorldSpace
 			{
 				tmpc = closest.material.emission_color;
 				
-				Color textureColor = Colors.White;
-				
 				if(closest.material.hasTexture())
 				{
 					fpnum U,V;
 					closest.getUVMapping(rayhit, U, V);
-					textureColor = closest.material.peekUV(U,V);
+					Color textureColor = closest.material.peekUV(U,V);
+					tmpc *= textureColor;
 				}
 
 				//TODO:lightning not supported yet
@@ -92,7 +92,25 @@ class WorldSpaceWrapper : WorldSpace
 						}
 					}
 				}*/
-				tmpc *= textureColor;
+				auto init = cast(AnaliticMetricContainer)metric;
+				if(init is null) return tmpc;
+				
+				if(isFinite(closest.material.emission_wave_lenght))
+				{
+					fpnum est_lamda_src = closest.material.emission_wave_lenght;
+
+					init.initiator.prepareForRequest(rayhit);
+					fpnum src_met = init.initiator.getMetricAtPoint()[0,0];
+
+					init.initiator.prepareForRequest(ray.origin);
+					fpnum rec_met = init.initiator.getMetricAtPoint()[0,0];
+
+					fpnum red_shift_plus_one = sqrt(rec_met/src_met);
+
+					fpnum l_obs = est_lamda_src*red_shift_plus_one;
+
+					tmpc = GetSpectrumColor(l_obs);
+				}
 			}
 			else
 			{
