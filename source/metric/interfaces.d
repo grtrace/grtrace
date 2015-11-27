@@ -4,8 +4,11 @@ import math;
 import scene;
 import config;
 
+import metric.coordinates;
+
 interface Initiator
 {
+	@property Initiator clone() const;
 	void prepareForRequest(Vectorf point);
 	@property Metric4 getMetricAtPoint() const;
 	@property Metric4 getLocalMetricAtPoint() const;
@@ -13,7 +16,7 @@ interface Initiator
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const;
 	@property Matrix4f getTetradsElementsAtPoint() const;
 	@property Matrix4f getInverseTetradsElementsAtPoint() const;
-
+	
 	@property CoordinateChanger coordinate_system() const;
 }
 

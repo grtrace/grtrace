@@ -29,6 +29,7 @@ __gshared
 
 	unum cfgSamples = 1;
 	string cfgWorldSpace = "euclidean";
+	string cfgMetricOptions = "";
 	string cfgSpaceConfig = "";
 	string cfgCameraType = "orthogonal";
 	fpnum cfgCameraX = 0.0;

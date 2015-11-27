@@ -1,5 +1,6 @@
 ﻿module metric.wrapper;
 
+import std.math, std.traits;
 import metric.interfaces;
 import scene;
 import math;
@@ -8,7 +9,8 @@ import config;
 import image;
 import std.algorithm;
 import dbg.debugger;
-import std.math;
+
+Initiator tlsInitiator = null;
 
 class WorldSpaceWrapper : WorldSpace
 {
@@ -56,15 +58,16 @@ class WorldSpaceWrapper : WorldSpace
 			{
 				tmpc = closest.material.emission_color;
 				
+				Color textureColor = Colors.White;
+				
 				if(closest.material.hasTexture())
 				{
 					fpnum U,V;
 					closest.getUVMapping(rayhit, U, V);
-					Color textureColor = closest.material.peekUV(U,V);
-					tmpc *= textureColor;
+					textureColor = closest.material.peekUV(U,V);
 				}
 
-				//TODO:lightning not supported yet
+				//TODO:lighting not supported yet
 				/*if(closest.material.is_diffuse)
 				{
 					Color diffuseColor = closest.material.diffuse_color;
@@ -95,20 +98,24 @@ class WorldSpaceWrapper : WorldSpace
 				auto init = cast(AnaliticMetricContainer)metric;
 				if(init is null) return tmpc;
 				
-				if(isFinite(closest.material.emission_wave_lenght))
+				if(isFinite(closest.material.emission_wave_length))
 				{
-					fpnum est_lamda_src = closest.material.emission_wave_lenght;
-
+					if(tlsInitiator is null)
+					{
+						tlsInitiator = init.initiator.clone;
+					}
+					fpnum est_lamda_src = closest.material.emission_wave_length;
+					
 					init.initiator.prepareForRequest(rayhit);
-					fpnum src_met = init.initiator.getMetricAtPoint()[0,0];
-
+					fpnum src_met = tlsInitiator.getMetricAtPoint()[0,0];
+					
 					init.initiator.prepareForRequest(ray.origin);
-					fpnum rec_met = init.initiator.getMetricAtPoint()[0,0];
-
+					fpnum rec_met = tlsInitiator.getMetricAtPoint()[0,0];
+					
 					fpnum red_shift_plus_one = sqrt(rec_met/src_met);
-
+					
 					fpnum l_obs = est_lamda_src*red_shift_plus_one;
-
+					
 					tmpc = GetSpectrumColor(l_obs);
 				}
 			}
