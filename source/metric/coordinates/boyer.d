@@ -26,6 +26,13 @@ class BoyerLinguist : CoordinateChanger
 		a = angular_momentum/mass;
 		a2 = a*a;
 	}
+	
+	this(const BoyerLinguist o)
+	{
+		origin = o.origin;
+		a = o.a;
+		a2 = o.a2;
+	}
 
 	fpnum[4] transformForwardPosition(Vectorf a)
 	{

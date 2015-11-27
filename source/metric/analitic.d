@@ -10,6 +10,8 @@ import std.concurrency;
 import std.math;
 import dbg.debugger;
 
+import core.atomic;
+
 class Analitic : AnaliticMetricContainer
 {
 	private __gshared fpnum param_step;
@@ -101,7 +103,6 @@ class Analitic : AnaliticMetricContainer
 			VisualDebugger.DebugRayB(ray, *hitpoint, &dbg.debugger.rayColors[6]);
 			return mdist;
 		}
-
 		VisualDebugger.DebugRayB(ray, to, &dbg.debugger.rayColors[6]);
 		return travel_dist;
 	}
@@ -169,7 +170,7 @@ class Analitic : AnaliticMetricContainer
 	//Iterative version
 	private fpnum RaytraceI(bool doP, bool doN, bool doO)(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0)
 	{
-		auto init = cast(Initiator)this.init;
+		auto init = (cast(Initiator)(this.init)).clone();
 		fpnum totalDist = 0;
 		
 		for(size_t i = 0; i<max_number_of_steps; i++) //TODO: ray hit not correct
@@ -208,7 +209,7 @@ class Analitic : AnaliticMetricContainer
 			
 			ray = newRay;
 		}
-		
 		return fpnum.infinity;
 	}
-	}
+}
+

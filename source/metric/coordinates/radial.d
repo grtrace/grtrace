@@ -13,6 +13,11 @@ class Radial : CoordinateChanger
 	{
 		origin = center;
 	}
+	
+	this(const Radial o)
+	{
+		origin = o.origin;
+	}
 
 	fpnum[4] transformForwardPosition(Vectorf a)
 	{

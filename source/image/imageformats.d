@@ -1751,7 +1751,7 @@ void read_scan_header(ref JPEG_Decoder dc) {
 		len != (6+num_scan_comps*2) )
 		throw new ImageIOException("invalid / not supported");
 	
-	auto buf = (cast(ubyte*) alloca((len-3) * ubyte.sizeof))[0..len-3];
+	ubyte[] buf;buf.length = len-3;
 	dc.stream.readExact(buf, buf.length);
 	
 	foreach (i; 0..num_scan_comps) {

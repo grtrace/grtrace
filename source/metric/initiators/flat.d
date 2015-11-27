@@ -12,7 +12,14 @@ import config;
 class FlatCartesian : Initiator
 {
 	private static const Cartesian cord = new Cartesian();
-
+	
+	this(){}
+	
+	@property Initiator clone() const
+	{
+		return new FlatCartesian();
+	}
+	
 	void prepareForRequest(Vectorf point)
 	{
 		return;
@@ -90,7 +97,25 @@ class FlatRadial : Initiator
 	private fpnum inv_r2;
 	private fpnum theta;
 	private fpnum sin_theta;
-
+	
+	this()
+	{}
+	
+	this(const FlatRadial o)
+	{
+		r2 = o.r2;
+		r = o.r;
+		inv_r = o.inv_r;
+		inv_r2 = o.inv_r2;
+		theta = o.theta;
+		sin_theta = o.sin_theta;
+	}
+	
+	@property Initiator clone() const
+	{
+		return new FlatRadial(this);
+	}
+	
 	void prepareForRequest(Vectorf point)
 	{
 		r2 = (*point);

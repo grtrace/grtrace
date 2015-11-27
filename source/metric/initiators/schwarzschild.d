@@ -30,6 +30,26 @@ class Schwarzschild : Initiator
 		schwarzschild_radius = 2*m;
 		mass = m;
 	}
+	
+	this(const Schwarzschild o)
+	{
+		origin = o.origin;
+		schwarzschild_radius = o.schwarzschild_radius;
+		mass = o.mass;
+		cord = new Radial(o.cord);
+		r2 = o.r2;
+		inv_r = o.inv_r;
+		inv_r2 = o.inv_r2;
+		theta = o.theta;
+		sin_theta = o.sin_theta;
+		tmp = o.tmp;
+		inv_tmp = o.inv_tmp;
+	}
+	
+	@property Initiator clone() const
+	{
+		return new Schwarzschild(this);
+	}
 
 	void prepareForRequest(Vectorf point)
 	{

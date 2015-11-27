@@ -263,7 +263,7 @@ extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) no
 		{
 			StartTest();
 		}
-		if(id==GLFW_KEY_Q)
+		if(id==GLFW_KEY_ESCAPE)
 		{
 			glfwSetWindowShouldClose(w, GL_TRUE);
 		}

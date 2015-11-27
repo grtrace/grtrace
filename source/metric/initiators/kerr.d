@@ -46,7 +46,37 @@ class Kerr : Initiator
 		a2 = a*a;
 		coord = new BoyerLinguist(origin, a);
 	}
-
+	
+	this(const Kerr o)
+	{
+		origin = o.origin;
+		coord = new BoyerLinguist(o.coord);
+		m = o.m;
+		j = o.j;
+		Rs = o.Rs;
+		a = o.a;
+		a2 = o.a2;
+		r2 = o.r2;
+		r = o.r;
+		theta = o.theta;
+		sin_theta = o.sin_theta;
+		sin2_theta = o.sin2_theta;
+		sin3_theta = o.sin3_theta;
+		cos_theta = o.cos_theta;
+		cos2_theta = o.cos2_theta;
+		delta = o.delta;
+		sigma = o.sigma;
+		p = o.p;
+		p2 = o.p2;
+		p4 = o.p4;
+		p6 = o.p6;
+	}
+	
+	@property Initiator clone() const
+	{
+		return new Kerr(this);
+	}
+	
 	void prepareForRequest(Vectorf point)
 	{
 		Vectorf tmp = point-origin;
