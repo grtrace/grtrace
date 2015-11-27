@@ -326,10 +326,10 @@ WorldSpace CreateSpace(string name)
 	{
 		auto A = new Analitic;
 		//A.initiator = new Schwarzschild(3, vectorf(0,0,0));
-		A.initiator = new Schwarzschild(1.5, vectorf(0,0,0));
+		A.initiator = new Schwarzschild(0.5, vectorf(0,0,0));
 		//A.initiator = new FlatRadial();
-		A.paramStep = 0.008;
-		A.maxNumberOfSteps = 1250;
+		A.paramStep = 0.01;
+		A.maxNumberOfSteps = 10000;
 		R = new WorldSpaceWrapper(A);
 	}
 	else
