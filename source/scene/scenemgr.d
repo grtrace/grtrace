@@ -3,6 +3,9 @@
 import config;
 import core.time;
 import std.concurrency;
+import std.getopt;
+import std.array;
+import std.string;
 import std.stdio;
 import std.math;
 import std.functional;
@@ -325,11 +328,24 @@ WorldSpace CreateSpace(string name)
 	else if(name=="test")
 	{
 		auto A = new Analitic;
+		string initType = "schwarzschild";
+		fpnum mass = 1.5;
+		fpnum x=0.0,y=0.0,z=0.0;
+		fpnum pStep = 0.08;
+		int nSteps = 250;
+		string[] args = split(cfgMetricOptions);
+		getopt(args, "type|t", &initType,
+				"mass|m",&mass,
+				"x",&x,
+				"y",&y,
+				"z",&z,
+				"paramstep|t",&pStep,
+				"nsteps|n",&nSteps);
 		//A.initiator = new Schwarzschild(3, vectorf(0,0,0));
-		A.initiator = new Schwarzschild(1.5, vectorf(0,0,0));
+		A.initiator = new Schwarzschild(mass, vectorf(x,y,z));
 		//A.initiator = new FlatRadial();
-		A.paramStep = 0.008;
-		A.maxNumberOfSteps = 1250;
+		A.paramStep = pStep;
+		A.maxNumberOfSteps = nSteps;
 		R = new WorldSpaceWrapper(A);
 	}
 	else

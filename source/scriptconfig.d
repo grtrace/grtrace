@@ -60,6 +60,7 @@ void InitScripting(string arg0)
 	mixin(ConfigMixin("CameraRoll"));
 	mixin(ConfigMixin("CameraOptions"));
 	mixin(ConfigMixin("OutputFile"));
+	mixin(ConfigMixin("MetricOptions"));
 	mixin(ConfigMixin("MaxDepth"));
 }
 
