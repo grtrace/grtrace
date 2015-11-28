@@ -21,6 +21,7 @@ __gshared
 	bool cfgAdditionalCalc = false;
 	bool cfgNoImage = false;
 	bool cfgGpuAcc = false;
+	bool cfgFastApproximation = false;
 	string cfgScript = "raytrace.tcl";
 	inum cfgResolutionX = 320;
 	inum cfgResolutionY = 240;

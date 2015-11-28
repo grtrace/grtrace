@@ -87,33 +87,71 @@ abstract class WorldSpace
 			int cc=0;
 			Line cray;
 			double jitx=0.0, jity=0.0;
-			for(unum y=y0;y<y1;y++)
+			if(cfgFastApproximation)
 			{
-				for(unum x=0;x<pixelsx;x++)
+				for(unum y=y0;y<y1;y++)
 				{
-					Color col = Colors.Black;
-					for(unum sy=0;sy<samples;sy++)
+					for(unum x=0;x<pixelsx;x++)
 					{
-						for(unum sx=0;sx<samples;sx++)
+						if( ((x%5)==0) && ((y%5)==0) )
 						{
-							if(samples>1)
+							Color col = Colors.Black;
+							if(cam.fetchRay(x*jmpx - 1.0,y*jmpy - 1.0,cray))
 							{
-								jitx = uniform01!double(rnd)*2.0-1.0;
-								jity = uniform01!double(rnd)*2.0-1.0;
+								col = DoRay(owner, cray, x, y, tnum);
 							}
-							if(cam.fetchRay(x*jmpx - 1.0 + sx*smpx + jitx*smpx,y*jmpy - 1.0 + sy*smpy + jity*smpy,cray))
+							im.Poke(x,y,col);
+						}
+						else
+						{
+							if( (x%5)==0 )
 							{
-								col += DoRay(owner, cray, x, y, tnum);
+								im.Poke(x,y,im.Peek(x,y-1));
+							}
+							else
+							{
+								im.Poke(x,y,im.Peek(x-1,y));
 							}
 						}
+						cc++;
+						if(cc==100)
+						{
+							send(owner,Message.Pixel100);
+							cc=0;
+						}
 					}
-					col/=smpd;
-					im.Poke(x,y,col);
-					cc++;
-					if(cc==100)
+				}
+			}
+			else
+			{
+				for(unum y=y0;y<y1;y++)
+				{
+					for(unum x=0;x<pixelsx;x++)
 					{
-						send(owner,Message.Pixel100);
-						cc=0;
+						Color col = Colors.Black;
+						for(unum sy=0;sy<samples;sy++)
+						{
+							for(unum sx=0;sx<samples;sx++)
+							{
+								if(samples>1)
+								{
+									jitx = uniform01!double(rnd)*2.0-1.0;
+									jity = uniform01!double(rnd)*2.0-1.0;
+								}
+								if(cam.fetchRay(x*jmpx - 1.0 + sx*smpx + jitx*smpx,y*jmpy - 1.0 + sy*smpy + jity*smpy,cray))
+								{
+									col += DoRay(owner, cray, x, y, tnum);
+								}
+							}
+						}
+						col/=smpd;
+						im.Poke(x,y,col);
+						cc++;
+						if(cc==100)
+						{
+							send(owner,Message.Pixel100);
+							cc=0;
+						}
 					}
 				}
 			}

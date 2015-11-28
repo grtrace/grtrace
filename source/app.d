@@ -18,14 +18,15 @@ enum string HelpStr = `
 General Relativity rayTracer usage:
 %s [options]
 Options:
---verbose|-v  - Outputs additional information
---script|-s   - Script to load the configuration from (default raytrace.tcl)
---help|-h     - Displays this text
---threads|-t  - Thread number to use
---debug|-d    - Launches the visual debugger
---noimage|-n  - Doesn't run the main rendering loop
---nogpu|-g    - Force-disable GPU acceleration
---addcalc|-c  - Do only additional calculations
+--verbose|-v     - Outputs additional information
+--script|-s      - Script to load the configuration from (default raytrace.tcl)
+--help|-h        - Displays this text
+--threads|-t     - Thread number to use
+--debug|-d       - Launches the visual debugger
+--noimage|-n     - Doesn't run the main rendering loop
+--nogpu|-g       - Force-disable GPU acceleration
+--addcalc|-c     - Do only additional calculations
+--fastapprox|-f  - Calculate 25x less pixels for visual approximation of the result
 `;
 
 void RenderSpawner(Tid owner)
@@ -82,12 +83,13 @@ void main(string[] args)
 		"debug|d", &cfgDebug,
 		"noimage|n", &cfgNoImage,
 		"nogpu|g", &cfgGpuAcc,
-		"addcalc|c", &cfgAdditionalCalc
+		"addcalc|c", &cfgAdditionalCalc,
+		"fastapprox|f", &cfgFastApproximation
 		);
 	cfgGpuAcc = !cfgGpuAcc;
 	if(doHelp)
 	{
-		writef(HelpStr, arg0);
+		writefln(HelpStr, arg0);
 		return;
 	}
 	MonoTime startTime = MonoTime.currTime;
