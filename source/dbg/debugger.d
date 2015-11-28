@@ -10,6 +10,7 @@ import scene.camera;
 import scene.objects.interfaces;
 import math;
 import image.color;
+import image.spectrum;
 import metric;
 
 // Source: http://www.cburch.com/cs/490/sched/feb8/
@@ -51,10 +52,10 @@ private struct SavedRay
 	Vectorf destination;
 	Vectorf direction;
 	fpnum distance;
-	Color* col;
+	Color col;
 	string toString()
 	{
-		return "#%-2d %s -> %s".format(&col,origin,destination);
+		return "#%-2d %s -> %s".format(col,origin,destination);
 	}
 }
 
@@ -87,6 +88,7 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 					VisualDebugger.DebugRayB = &VisualDebugger.SaveRay;
 					VisualDebugger.inst.DebugRayA = &VisualDebugger.SaveRay;
 					VisualDebugger.inst.DebugRayB = &VisualDebugger.SaveRay;
+					VisualDebugger.inst.start_col = Colors.Red;
 					//TODO:remove
 					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,0.01,0).normalized);
 					//writeln(ray);
@@ -100,6 +102,8 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 					
 					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(3,h,1).normalized);
 					VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
+					
+					if(isFinite(VisualDebugger.inst.cur_src_lambda)) VisualizeRedshift(VisualDebugger.inst.cur_src_lambda);
 
 					VisualDebugger vd = VisualDebugger.inst;
 					/*for(int i=1;i<vd.rays.length;i++)
@@ -263,6 +267,14 @@ extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) no
 		{
 			StartTest();
 		}
+		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F3))
+		{
+			VisualizeRedshift();
+		}
+		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F4))
+		{
+			changeDefaultLambda();
+		}
 		if(id==GLFW_KEY_ESCAPE)
 		{
 			glfwSetWindowShouldClose(w, GL_TRUE);
@@ -311,6 +323,62 @@ void StartTest()
 			PhotonSphereStability(mass, min_timestep, max_timestep, step_timestep, numOfCircles, path);
 		}
 	}
+}
+
+void VisualizeRedshift()
+{
+	writef("Are you sure to visualize redshift? (y/n): ");
+	char ans;
+	readf(" %c", &ans);
+	if(ans=='y')
+	{
+		double lambda;
+		do
+		{
+			writefln("Enter desired source wavelenght in nanometers: ");
+			scanf("%lf", &lambda);
+		}while((lambda<=0?(writefln("Try Again"),1):0));
+		VisualizeRedshift(cast(fpnum)lambda);
+	}
+}
+
+void VisualizeRedshift(fpnum lambda)
+{
+	if(VisualDebugger.inst.rays.length == 0) writefln("Trace rays first");
+	
+	VisualDebugger.inst.start_col = GetSpectrumColor(lambda);
+	
+	auto s = cast(WorldSpaceWrapper) VisualDebugger.inst.space;
+	if(s is null)
+	{
+		foreach(ref SavedRay ray; VisualDebugger.inst.rays)
+		{
+			ray.col = VisualDebugger.inst.start_col;
+		}
+	}
+	auto k = cast(AnaliticMetricContainer)(s.smetric);
+	if(k is null) return;
+	auto met = k.initiator;
+	
+	auto first = VisualDebugger.inst.rays[0];
+	met.prepareForRequest(first.origin);
+	auto met_src = met.getMetricAtPoint()[0,0];
+	
+	foreach(ref SavedRay ray; VisualDebugger.inst.rays)
+	{
+		met.prepareForRequest(ray.destination);
+		auto met_rec = met.getMetricAtPoint()[0,0];
+		ray.col = GetSpectrumColor(lambda*sqrt(met_rec/met_src));
+	}
+}
+
+void changeDefaultLambda()
+{
+	fpnum* lambda = &VisualDebugger.inst.cur_src_lambda;
+	writeln("Current wavelenght of light source is: ", *lambda);
+	writeln("Enter new wavelenght: ");
+	scanf("%lf", lambda);
+	if(!isFinite(*lambda) || (*lambda) <= 0) *lambda = fpnum.nan;
 }
 
 void PhotonSphereStability(fpnum mass, fpnum min_timestep, fpnum max_timestep, fpnum step_timestep, int numOfCircles, string fpath)
@@ -397,6 +465,8 @@ class VisualDebugger
 	static bool glLoaded = false;
 	float aspect;
 	SavedRay[] rays;
+	Color start_col = Colors.Red;
+	fpnum cur_src_lambda = fpnum.nan;
 	
 	fpnum[] rayProcesorData_f;
 	size_t[] rayProcesorData_i;
@@ -421,7 +491,7 @@ class VisualDebugger
 		if(inst)
 		{
 			inst.rays[$-1].destination = pos;
-			inst.rays[$-1].col = &rayColors[6];
+			inst.rays[$-1].col = rayColors[6];
 			writefln("Lit ray");
 		}
 	}
@@ -432,7 +502,7 @@ class VisualDebugger
 		{
 			Vectorf dif = newp - ray.origin;
 			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
-			inst.rays ~= SavedRay(ray.origin,newp,ray.direction,~dif,col);
+			inst.rays ~= SavedRay(ray.origin,newp,ray.direction,~dif,*col);
 		}
 	}
 	
@@ -445,7 +515,7 @@ class VisualDebugger
 				dist = 100.0;
 			}
 			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
-			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,ray.direction,dist,col);
+			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,ray.direction,dist,*col);
 			writefln("Saved ray %s",inst.rays[$-1]);
 		}
 	}
@@ -711,10 +781,11 @@ class VisualDebugger
 			glLoadIdentity();
 			//glDisable(GL_DEPTH_TEST);
 			glBegin(GL_LINES);
+			glColor3f(start_col.r, start_col.g, start_col.b);
 			foreach(SavedRay ray;rays)
 			{
-				glColor3f(ray.col.r,ray.col.g,ray.col.b);
 				glVertex3d(ray.origin.x, ray.origin.y, ray.origin.z);
+				glColor3f(ray.col.r,ray.col.g,ray.col.b);
 				glVertex3d(ray.destination.x, ray.destination.y, ray.destination.z);
 			}
 			glEnd();
