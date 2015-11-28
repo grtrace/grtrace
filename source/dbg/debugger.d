@@ -101,7 +101,14 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 					}*/
 					
 					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(3,h,1).normalized);
-					VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
+					Color outcol = VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
+					if( (x>=0) && (y>=0) && (x<cfgResolutionX) && (y<cfgResolutionY))
+					{
+						ubyte[] pixel = [outcol.ru,outcol.gu,outcol.bu];
+						glfwMakeContextCurrent(VisualDebugger.inst.rwin);
+						glBindTexture(GL_TEXTURE_2D, VisualDebugger.inst.texId);
+						glTexSubImage2D(GL_TEXTURE_2D,0,x,y,1,1,GL_RGB,GL_UNSIGNED_BYTE,pixel.ptr);
+					}
 					
 					if(isFinite(VisualDebugger.inst.cur_src_lambda)) VisualizeRedshift(VisualDebugger.inst.cur_src_lambda);
 
@@ -492,7 +499,6 @@ class VisualDebugger
 		{
 			inst.rays[$-1].destination = pos;
 			inst.rays[$-1].col = rayColors[6];
-			writefln("Lit ray");
 		}
 	}
 
@@ -516,7 +522,6 @@ class VisualDebugger
 			}
 			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
 			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,ray.direction,dist,*col);
-			writefln("Saved ray %s",inst.rays[$-1]);
 		}
 	}
 	
