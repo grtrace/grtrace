@@ -356,7 +356,7 @@ void VisualizeRedshift(fpnum lambda)
 			ray.col = VisualDebugger.inst.start_col;
 		}
 	}
-	auto k = cast(AnaliticMetricContainer)(s.smetric);
+	auto k = cast(AnalyticMetricContainer)(s.smetric);
 	if(k is null) return;
 	auto met = k.initiator;
 	
