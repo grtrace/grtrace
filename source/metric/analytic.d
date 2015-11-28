@@ -1,4 +1,4 @@
-﻿module metric.analitic;
+﻿module metric.analytic;
 
 import metric.interfaces;
 import metric.util;
@@ -12,7 +12,7 @@ import dbg.debugger;
 
 import core.atomic;
 
-class Analitic : AnaliticMetricContainer
+class Analytic : AnalyticMetricContainer
 {
 	private __gshared fpnum param_step;
 	private __gshared size_t max_number_of_steps;

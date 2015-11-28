@@ -325,12 +325,13 @@ WorldSpace CreateSpace(string name)
 	{
 		R = new KexMetric();
 	}
-	else if(name=="test")
+	else if(name=="test" || name=="analytic")
 	{
-		auto A = new Analitic;
+		auto A = new Analytic;
 		string initType = "schwarzschild";
 		fpnum mass = 1.5;
 		fpnum x=0.0,y=0.0,z=0.0;
+		fpnum L=0.0;
 		fpnum pStep = 0.08;
 		int nSteps = 250;
 		string[] args = split(cfgMetricOptions);
@@ -339,11 +340,27 @@ WorldSpace CreateSpace(string name)
 				"x",&x,
 				"y",&y,
 				"z",&z,
-				"paramstep|t",&pStep,
+				"angularmomentum|L",&L,
+				"paramstep|d",&pStep,
 				"nsteps|n",&nSteps);
-		//A.initiator = new Schwarzschild(3, vectorf(0,0,0));
-		A.initiator = new Schwarzschild(mass, vectorf(x,y,z));
-		//A.initiator = new FlatRadial();
+		switch(initType)
+		{
+			case "schwarzschild":
+				A.initiator = new Schwarzschild(mass, vectorf(x,y,z));
+				break;
+			case "flatcartesian":
+				A.initiator = new FlatCartesian();
+				break;
+			case "flatradial":
+				A.initiator = new FlatRadial();
+				break;
+			case "kerr":
+				A.initiator = new Kerr(mass, L, vectorf(x,y,z));
+				break;
+			default:
+				stderr.writeln("Error: wrong type of analytic metric: "~initType);
+				assert(0);
+		}
 		A.paramStep = pStep;
 		A.maxNumberOfSteps = nSteps;
 		R = new WorldSpaceWrapper(A);

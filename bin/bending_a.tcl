@@ -13,7 +13,7 @@ configSet "CameraPitch" 0
 configSet "CameraYaw" 0
 configSet "CameraRoll" 0
 configSet "CameraOptions" "-x 10 -f 45"
-configSet "MetricOptions" "-t schwarzschild -m 1.5 -x 0 -y 0 -z 0 -t 0.08 -n 500"
+configSet "MetricOptions" "-t schwarzschild -m 1.5 -x 0 -y 0 -z 0 -d 0.08 -n 500"
 
 addMaterial .mat1 -e white -d 1.0,1.0,1.0 -f b
 addMaterial .EH -e black -f b

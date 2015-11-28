@@ -39,7 +39,7 @@ interface DiscreteMetricContainer : MetricContainer
 	void InitializeMetric();
 }
 
-interface AnaliticMetricContainer : MetricContainer
+interface AnalyticMetricContainer : MetricContainer
 {
 	@property Initiator initiator();
 	@property void initiator(Initiator inx);

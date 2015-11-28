@@ -322,7 +322,7 @@ void PhotonSphereStability(fpnum mass, fpnum min_timestep, fpnum max_timestep, f
 		return;
 	}
 	
-	Analitic k = cast(Analitic) cast(AnaliticMetricContainer) s.smetric;
+	Analytic k = cast(Analytic) cast(AnalyticMetricContainer) s.smetric;
 	if(k is null)
 	{
 		printf("Change Space to Schwarzschild\n");

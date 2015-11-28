@@ -95,7 +95,7 @@ class WorldSpaceWrapper : WorldSpace
 						}
 					}
 				}*/
-				auto init = cast(AnaliticMetricContainer)metric;
+				auto init = cast(AnalyticMetricContainer)metric;
 				if(init is null) return tmpc;
 				
 				if(isFinite(closest.material.emission_wave_length))
