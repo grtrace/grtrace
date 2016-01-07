@@ -106,10 +106,10 @@ class WorldSpaceWrapper : WorldSpace
 					}
 					fpnum est_lamda_src = closest.material.emission_wave_length;
 					
-					init.initiator.prepareForRequest(rayhit);
+					tlsInitiator.prepareForRequest(rayhit);
 					fpnum src_met = tlsInitiator.getMetricAtPoint()[0,0];
 					
-					init.initiator.prepareForRequest(ray.origin);
+					tlsInitiator.prepareForRequest(ray.origin);
 					fpnum rec_met = tlsInitiator.getMetricAtPoint()[0,0];
 					
 					fpnum red_shift_plus_one = sqrt(rec_met/src_met);
