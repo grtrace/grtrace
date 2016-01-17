@@ -1,9 +1,9 @@
 #version 150 core
 
-in vec2 vert
-in vec2 tex_coord
+in vec2 vert;
+in vec2 tex_coord;
 
-out vec2 texture_coord
+out vec2 texture_coord;
 
 void main()
 {

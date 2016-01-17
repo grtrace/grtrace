@@ -1,16 +1,16 @@
-module dbg.debug_new;
+module dbg.debugger_new;
 
-import derelict.glfw3.glfw3;
 import glad.gl.all;
 import glad.gl.loader;
+import derelict.glfw3.glfw3;
 
 import std.stdio, std.string, std.file, std.math;
 
 import config, scene.camera, scene.scenemgr, math;
 
-class VisualDebugger
+class VisualDebugger_N
 {
-	public static VisualDebugger inst;
+	private static VisualDebugger_N inst = null;
 	__gshared GLFWwindow* vis_window;
 	__gshared GLFWwindow* img_window;
 	
@@ -45,97 +45,92 @@ class VisualDebugger
 	
 	this()
 	{
-		if(inst is null)
+		if(cfgDebug)
 		{
-			inst = new VisualDebugger();
-			if(cfgDebug)
-			{
-				//libraries
-				DerelictGLFW3.load();
-				glfwInit();
-				
-				//windows
-				vis_window = makeWindow("GRTrace visualiser", cast(int)cfgResolutionX, cast(int)cfgResolutionY, true);
-				img_window = makeWindow("GRTrace traced image", cast(int)cfgResolutionX, cast(int)cfgResolutionY, false, vis_window);
+			//libraries
+			DerelictGLFW3.load();
+			glfwInit();
 			
-				glfwMakeContextCurrent(img_window);
-				//prepare "traced image"
-				//compile shaders
-				shaders["img_vec"] = CompileShader(GL_VERTEX_SHADER, import("image/vertex_shader.glsl"));
-				shaders["img_frag"] = CompileShader(GL_FRAGMENT_SHADER, import("image/fragment_shader.glsl"));
-				
-				//create program
-				GLuint tex_prog = glCreateProgram();
-				glAttachShader(tex_prog, shaders["img_vec"]);
-				glAttachShader(tex_prog, shaders["img_frag"]);
-				glLinkProgram(tex_prog);
-				programs["img"] = tex_prog;
-				
-				//setup VAO
-				GLuint tex_vao;
-				glGenVertexArrays(1, &tex_vao);
-				glBindVertexArray(tex_vao);
-				vaos["img_tex"] = tex_vao;
-				
-				//prepare VBO
-				glGenBuffers(1, &vbo_texture);
-				glBindBuffer(GL_ARRAY_BUFFER, vbo_texture);
-				glBufferData(GL_ARRAY_BUFFER, texture_verts.sizeof, cast(void*)texture_verts, GL_STATIC_DRAW);
-				
-				//setup input format
-				GLint tex_vert_atrib = glGetAttribLocation(tex_prog, "vert");
-				glEnableVertexAttribArray(tex_vert_atrib);
-				glVertexAttribPointer(tex_vert_atrib, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(void*)0);
-				
-				GLint tex_tex_attrib = glGetAttribLocation(tex_prog, "tex_coord");
-				glEnableVertexAttribArray(tex_tex_attrib);
-				glVertexAttribPointer(tex_vert_atrib, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(void*)(2*float.sizeof));
-				
-				//prepare "visualizer"
-				glfwMakeContextCurrent(vis_window);
-				glEnable(GL_DEPTH_TEST);
-				
-				//create line drawing program
-				shaders["lines_vec"] = CompileShader(GL_VERTEX_SHADER, import("lines/vertex_shader.glsl"));
-				//TODO:Fix the opengl bindings
-				shaders["lines_geo"] = CompileShader(GL_GEOMETRY_SHADER_EXT, import("lines/geometry_shader.glsl"));
-				shaders["lines_frag"] = CompileShader(GL_FRAGMENT_SHADER, import("lines/fragment_shader.glsl"));
-				
-				GLuint lines_prog = glCreateProgram();
-				glAttachShader(lines_prog, shaders["lines_vec"]);
-				glAttachShader(lines_prog, shaders["lines_geo"]);
-				glAttachShader(lines_prog, shaders["lines_frag"]);
-				glLinkProgram(lines_prog);
-				
-				//generate VBO for ray drawing
-				glGenBuffers(1, &vbo_saved_rays);
-				glGenBuffers(1, &vbo_point_colors);
-				
-				//generate VAO for ray drawing
-				GLuint lines_vao;
-				glGenVertexArrays(1, &lines_vao);
-				glBindVertexArray(lines_vao);
-				vaos["lines_ray"] = lines_vao;
-				
-				//setup input format
-				glBindBuffer(GL_ARRAY_BUFFER, vbo_saved_rays);
-				GLint lines_pos = glGetAttribLocation(lines_prog, "position");
-				glEnableVertexAttribArray(lines_pos);
-				glVertexAttribPointer(lines_pos, 3, GL_FLOAT, GL_FALSE, cast(void*)(3*float.sizeof), cast(void*)0);
-				
-				glBindBuffer(GL_ARRAY_BUFFER, vbo_point_colors);
-				GLint lines_col = glGetAttribLocation(lines_prog, "color");
-				glEnableVertexAttribArray(lines_col);
-				glVertexAttribPointer(lines_col, 3, GL_FLOAT, GL_FALSE, cast(void*)(3*float.sizeof), cast(void*)0);
-				
-				//setup uniforms
-				uniforms["lines_model_mat"] = glGetUniformLocation(lines_prog, "model");
-				uniforms["lines_view_mat"] = glGetUniformLocation(lines_prog, "view");
-				uniforms["lines_proj_mat"] = glGetUniformLocation(lines_prog, "proj");
-				uniforms["lines_viewport_2f"] = glGetUniformLocation(lines_prog, "viewport_size");
-				uniforms["lines_line_thickness_1f"] = glGetUniformLocation(lines_prog, "line_thickness");
-				
-			}
+			//windows
+			vis_window = makeWindow("GRTrace visualiser", cast(int)cfgResolutionX, cast(int)cfgResolutionY, true);
+			img_window = makeWindow("GRTrace traced image", cast(int)cfgResolutionX, cast(int)cfgResolutionY, false, vis_window);
+		
+			glfwMakeContextCurrent(img_window);
+			//prepare "traced image"
+			//compile shaders
+			shaders["img_vec"] = CompileShader(GL_VERTEX_SHADER, import("image/vertex_shader.glsl"));
+			shaders["img_frag"] = CompileShader(GL_FRAGMENT_SHADER, import("image/fragment_shader.glsl"));
+			
+			//create program
+			GLuint tex_prog = glCreateProgram();
+			glAttachShader(tex_prog, shaders["img_vec"]);
+			glAttachShader(tex_prog, shaders["img_frag"]);
+			glLinkProgram(tex_prog);
+			programs["img"] = tex_prog;
+			
+			//setup VAO
+			GLuint tex_vao;
+			glGenVertexArrays(1, &tex_vao);
+			assert(tex_vao>0);
+			glBindVertexArray(tex_vao);
+			vaos["img_tex"] = tex_vao;
+			
+			//prepare VBO
+			glGenBuffers(1, &vbo_texture);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_texture);
+			glBufferData(GL_ARRAY_BUFFER, texture_verts.sizeof, cast(void*)texture_verts, GL_STATIC_DRAW);
+			
+			//setup input format
+			GLint tex_vert_atrib = glGetAttribLocation(tex_prog, "vert");
+			glEnableVertexAttribArray(tex_vert_atrib);
+			glVertexAttribPointer(tex_vert_atrib, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(void*)0);
+			
+			GLint tex_tex_attrib = glGetAttribLocation(tex_prog, "tex_coord");
+			glEnableVertexAttribArray(tex_tex_attrib);
+			glVertexAttribPointer(tex_vert_atrib, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(void*)(2*float.sizeof));
+			
+			//prepare "visualizer"
+			glfwMakeContextCurrent(vis_window);
+			glEnable(GL_DEPTH_TEST);
+			
+			//create line drawing program
+			shaders["lines_vec"] = CompileShader(GL_VERTEX_SHADER, import("lines/vertex_shader.glsl"));
+			shaders["lines_geo"] = CompileShader(GL_GEOMETRY_SHADER, import("lines/geometry_shader.glsl"));
+			shaders["lines_frag"] = CompileShader(GL_FRAGMENT_SHADER, import("lines/fragment_shader.glsl"));
+			
+			GLuint lines_prog = glCreateProgram();
+			glAttachShader(lines_prog, shaders["lines_vec"]);
+			glAttachShader(lines_prog, shaders["lines_geo"]);
+			glAttachShader(lines_prog, shaders["lines_frag"]);
+			glLinkProgram(lines_prog);
+			
+			//generate VBO for ray drawing
+			glGenBuffers(1, &vbo_saved_rays);
+			glGenBuffers(1, &vbo_point_colors);
+			
+			//generate VAO for ray drawing
+			GLuint lines_vao;
+			glGenVertexArrays(1, &lines_vao);
+			glBindVertexArray(lines_vao);
+			vaos["lines_ray"] = lines_vao;
+			
+			//setup input format
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_saved_rays);
+			GLint lines_pos = glGetAttribLocation(lines_prog, "position");
+			glEnableVertexAttribArray(lines_pos);
+			glVertexAttribPointer(lines_pos, 3, GL_FLOAT, GL_FALSE, cast(void*)(3*float.sizeof), cast(void*)0);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_point_colors);
+			GLint lines_col = glGetAttribLocation(lines_prog, "color");
+			glEnableVertexAttribArray(lines_col);
+			glVertexAttribPointer(lines_col, 3, GL_FLOAT, GL_FALSE, cast(void*)(3*float.sizeof), cast(void*)0);
+			
+			//setup uniforms
+			uniforms["lines_model_mat"] = glGetUniformLocation(lines_prog, "model");
+			uniforms["lines_view_mat"] = glGetUniformLocation(lines_prog, "view");
+			uniforms["lines_proj_mat"] = glGetUniformLocation(lines_prog, "proj");
+			uniforms["lines_viewport_2f"] = glGetUniformLocation(lines_prog, "viewport_size");
+			uniforms["lines_line_thickness_1f"] = glGetUniformLocation(lines_prog, "line_thickness");
 		}
 	}
 	
@@ -157,32 +152,21 @@ class VisualDebugger
 		
 	}
 	
-	static VisualDebugger get()
+	public static VisualDebugger_N get()
 	{
 		if(inst is null)
 		{
-			inst = new VisualDebugger();
+			inst = new VisualDebugger_N();
 		}
 		return inst;
 	}
 	
-	GLuint CompileShader(GLenum type, string file_name)
-	{
-		if(exists(file_name))
-		{
-			return CompileShader(type, cast(char[])read(file_name));
-		}
-		else
-		{
-			throw new Exception("Shader file : "~file_name~" does not exist");
-		}
-	}
-	
-	GLuint CompileShader(GLenum type, char[] code)
+	GLuint CompileShader(GLenum type, string code)
 	{
 		//create and compile shader
 		GLuint shader = glCreateShader(type);
-		glShaderSource(shader, 1, cast(const char**)&code, null);
+		const char* ccode = toStringz(code);
+		glShaderSource(shader, 1, &ccode, null);
 		glCompileShader(shader);
 		
 		//check if operation was succesfull
@@ -237,6 +221,7 @@ class VisualDebugger
 		if(!gl_loaded)
 		{
 			gl_loaded=true;
+			
 			if(!gladLoadGL())
 			{
 				throw new Exception("Couldn't load OpenGL functions");

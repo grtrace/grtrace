@@ -27,7 +27,7 @@ private void drawSphereGen(int lats, int longs) {
 		double z1 = sin(lat1);
 		double zr1 = cos(lat1);
 
-		glBegin(GL_QUAD_STRIP);
+	/*	glBegin(GL_QUAD_STRIP);
 		for(j = 0; j <= longs; j++)
 		{
 			double lng = PI2 * cast(double) (j - 1) / longs;
@@ -39,7 +39,7 @@ private void drawSphereGen(int lats, int longs) {
 			glNormal3f(x * zr1, y * zr1, z1);
 			glVertex3f(x * zr1, y * zr1, z1);
 		}
-		glEnd();
+		glEnd();*/
 	}
 }
 
@@ -631,7 +631,7 @@ class VisualDebugger
 		glLineWidth(2.0f);
 		glPointSize(3.5f);
 		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_POINT_SMOOTH);
+	//	glEnable(GL_POINT_SMOOTH);
 		glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
 		glfwSwapBuffers(w);
 		return w;
@@ -667,7 +667,7 @@ class VisualDebugger
 			GL_RGB, GL_UNSIGNED_BYTE, cast(ubyte*)(space.fullray.data.ptr));
 		glDisable(GL_TEXTURE_2D);
 
-		drawBg = glGenLists(1);
+	/*	drawBg = glGenLists(1);
 		glNewList(drawBg, GL_COMPILE);
 		glColor3f(1.0f,1.0f,1.0f);
 		glEnable(GL_TEXTURE_2D);
@@ -694,7 +694,7 @@ class VisualDebugger
 		drawSphere = glGenLists(1);
 		glNewList(drawSphere,GL_COMPILE);
 		drawSphereGen(32,32);
-		glEndList();
+		glEndList();*/
 	}
 
 	void makeFrustum(double fovY, double aspectRatio, double front, double back)
@@ -705,7 +705,7 @@ class VisualDebugger
 		double width = height * aspectRatio;      // half width of near plane
 		
 		// params: left, right, bottom, top, near, far
-		glFrustum(-width, width, -height, height, front, back);
+		//glFrustum(-width, width, -height, height, front, back);
 	}
 
 	void Run()
@@ -722,7 +722,7 @@ class VisualDebugger
 		while(!(glfwWindowShouldClose(rwin)||glfwWindowShouldClose(dwin)))
 		{
 			// rwin
-			glfwMakeContextCurrent(rwin);
+			/*glfwMakeContextCurrent(rwin);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
@@ -808,7 +808,7 @@ class VisualDebugger
 				glCallList(drawSphere);
 				glPopMatrix();
 			}*/
-			glColor3f(1.0f,0.0f,0.0f);
+			/*glColor3f(1.0f,0.0f,0.0f);
 			glLoadIdentity();
 			glBegin(GL_POINTS);
 			glVertex3d(camera.origin.x,camera.origin.y,camera.origin.z);
@@ -838,7 +838,7 @@ class VisualDebugger
 			{
 				string T = "grtrace showrays %.1f FPS".format(1/dt);
 				//glfwSetWindowTitle(dwin,T.toStringz());
-			}
+			}*/
 		}
 	}
 }

@@ -101,12 +101,16 @@ void main(string[] args)
 	writefln("Total rendering time: %s",duration);
 	if(cfgDebug || cfgAdditionalCalc)
 	{
-		import dbg.debugger;
-		VisualDebugger vdbg = new VisualDebugger();
-		vdbg.Run();
+		//import dbg.debugger;
+		import dbg.debugger_new;
+		auto nfbg = new VisualDebugger_N();
+		nfbg.Start();
+		
+		//auto vdbg = new VisualDebugger();
+		//vdbg.Run();
 		if(cfgAdditionalCalc && (!cfgDebug))
 		{
-			StartTest();
+			//StartTest();
 		}
 	}
 	FinalizeGPU();

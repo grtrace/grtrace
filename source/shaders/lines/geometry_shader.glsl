@@ -12,6 +12,7 @@ layout(triangle_strip, max_vertices = 4) out;
 
 void main()
 {
+	float line_thickness_A = line_thickness;
     float line_thickness_B = line_thickness_A; //TODO: line thickness depends on distance from camera
 	vec2 normalized_line_beg = gl_in[0].gl_Position.xy / gl_in[0].gl_Position.w;
     vec2 normalized_line_end = gl_in[1].gl_Position.xy / gl_in[1].gl_Position.w;

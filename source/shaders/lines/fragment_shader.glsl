@@ -6,5 +6,5 @@ out vec4 color;
 
 void main()
 {
-	color = GeoColor;
+	color = vec4(GeoColor,0);
 }
