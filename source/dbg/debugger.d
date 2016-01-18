@@ -61,7 +61,7 @@ private struct SavedRay
 
 bool rayMode=false;
 
-extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int modkeys) nothrow
+extern (C) private void corexMouseButton(GLFWwindow* w, int btn, int type, int modkeys) nothrow
 {
 	try
 	{
@@ -145,13 +145,13 @@ extern (C) private void coreMouseButton(GLFWwindow* w, int btn, int type, int mo
 	}
 }
 
-extern (C) void coreRayMove(GLFWwindow* w, double x, double y) nothrow
+extern (C) void corexRayMove(GLFWwindow* w, double x, double y) nothrow
 {
 	try
 	{
 		if(rayMode)
 		{
-			coreMouseButton(w,GLFW_MOUSE_BUTTON_1,GLFW_PRESS,0);
+			corexMouseButton(w,GLFW_MOUSE_BUTTON_1,GLFW_PRESS,0);
 		}
 	}
 	catch (Throwable o)
@@ -162,7 +162,7 @@ extern (C) void coreRayMove(GLFWwindow* w, double x, double y) nothrow
 private static bool inCamera=false;
 private static double lastX=0.0,lastY=0.0;
 
-extern (C) private void coreMouseCamera(GLFWwindow* w, int btn, int type, int modkeys) nothrow
+extern (C) private void corexMouseCamera(GLFWwindow* w, int btn, int type, int modkeys) nothrow
 {
 	try
 	{
@@ -190,7 +190,7 @@ extern (C) private void coreMouseCamera(GLFWwindow* w, int btn, int type, int mo
 	}
 }
 
-extern (C) void coreCameraMove(GLFWwindow* w, double x, double y) nothrow
+extern (C) void corexCameraMove(GLFWwindow* w, double x, double y) nothrow
 {
 	try
 	{
@@ -219,7 +219,7 @@ extern (C) void coreCameraMove(GLFWwindow* w, double x, double y) nothrow
 
 Vectorf vel = Vectorf(0,0,0,1);
 
-extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) nothrow
+extern (C) void corexKey(GLFWwindow* w, int id, int scan, int state, int mods) nothrow
 {
 	try
 	{
@@ -579,11 +579,11 @@ class VisualDebugger
 			glfwInit();
 			rwin = makeWin("grtrace raytrace");
 			dwin = makeWin("grtrace showrays",rwin);
-			glfwSetMouseButtonCallback(rwin, &coreMouseButton);
-			glfwSetMouseButtonCallback(dwin, &coreMouseCamera);
-			glfwSetCursorPosCallback(rwin, &coreRayMove);
-			glfwSetCursorPosCallback(dwin, &coreCameraMove);
-			glfwSetKeyCallback(dwin, &coreKey);
+			glfwSetMouseButtonCallback(rwin, &corexMouseButton);
+			glfwSetMouseButtonCallback(dwin, &corexMouseCamera);
+			glfwSetCursorPosCallback(rwin, &corexRayMove);
+			glfwSetCursorPosCallback(dwin, &corexCameraMove);
+			glfwSetKeyCallback(dwin, &corexKey);
 		}
 		else
 		{

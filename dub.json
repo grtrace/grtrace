@@ -9,10 +9,9 @@
 	"targetPath": "bin/",
 	"dependencies": {
 		"tcltk": "~>8.6.5",
-		"derelict-glfw3": ">=1.1.0"
+		"derelict-glfw3": ">=1.1.1"
 	},
 	"mainSourceFile": "source/app.d",
 	"lflags-ldc": ["-L=--allow-multiple-definition","-O5"],
-	"dflags-ldc": ["-L=--allow-multiple-definition","-O5"],
-	"dflags-dmd": ["-J./source/shaders/"]
+	"dflags-ldc": ["-L=--allow-multiple-definition","-O5"]
 }

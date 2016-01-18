@@ -13,6 +13,7 @@ import core.thread : Thread;
 import core.time;
 import math;
 import gpuacc.gpu;
+import dbg.debugger_new : VisualHelper;
 
 enum string HelpStr = `
 General Relativity rayTracer usage:
@@ -92,6 +93,7 @@ void main(string[] args)
 		writefln(HelpStr, arg0);
 		return;
 	}
+    VisualHelper.instance.initialize();
 	MonoTime startTime = MonoTime.currTime;
 	renderTid = spawn(&RenderSpawner, thisTid);
 	DoScript(cfgScript);
@@ -101,11 +103,7 @@ void main(string[] args)
 	writefln("Total rendering time: %s",duration);
 	if(cfgDebug || cfgAdditionalCalc)
 	{
-		//import dbg.debugger;
-		import dbg.debugger_new;
-		auto nfbg = new VisualDebugger_N();
-		nfbg.Start();
-		
+		VisualHelper.instance.runGraphics();
 		//auto vdbg = new VisualDebugger();
 		//vdbg.Run();
 		if(cfgAdditionalCalc && (!cfgDebug))

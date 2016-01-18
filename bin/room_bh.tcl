@@ -1,5 +1,5 @@
-configSet "ResolutionX" 1000
-configSet "ResolutionY" 1000
+configSet "ResolutionX" 500
+configSet "ResolutionY" 500
 
 configSet "Samples" 1
 #configSet "WorldSpace" "kex"
