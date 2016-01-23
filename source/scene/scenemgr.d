@@ -23,6 +23,7 @@ import core.cpuid;
 import std.algorithm;
 import std.random;
 import dbg.debugger;
+import dbg.dispatcher;
 import metric;
 
 import scene.noneuclidean;
@@ -61,6 +62,7 @@ abstract class WorldSpace
 	public void StartTracing(string outfile)
 	{
 		auto cam = cast(ICamera)(camera);
+        DebugDispatcher.space = this;
 		ambientLight = cast(shared(Color))(Colors.White);
 		pixelsx = cfgResolutionX;
 		pixelsy = cfgResolutionY;
@@ -205,6 +207,7 @@ abstract class WorldSpace
 			}
 			writeln();writeln("Finished!");
 			im.WriteImage(outfile);
+            DebugDispatcher.renderResult = im;
 		}
 	}
 

@@ -3,7 +3,9 @@ module dbg.debugger_new;
 import glad.gl.all;
 import glad.gl.loader;
 import derelict.glfw3.glfw3;
-
+import imgui.api;
+import dbg.glhelpers;
+import dbg.dispatcher;
 import std.stdio, std.string, std.file, std.math, std.exception;
 
 import config, scene.camera, scene.scenemgr, math;
@@ -42,6 +44,90 @@ class VisualHelper
     
     private GLFWwindow* rwin;
     private int winx,winy;
+    private int mousex,mousey,mousescroll,keychar;
+    private ubyte mousebtns;
+    private float bgIntensity = 0.25f;
+    private GFXtexture texRendered;
+    private static struct DrawnObj
+    {
+        GFXdataStruct data;
+        GFXbufferObject vbo, veo;
+        GFXvertexArrayObject vao;
+        GFXtexture tex;
+        void bind()
+        {
+            if(vbo)vbo.bindTo(gBufferTarget.VertexArray);
+            if(veo)veo.bindTo(gBufferTarget.ElementArray);
+            if(vao)vao.bind();
+            if(tex)tex.bind();
+        }
+    }
+    private DrawnObj objRendered;
+    private GFXshader shader2D;
+    
+    private void initVisuals()
+    {
+        texRendered = new GFXtexture();
+        texRendered.recreateTexture(DebugDispatcher.renderResult);
+        texRendered.bind();
+        texRendered.generateMipmaps();
+        shader2D = new GFXshader();
+        shader2D.loadVertShader("shaders/twod.vert");
+        shader2D.loadFragShader("shaders/twod.frag");
+        shader2D.link();
+        shader2D.bind();
+        shader2D.setUniform1i("doTexture", 1);
+        shader2D.setUniformM4("model", gIdentity4());
+        shader2D.setUniformM4("view", gIdentity4());
+        shader2D.setUniformM4("proj", gIdentity4());
+        int sh2Pos = shader2D.getAttribLocation("position");
+        int sh2Tex = shader2D.getAttribLocation("texcoord");
+        int sh2Color = shader2D.getAttribLocation("color");
+        objRendered.tex = texRendered;
+        objRendered.data = new GFXdataStruct();
+        {
+            int vPos, vTex, vColor;
+            ubyte[] xdata;
+            with(objRendered.data)
+            {
+                vPos = appendType(gDataType.Avector3); // pos
+                vTex = appendType(gDataType.Avector3); // texcoord
+                vColor = appendType(gDataType.Avector4); // color
+                declarationComplete();
+                static struct Vert
+                {
+                    float x,y,z;
+                    float u,v,w;
+                    float r,g,b,a;
+                }
+                Vert[6] dta;
+                dta[0] = Vert(-1,-1,0, 0,1,0, 1,1,1,1);
+                dta[1] = Vert(-1, 1,0, 0,0,0, 1,1,1,1);
+                dta[2] = Vert( 1, 1,0, 1,0,0, 1,1,1,1);
+                dta[3] = Vert( 1, 1,0, 1,0,0, 1,1,1,1);
+                dta[4] = Vert( 1,-1,0, 1,1,0, 1,1,1,1);
+                dta[5] = Vert(-1,-1,0, 0,1,0, 1,1,1,1);
+                xdata = cast(ubyte[])(dta);
+            }
+            objRendered.vbo = new GFXbufferObject(gBufferUsage.StaticPush);
+            with(objRendered.vbo)
+            {
+                bindTo(gBufferTarget.VertexArray);
+                updateData(xdata);
+            }
+            objRendered.vao = new GFXvertexArrayObject();
+            with(objRendered.vao)
+            {
+                bind();
+                glEnableVertexAttribArray(sh2Pos);
+                configureAttribute(objRendered.data, vPos, sh2Pos, false, false);
+                glEnableVertexAttribArray(sh2Tex);
+                configureAttribute(objRendered.data, vTex, sh2Tex, false, false);
+                glEnableVertexAttribArray(sh2Color);
+                configureAttribute(objRendered.data, vColor, sh2Color, false, false);
+            }
+        }
+    }
     
     /// Starts the graphical part of the debugger
     public void runGraphics()
@@ -49,17 +135,48 @@ class VisualHelper
         DerelictGLFW3.load();
         glfwInit();
         setupWindow();
+        enforce(imguiInit("firasans-medium.ttf",1024));
+        initVisuals();
+        int scroll_d = 0;
         while(!glfwWindowShouldClose(rwin))
         {
             resetGl();
-            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            
+            shader2D.bind();
+            shader2D.setUniform1i("doTexture", 1);
+            shader2D.setUniformM4("model", 
+                gMat4Mul(gMatTranslation(gVec3(-winx+60,-winy+60,0)),gMatScaling(gVec3(50,50,1)))
+                );
+            shader2D.setUniformM4("view", gIdentity4());
+            shader2D.setUniformM4("proj", gMatOrthographic(0,winx,0,winy,0,1));
+            objRendered.bind();
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            gAssertGl();
+            imguiBeginFrame(mousex,winy-mousey,mousebtns,mousescroll,cast(dchar)keychar);
+            // GUI code
+            
+            imguiBeginScrollArea("Controls", 10, 10, 100, 100, &scroll_d);
+            {
+                imguiSlider("BG",&bgIntensity,0.0f,1.0f,0.02f);
+            }
+            imguiEndScrollArea();
+            
+            imguiEndFrame();
+            mousescroll = 0;
+            keychar = 0;
+            imguiRender(winx,winy);
             glfwSwapBuffers(rwin);
+            glfwPollEvents();
         }
+        imguiDestroy();
+        glfwTerminate();
     }
     
     private void resetGl()
     {
-        glClearColor(0, 0, 0, 1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glClearColor(bgIntensity, bgIntensity, bgIntensity, 1.0f);
         glViewport(0, 0, winx, winy);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
@@ -143,31 +260,65 @@ class VisualHelper
     /// -
     public void onMouseButton(int button, int state, int x, int y)
     {
-        
+        if(button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            if(state==GLFW_PRESS)
+            {
+                mousebtns |= MouseButton.left;
+            }
+            else if(state==GLFW_RELEASE)
+            {
+                mousebtns &= ~MouseButton.left;
+            }
+        }
+        else if(button == GLFW_MOUSE_BUTTON_RIGHT)
+        {
+            if(state==GLFW_PRESS)
+            {
+                mousebtns |= MouseButton.right;
+            }
+            else if(state==GLFW_RELEASE)
+            {
+                mousebtns &= ~MouseButton.right;
+            }
+        }
     }
     
     /// -
     public void onMouseMove(int x, int y)
     {
-        
+        mousex = x;
+        mousey = y;
     }
     
     /// -
     public void onScroll(double axis, double dir)
     {
-        
+        mousescroll = cast(int)dir;
     }
     
     /// -
     public void onChar(dchar ch)
     {
-        
+        keychar = cast(int)ch;
     }
     
     /// -
     public void onKey(int id, int state)
     {
-        
+        if(id==GLFW_KEY_ESCAPE && state==GLFW_RELEASE)
+        {
+            glfwSetWindowShouldClose(rwin,GL_TRUE);
+            return;
+        }
+        if(id==GLFW_KEY_BACKSPACE && state!=GLFW_RELEASE)
+        {
+            keychar = '\b';
+        }
+        else if(id==GLFW_KEY_ENTER && state!=GLFW_RELEASE)
+        {
+            keychar = '\n';
+        }
     }
     
     /// -

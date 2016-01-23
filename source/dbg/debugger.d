@@ -779,6 +779,19 @@ class VisualDebugger
 						glVertex3d(tr.c.x+tr.plane.origin.x,tr.c.y+tr.plane.origin.y,tr.c.z+tr.plane.origin.z);
 						glEnd();
 						break;
+					case DrawType.Plane:
+						Plane pl = *(dd.plane);
+						glBegin(GL_QUADS);
+						glColor3f(1.0f,1.0f,0.0f);
+						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
+						glColor3f(1.0f,0.0f,1.0f);
+						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
+						glColor3f(0.0f,1.0f,1.0f);
+						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
+						glColor3f(0.0f,1.0f,0.0f);
+						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
+						glEnd();
+						break;
 					default:
 						break;
 				}

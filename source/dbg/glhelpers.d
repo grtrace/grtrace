@@ -10,9 +10,9 @@ public import std.exception;
 private string LoadFileAsStrRet(string path)
 {
     import std.file : readText;
+
     return readText!string(path);
 }
-
 
 /// Floating-point type
 alias GFXnum = float;
@@ -54,6 +54,11 @@ struct GFXvector3
     GLdouble* opCast(T : GLdouble*)()
     {
         return [x, y, z].ptr;
+    }
+    
+    float[] arr()
+    {
+        return [x,y,z];
     }
 
     private static pure string strOpBinary(string op)
@@ -103,6 +108,11 @@ struct GFXvector4
     GFXvector3 to3()
     {
         return gVec3(x, y, z);
+    }
+
+    float[] arr()
+    {
+        return [x,y,z,w];
     }
 
     GFXvector4 opUnary(string op)() if (op == "-")
@@ -260,7 +270,7 @@ GFXmatrix4 gMat4Mul(GFXmatrix4 A, GFXmatrix4 B)
     GFXnum[4] T;
     for (int i = 0; i < 4; i++)
     {
-        GFXnum[4] R = A[i .. i + 4];
+        GFXnum[4] R = A[4*i .. 4*(i + 1)];
         T[] = R[] * C1[];
         O[4 * i + 0] = T[0] + T[1] + T[2] + T[3];
         T[] = R[] * C2[];
@@ -350,6 +360,28 @@ GFXmatrix4 gMat4Scale(GFXmatrix4 A, GFXnum n)
     GFXmatrix4 S = A.dup;
     S[] *= n;
     return S;
+}
+
+/// -
+GFXmatrix4 gMatTranslation(GFXvector3 v)
+{
+    return [
+    1,0,0,v.x,
+    0,1,0,v.y,
+    0,0,1,v.z,
+    0,0,0,1
+    ];
+}
+
+/// -
+GFXmatrix4 gMatScaling(GFXvector3 v)
+{
+    return [
+    v.x,0,0,0,
+    0,v.y,0,0,
+    0,0,v.z,0,
+    0,0,0,1
+    ];
 }
 
 /**
@@ -468,13 +500,19 @@ private class gDataTypeField
 
     void SetFromD(T)(void* ptr, T val)
     {
-
+        SetFromDvoid(ptr, cast(void*)(&val));
     }
 
     T GetToD(T)(void* ptr)
     {
-        return T.init;
+        return *(cast(T*)GetToDvoid(ptr));
     }
+    
+    void SetFromDvoid(void* ptr, void* val)
+    {assert(0);}
+    
+    void* GetToDvoid(void* ptr)
+    {assert(0);}
 }
 
 private class gDataImpl(T) : gDataTypeField
@@ -488,16 +526,7 @@ private class gDataImpl(T) : gDataTypeField
     {
         return T.sizeof;
     }
-
-    override void SetFromD(TT)(void* ptr, TT val)
-    {
-
-    }
-
-    override TT GetToD(TT)(void* ptr)
-    {
-        return TT.init;
-    }
+    
 }
 
 private template mixDataInt(T)
@@ -513,17 +542,17 @@ private template mixDataInt(T)
         return sz;
     }
 
-    override void SetFromD(TT)(void* ptr, TT val)
+    override void SetFromDvoid(void* ptr, void* val)
     {
-        void* P = cast(void*)(&(cast(T)(val)));
-        ptr[0 .. sz] = P[0 .. sz];
+        ptr[0 .. sz] = val[0 .. sz];
     }
-
-    override TT GetToD(TT)(void* ptr)
+    T bufV;
+    override void* GetToDvoid(void* ptr)
     {
-        TT V;
-        cast(void*)(&V)[0 .. sz] = cast(TT*)(ptr[0 .. sz]);
-        return V;
+        T V;
+        (cast(void*)(&V))[0 .. sz] = ptr[0 .. sz];
+        bufV = V;
+        return &bufV;
     }
 }
 
@@ -540,17 +569,17 @@ private template mixDataUInt(T)
         return sz;
     }
 
-    override void SetFromD(TT)(void* ptr, TT val)
+    override void SetFromDvoid(void* ptr, void* val)
     {
-        void* P = cast(void*)(&(cast(T)(val)));
-        ptr[0 .. sz] = P[0 .. sz];
+        ptr[0 .. sz] = val[0 .. sz];
     }
-
-    override TT GetToD(TT)(void* ptr)
+    T bufV;
+    override void* GetToDvoid(void* ptr)
     {
-        TT V;
-        cast(void*)(&V)[0 .. sz] = cast(TT*)(ptr[0 .. sz]);
-        return V;
+        T V;
+        (cast(void*)(&V))[0 .. sz] = ptr[0 .. sz];
+        bufV = V;
+        return &bufV;
     }
 }
 
@@ -567,22 +596,23 @@ private template mixDataFloat(T)
         return sz;
     }
 
-    override void SetFromD(TT)(void* ptr, TT val)
+    override void SetFromDvoid(void* ptr, void* val)
     {
-        void* P = cast(void*)(&(cast(T)(val)));
-        ptr[0 .. sz] = P[0 .. sz];
+        ptr[0 .. sz] = val[0 .. sz];
     }
-
-    override TT GetToD(TT)(void* ptr)
+    T bufV;
+    override void* GetToDvoid(void* ptr)
     {
-        TT V;
-        cast(void*)(&V)[0 .. sz] = cast(TT*)(ptr[0 .. sz]);
-        return V;
+        T V;
+        (cast(void*)(&V))[0 .. sz] = ptr[0 .. sz];
+        bufV = V;
+        return &bufV;
     }
 }
 
 private class gDataImpl(T : void) : gDataTypeField
 {
+    static void* nptr = null;
     public this(gDataType T)
     {
         super(T);
@@ -592,14 +622,14 @@ private class gDataImpl(T : void) : gDataTypeField
     {
         return 1;
     }
-
-    override void SetFromD(TT)(void* ptr, TT val)
+    
+    override void SetFromDvoid(void* ptr, void* val)
     {
     }
 
-    override TT GetToD(TT)(void* ptr)
+    override void* GetToDvoid(void* ptr)
     {
-        return TT.init;
+        return &nptr;
     }
 }
 
@@ -666,17 +696,19 @@ private class gDataImpl(T : GFXvector3) : gDataTypeField
         return sz;
     }
 
-    override void SetFromD(TT)(void* ptr, TT val)
+    override void SetFromDvoid(void* ptr, void* val)
     {
-        void* P = cast(void*)(&(cast(T)(val)));
-        ptr[0 .. sz] = P[0 .. sz];
+        GFXvector3 V = *(cast(T*)val);
+        float[3] A = [V.x, V.y, V.z];
+        ptr[0 .. sz] = (cast(void*)(A.ptr))[0 .. sz];
     }
-
-    override TT GetToD(TT)(void* ptr)
+    T bufV;
+    override void* GetToDvoid(void* ptr)
     {
-        TT V;
-        cast(void*)(&V)[0 .. sz] = cast(TT*)(ptr[0 .. sz]);
-        return V;
+        float[3] A;
+        (cast(void*)(A.ptr))[0 .. sz] = ptr[0 .. sz];
+        bufV = gVec3(A[0],A[1],A[2]);
+        return &bufV;
     }
 }
 
@@ -693,17 +725,16 @@ private class gDataImpl(T : GFXmatrix3) : gDataTypeField
         return sz;
     }
 
-    override void SetFromD(TT)(void* ptr, TT val)
+    override void SetFromDvoid(void* ptr, void* val)
     {
-        void* P = cast(void*)(&(cast(T)(val)));
-        ptr[0 .. sz] = P[0 .. sz];
+        T *V = cast(T*)val;
+        ptr[0 .. sz] = (cast(void*)(V))[0 .. sz];
     }
-
-    override TT GetToD(TT)(void* ptr)
+    T bufV;
+    override void* GetToDvoid(void* ptr)
     {
-        TT V;
-        cast(void*)(&V)[0 .. sz] = cast(TT*)(ptr[0 .. sz]);
-        return V;
+        (cast(void*)(bufV.ptr))[0 .. sz] = ptr[0 .. sz];
+        return &bufV;
     }
 }
 
@@ -720,17 +751,19 @@ private class gDataImpl(T : GFXvector4) : gDataTypeField
         return sz;
     }
 
-    override void SetFromD(TT)(void* ptr, TT val)
+    override void SetFromDvoid(void* ptr, void* val)
     {
-        void* P = cast(void*)(&(cast(T)(val)));
-        ptr[0 .. sz] = P[0 .. sz];
+        T *V = cast(T*)val;
+        float[4] A = [V.x, V.y, V.z, V.w];
+        ptr[0 .. sz] = (cast(void*)(A))[0 .. sz];
     }
-
-    override TT GetToD(TT)(void* ptr)
+    T bufV;
+    override void* GetToDvoid(void* ptr)
     {
-        TT V;
-        cast(void*)(&V)[0 .. sz] = cast(TT*)(ptr[0 .. sz]);
-        return V;
+        float[4] A;
+        (cast(void*)(A.ptr))[0 .. sz] = ptr[0 .. sz];
+        bufV = gVec4(A[0],A[1],A[2],A[3]);
+        return &bufV;
     }
 }
 
@@ -747,17 +780,16 @@ private class gDataImpl(T : GFXmatrix4) : gDataTypeField
         return sz;
     }
 
-    override void SetFromD(TT)(void* ptr, TT val)
+    override void SetFromDvoid(void* ptr, void* val)
     {
-        void* P = cast(void*)(&(cast(T)(val)));
-        ptr[0 .. sz] = P[0 .. sz];
+        T *V = cast(T*)val;
+        ptr[0 .. sz] = (cast(void*)(V))[0 .. sz];
     }
-
-    override TT GetToD(TT)(void* ptr)
+    T bufV;
+    override void* GetToDvoid(void* ptr)
     {
-        TT V;
-        cast(void*)(&V)[0 .. sz] = cast(TT*)(ptr[0 .. sz]);
-        return V;
+        (cast(void*)(bufV.ptr))[0 .. sz] = ptr[0 .. sz];
+        return &bufV;
     }
 }
 
@@ -905,6 +937,11 @@ class GFXdataStruct
         void* ptr = data.ptr + _stride * idx;
         return fieldTypes[field].GetFromD!T(ptr);
     }
+    
+    override public string toString() const
+    {
+        return to!string(data);
+    }
 }
 
 /** Buffer usage
@@ -915,230 +952,247 @@ class GFXdataStruct
 	Pull - the buffer will be used mostly for receiving data from OpenGL
 	Server - the buffer will be used mostly for in-GPU-memory data transfers
 */
- enum gBufferUsage
+enum gBufferUsage
 {
-	StaticPush,
-	DynamicPush,
-	StreamPush,
-	StaticPull,
-	DynamicPull,
-	StreamPull,
-	StaticServer,
-	DynamicServer,
-	StreamServer
+    StaticPush,
+    DynamicPush,
+    StreamPush,
+    StaticPull,
+    DynamicPull,
+    StreamPull,
+    StaticServer,
+    DynamicServer,
+    StreamServer
 }
 
 /// Converts gBufferUsage enum to a correct OpenGL enum value
 public GLuint gBufferUsageEnum(gBufferUsage u)
 {
-	switch (u)
-	{
-	case gBufferUsage.StaticPush:
-		return GL_STATIC_DRAW;
-	case gBufferUsage.StaticPull:
-		return GL_STATIC_READ;
-	case gBufferUsage.StaticServer:
-		return GL_STATIC_COPY;
+    switch (u)
+    {
+    case gBufferUsage.StaticPush:
+        return GL_STATIC_DRAW;
+    case gBufferUsage.StaticPull:
+        return GL_STATIC_READ;
+    case gBufferUsage.StaticServer:
+        return GL_STATIC_COPY;
 
-	case gBufferUsage.DynamicPush:
-		return GL_DYNAMIC_DRAW;
-	case gBufferUsage.DynamicPull:
-		return GL_DYNAMIC_READ;
-	case gBufferUsage.DynamicServer:
-		return GL_DYNAMIC_COPY;
+    case gBufferUsage.DynamicPush:
+        return GL_DYNAMIC_DRAW;
+    case gBufferUsage.DynamicPull:
+        return GL_DYNAMIC_READ;
+    case gBufferUsage.DynamicServer:
+        return GL_DYNAMIC_COPY;
 
-	case gBufferUsage.StreamPush:
-		return GL_STREAM_DRAW;
-	case gBufferUsage.StreamPull:
-		return GL_STREAM_READ;
-	case gBufferUsage.StreamServer:
-		return GL_STREAM_COPY;
+    case gBufferUsage.StreamPush:
+        return GL_STREAM_DRAW;
+    case gBufferUsage.StreamPull:
+        return GL_STREAM_READ;
+    case gBufferUsage.StreamServer:
+        return GL_STREAM_COPY;
 
-	default:
-		return GL_DYNAMIC_DRAW;
-	}
+    default:
+        return GL_DYNAMIC_DRAW;
+    }
 }
 
 /// Enum describing binding targets of a buffer object (See: $(LINK https://www.opengl.org/wiki/Buffer_Object#General_use) )
- enum gBufferTarget
+enum gBufferTarget
 {
-	VertexArray,
-	ElementArray,
-	CopyRead,
-	CopyWrite,
-	PixelUnpack,
-	PixelPack,
-	Query,
-	Texture,
-	TransformFeedback,
-	Uniform
+    VertexArray,
+    ElementArray,
+    CopyRead,
+    CopyWrite,
+    PixelUnpack,
+    PixelPack,
+    Query,
+    Texture,
+    TransformFeedback,
+    Uniform
 }
 
 /// Converts gBufferTarget enum to a correct OpenGL enum value
 public GLuint gBufferTargetEnum(gBufferTarget t)
 {
-	switch (t)
-	{
-	case gBufferTarget.VertexArray:
-		return GL_ARRAY_BUFFER;
-	case gBufferTarget.ElementArray:
-		return GL_ELEMENT_ARRAY_BUFFER;
-	case gBufferTarget.CopyRead:
-		return GL_COPY_READ_BUFFER;
-	case gBufferTarget.CopyWrite:
-		return GL_COPY_WRITE_BUFFER;
-	case gBufferTarget.PixelUnpack:
-		return GL_PIXEL_UNPACK_BUFFER;
-	case gBufferTarget.PixelPack:
-		return GL_PIXEL_PACK_BUFFER;
-	case gBufferTarget.Query:
-		return GL_QUERY_BUFFER;
-	case gBufferTarget.Texture:
-		return GL_TEXTURE_BUFFER;
-	case gBufferTarget.TransformFeedback:
-		return GL_TRANSFORM_FEEDBACK_BUFFER;
-	case gBufferTarget.Uniform:
-		return GL_UNIFORM_BUFFER;
-	default:
-		return GL_COPY_READ_BUFFER;
-	}
+    switch (t)
+    {
+    case gBufferTarget.VertexArray:
+        return GL_ARRAY_BUFFER;
+    case gBufferTarget.ElementArray:
+        return GL_ELEMENT_ARRAY_BUFFER;
+    case gBufferTarget.CopyRead:
+        return GL_COPY_READ_BUFFER;
+    case gBufferTarget.CopyWrite:
+        return GL_COPY_WRITE_BUFFER;
+    case gBufferTarget.PixelUnpack:
+        return GL_PIXEL_UNPACK_BUFFER;
+    case gBufferTarget.PixelPack:
+        return GL_PIXEL_PACK_BUFFER;
+    case gBufferTarget.Query:
+        return GL_QUERY_BUFFER;
+    case gBufferTarget.Texture:
+        return GL_TEXTURE_BUFFER;
+    case gBufferTarget.TransformFeedback:
+        return GL_TRANSFORM_FEEDBACK_BUFFER;
+    case gBufferTarget.Uniform:
+        return GL_UNIFORM_BUFFER;
+    default:
+        return GL_COPY_READ_BUFFER;
+    }
 }
 
 public GLuint gBufferTargetBindingEnum(gBufferTarget t)
 {
-	switch (t)
-	{
-	case gBufferTarget.VertexArray:
-		return GL_ARRAY_BUFFER_BINDING;
-	case gBufferTarget.ElementArray:
-		return GL_ELEMENT_ARRAY_BUFFER_BINDING;
-	case gBufferTarget.PixelUnpack:
-		return GL_PIXEL_UNPACK_BUFFER_BINDING;
-	case gBufferTarget.PixelPack:
-		return GL_PIXEL_PACK_BUFFER_BINDING;
-	case gBufferTarget.Query:
-		return GL_QUERY_BUFFER_BINDING;
-	case gBufferTarget.TransformFeedback:
-		return GL_TRANSFORM_FEEDBACK_BUFFER_BINDING;
-	case gBufferTarget.Uniform:
-		return GL_UNIFORM_BUFFER_BINDING;
-	default:
-		return GL_ARRAY_BUFFER_BINDING;
-	}
+    switch (t)
+    {
+    case gBufferTarget.VertexArray:
+        return GL_ARRAY_BUFFER_BINDING;
+    case gBufferTarget.ElementArray:
+        return GL_ELEMENT_ARRAY_BUFFER_BINDING;
+    case gBufferTarget.PixelUnpack:
+        return GL_PIXEL_UNPACK_BUFFER_BINDING;
+    case gBufferTarget.PixelPack:
+        return GL_PIXEL_PACK_BUFFER_BINDING;
+    case gBufferTarget.Query:
+        return GL_QUERY_BUFFER_BINDING;
+    case gBufferTarget.TransformFeedback:
+        return GL_TRANSFORM_FEEDBACK_BUFFER_BINDING;
+    case gBufferTarget.Uniform:
+        return GL_UNIFORM_BUFFER_BINDING;
+    default:
+        return GL_ARRAY_BUFFER_BINDING;
+    }
 }
 
 /// Wraps OpenGL buffer objects, uses GFXdataStruct.
 class GFXbufferObject
 {
-	protected GLuint _id;
-	protected size_t _dsz = size_t.max;
-	protected gBufferUsage _usage;
-	protected gBufferTarget _bndX;
-	protected GLuint _bnd;
-	protected long _bid = 0;
-	protected static long _shbid = 1;
-	/// Gets the buffer id
-	public uint id()
-	{
-		return cast(uint) _id;
-	}
+    protected GLuint _id;
+    protected size_t _dsz = size_t.max;
+    protected gBufferUsage _usage;
+    protected gBufferTarget _bndX;
+    protected GLuint _bnd;
+    protected long _bid = 0;
+    protected static long _shbid = 1;
+    /// Gets the buffer id
+    public uint id()
+    {
+        return cast(uint) _id;
+    }
 
-	/// Gets the buffer usage
-	 public gBufferUsage usage()
-	{
-		return _usage;
-	}
+    /// Gets the buffer usage
+    public gBufferUsage usage()
+    {
+        return _usage;
+    }
 
-	/// Sets buffer usage
-	 public void changeUsage(gBufferUsage usg)
-	{
-		_usage = usg;
-	}
+    /// Sets buffer usage
+    public void changeUsage(gBufferUsage usg)
+    {
+        _usage = usg;
+    }
 
-	/// Constructor
-	 public this(gBufferUsage usg)
-	{
-		glGenBuffers(1, &_id);
-		gAssertGl();
-		_usage = usg;
-		_bnd = GL_COPY_READ_BUFFER;
-		_bndX = gBufferTarget.CopyRead;
-	}
+    /// Constructor
+    public this(gBufferUsage usg)
+    {
+        glGenBuffers(1, &_id);
+        gAssertGl();
+        _usage = usg;
+        _bnd = GL_COPY_READ_BUFFER;
+        _bndX = gBufferTarget.CopyRead;
+    }
 
-	/// Binds a buffer to the given target
-	 public void bindTo(gBufferTarget target)
-	{
-		_bndX = target;
-		_bnd = gBufferTargetEnum(target);
-		glBindBuffer(_bnd, _id);
-		gAssertGl();
-		_bid = ++_shbid;
-	}
+    /// Binds a buffer to the given target
+    public void bindTo(gBufferTarget target)
+    {
+        _bndX = target;
+        _bnd = gBufferTargetEnum(target);
+        glBindBuffer(_bnd, _id);
+        gAssertGl();
+        _bid = ++_shbid;
+    }
 
-	/// Unbinds the buffer from a target
-	 public void unbindFrom(gBufferTarget target)
-	{
-		_bndX = gBufferTarget.CopyRead;
-		_bnd = GL_COPY_READ_BUFFER;
-		glBindBuffer(gBufferTargetEnum(target), 0);
-		gAssertGl();
-		++_shbid;
-	}
+    /// Unbinds the buffer from a target
+    public void unbindFrom(gBufferTarget target)
+    {
+        _bndX = gBufferTarget.CopyRead;
+        _bnd = GL_COPY_READ_BUFFER;
+        glBindBuffer(gBufferTargetEnum(target), 0);
+        gAssertGl();
+        ++_shbid;
+    }
 
-	/// Ensure this is bound.
-	protected void fenceMe()
-	{
-		if (_bid != _shbid)
-		{
-			GLint boundid;
-			glGetIntegerv(gBufferTargetBindingEnum(_bndX), &boundid);
-			if (boundid != _id)
-				throw new Error("Trying to use unbound GFXbufferObject");
-			else
-				_bid = _shbid;
-		}
-	}
+    /// Ensure this is bound.
+    protected void fenceMe()
+    {
+        if (_bid != _shbid)
+        {
+            GLint boundid;
+            glGetIntegerv(gBufferTargetBindingEnum(_bndX), &boundid);
+            if (boundid != _id)
+                throw new Error("Trying to use unbound GFXbufferObject");
+            else
+                _bid = _shbid;
+        }
+    }
 
-	/// Updates the buffer data from a GFXdataStruct (requires previous binding)
-	 public void updateData(GFXdataStruct data)
-	{
-		fenceMe();
-		if (data.data.length != _dsz)
-		{
-			_dsz = data.data.length;
-			glBufferData(_bnd, _dsz, cast(const(GLvoid)*)(data.data.ptr),
-				gBufferUsageEnum(_usage));
-		}
-		else
-		{
-			glBufferSubData(_bnd, 0, _dsz, cast(const(GLvoid)*)(data.data.ptr));
-		}
-		gAssertGl();
-	}
+    /// Updates the buffer data from a GFXdataStruct (requires previous binding)
+    public void updateData(GFXdataStruct data)
+    {
+        fenceMe();
+        if (data.data.length != _dsz)
+        {
+            _dsz = data.data.length;
+            glBufferData(_bnd, _dsz, cast(const(GLvoid)*)(data.data.ptr),
+                gBufferUsageEnum(_usage));
+        }
+        else
+        {
+            glBufferSubData(_bnd, 0, _dsz, cast(const(GLvoid)*)(data.data.ptr));
+        }
+        gAssertGl();
+    }
+    
+    /// Updates the buffer data from bytes
+    public void updateData(ubyte[] data)
+    {
+        fenceMe();
+        if (data.length != _dsz)
+        {
+            _dsz = data.length;
+            glBufferData(_bnd, _dsz, cast(const(GLvoid)*)(data.ptr),
+                gBufferUsageEnum(_usage));
+        }
+        else
+        {
+            glBufferSubData(_bnd, 0, _dsz, cast(const(GLvoid)*)(data.ptr));
+        }
+        gAssertGl();
+    }
 
-	/// Updates a part of buffer data from a GFXdataStruct (requires previous binding)
-	 public void updateDataPart(GFXdataStruct data,
-		GFXuint offsetBuffer, GFXuint amount, GFXuint offsetStruct)
-	{
-		fenceMe();
-		amount *= data.stride;
-		offsetBuffer *= data.stride;
-		offsetStruct *= data.stride;
-		GFXuint str2 = offsetStruct + amount;
-		(str2 <= data.data.length) || assert(0);
-		glBufferSubData(_bnd, offsetBuffer, amount,
-			cast(const(GLvoid)*)(data.data[offsetStruct .. $].ptr));
-		gAssertGl();
-	}
+    /// Updates a part of buffer data from a GFXdataStruct (requires previous binding)
+    public void updateDataPart(GFXdataStruct data, GFXuint offsetBuffer,
+        GFXuint amount, GFXuint offsetStruct)
+    {
+        fenceMe();
+        amount *= data.stride;
+        offsetBuffer *= data.stride;
+        offsetStruct *= data.stride;
+        GFXuint str2 = offsetStruct + amount;
+        (str2 <= data.data.length) || assert(0);
+        glBufferSubData(_bnd, offsetBuffer, amount,
+            cast(const(GLvoid)*)(data.data[offsetStruct .. $].ptr));
+        gAssertGl();
+    }
 
-	/// Copies data to another buffer object (both must be bound to different targets and the other buffer must have enough space for the source data)
-	 public void copyData(GFXbufferObject target)
-	{
-		fenceMe();
-		target.fenceMe();
-		glCopyBufferSubData(this._bnd, target._bnd, 0, 0, this._dsz);
-		gAssertGl();
-	}
+    /// Copies data to another buffer object (both must be bound to different targets and the other buffer must have enough space for the source data)
+    public void copyData(GFXbufferObject target)
+    {
+        fenceMe();
+        target.fenceMe();
+        glCopyBufferSubData(this._bnd, target._bnd, 0, 0, this._dsz);
+        gAssertGl();
+    }
 }
 
 // ---------------------------------------------------------
@@ -1148,141 +1202,141 @@ class GFXbufferObject
 /// Wraps OpenGL Vertex Array Objects
 class GFXvertexArrayObject
 {
-	protected GLuint id;
+    protected GLuint id;
 
-	protected long _bid = 0;
-	protected static long _shbid = 0;
+    protected long _bid = 0;
+    protected static long _shbid = 0;
 
-	/// Constructor
-	 public this()
-	{
-		glGenVertexArrays(1, &id);
-		bind();
-	}
+    /// Constructor
+    public this()
+    {
+        glGenVertexArrays(1, &id);
+        bind();
+    }
 
-	/// Binds this VAO
-	 public void bind()
-	{
-		if (_shbid != _bid)
-		{
-			_shbid++;
-			_bid = _shbid;
-			glBindVertexArray(id);
-		}
-		gAssertGl();
-	}
+    /// Binds this VAO
+    public void bind()
+    {
+        if (_shbid != _bid)
+        {
+            _shbid++;
+            _bid = _shbid;
+            glBindVertexArray(id);
+        }
+        gAssertGl();
+    }
 
-	protected void fenceMe()
-	{
-		if (_bid != _shbid)
-		{
-			GLint bound;
-			glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &bound);
-			if (bound != id)
-				throw new Error("Trying to use unbound gVertexArrayObject");
-			else
-				_bid = _shbid;
-		}
-	}
+    protected void fenceMe()
+    {
+        if (_bid != _shbid)
+        {
+            GLint bound;
+            glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &bound);
+            if (bound != id)
+                throw new Error("Trying to use unbound gVertexArrayObject");
+            else
+                _bid = _shbid;
+        }
+    }
 
-	/**
+    /**
 		Configures an attribute in the vertex array (wraps glVertexAttrib[I]Pointer)
 		shaderIndex is the location in shader of the specified attribute.
 		normalize is only used when the parameter is of type float/matrix3x3/matrix4x4/vector3/vector4.
 		WARNING! 64-bit integers will be cut off to first 32 bits!
 	*/
-	 public void configureAttribute(GFXdataStruct str,
-		int fieldIdx, int shaderIndex, bool convToFloat = false, bool normalize = false)
-	{
-		fenceMe();
-		gDataTypeField F = str.fieldTypes[fieldIdx];
-		auto ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
-			GLsizei a4, const(GLvoid)* a5) {
-			glVertexAttribPointer(a1, a2, a3, GL_FALSE, a4, a5);
-		};
-		if (GL_ARB_vertex_attrib_64bit)
-		{
-			ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
-				GLsizei a4, const(GLvoid)* a5) {
-				glVertexAttribLPointer(a1, a2, a3, a4, a5);
-			};
-		}
-		switch (F.type)
-		{
-		case gDataType.Sint8:
-			glVertexAttribIPointer(shaderIndex, 1, GL_BYTE, str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Sint16:
-			glVertexAttribIPointer(shaderIndex, 1, GL_SHORT, str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Sint32:
-			glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Sint64:
-			glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(),
-				str.data.ptr + F.offset + 4);
-			break;
-		case gDataType.Uint8:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_BYTE,
-				str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Uint16:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_SHORT,
-				str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Uint32:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT,
-				str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Uint64:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT,
-				str.stride(), str.data.ptr + F.offset + 4);
-			break;
-		case gDataType.Sfloat32:
-			glVertexAttribPointer(shaderIndex, 1, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Sfloat64:
-			ffVertexAttribLPointer(shaderIndex, 1, GL_DOUBLE, str.stride(),
-				str.data.ptr + F.offset);
-			break;
-		case gDataType.Avector3:
-			glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Avector4:
-			glVertexAttribPointer(shaderIndex, 4, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
-			break;
-		case gDataType.Amatrix3x3:
-			glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, str.data.ptr + F.offset);
-			glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3,
-				str.data.ptr + F.offset + GFXnum.sizeof);
-			glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3,
-				str.data.ptr + F.offset + GFXnum.sizeof * 2);
-			break;
-		case gDataType.Amatrix4x4:
-			glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, str.data.ptr + F.offset);
-			glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
-				str.data.ptr + F.offset + GFXnum.sizeof);
-			glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
-				str.data.ptr + F.offset + GFXnum.sizeof * 2);
-			glVertexAttribPointer(shaderIndex + 3, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
-				str.data.ptr + F.offset + GFXnum.sizeof * 3);
-			break;
-		default:
-			break;
-		}
-		gAssertGl();
-		//glVertexAttribPointer(shaderIndex, NUMC, TYPE, (normalize)?GL_TRUE:GL_FALSE, str.stride(), str.data.ptr + F.offset);
-	}
+    public void configureAttribute(GFXdataStruct str, int fieldIdx,
+        int shaderIndex, bool convToFloat = false, bool normalize = false)
+    {
+        fenceMe();
+        gDataTypeField F = str.fieldTypes[fieldIdx];
+        auto ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
+            GLsizei a4, const(GLvoid)* a5) {
+            glVertexAttribPointer(a1, a2, a3, GL_FALSE, a4, a5);
+        };
+        if (GL_ARB_vertex_attrib_64bit)
+        {
+            ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
+                GLsizei a4, const(GLvoid)* a5) {
+                glVertexAttribLPointer(a1, a2, a3, a4, a5);
+            };
+        }
+        switch (F.type)
+        {
+        case gDataType.Sint8:
+            glVertexAttribIPointer(shaderIndex, 1, GL_BYTE, str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Sint16:
+            glVertexAttribIPointer(shaderIndex, 1, GL_SHORT, str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Sint32:
+            glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Sint64:
+            glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(),
+                str.data.ptr + F.offset + 4);
+            break;
+        case gDataType.Uint8:
+            glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_BYTE,
+                str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Uint16:
+            glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_SHORT,
+                str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Uint32:
+            glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT,
+                str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Uint64:
+            glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT,
+                str.stride(), str.data.ptr + F.offset + 4);
+            break;
+        case gDataType.Sfloat32:
+            glVertexAttribPointer(shaderIndex, 1, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Sfloat64:
+            ffVertexAttribLPointer(shaderIndex, 1, GL_DOUBLE, str.stride(),
+                str.data.ptr + F.offset);
+            break;
+        case gDataType.Avector3:
+            glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Avector4:
+            glVertexAttribPointer(shaderIndex, 4, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
+            break;
+        case gDataType.Amatrix3x3:
+            glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, str.data.ptr + F.offset);
+            glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3,
+                str.data.ptr + F.offset + GFXnum.sizeof);
+            glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3,
+                str.data.ptr + F.offset + GFXnum.sizeof * 2);
+            break;
+        case gDataType.Amatrix4x4:
+            glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, str.data.ptr + F.offset);
+            glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
+                str.data.ptr + F.offset + GFXnum.sizeof);
+            glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
+                str.data.ptr + F.offset + GFXnum.sizeof * 2);
+            glVertexAttribPointer(shaderIndex + 3, 3, GL_FLOAT,
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
+                str.data.ptr + F.offset + GFXnum.sizeof * 3);
+            break;
+        default:
+            break;
+        }
+        gAssertGl();
+        //glVertexAttribPointer(shaderIndex, NUMC, TYPE, (normalize)?GL_TRUE:GL_FALSE, str.stride(), str.data.ptr + F.offset);
+    }
 }
 
 // ---------------------------------------------------------
@@ -1292,384 +1346,383 @@ class GFXvertexArrayObject
 /// Shader Compilation Error
 class ShaderCompileError : Error
 {
-	public this(string msg, string shpath)
-	{
-		super(format("Shader compile error in file '%s': '%s'", shpath, msg));
-	}
+    public this(string msg, string shpath)
+    {
+        super(format("Shader compile error in file '%s': '%s'", shpath, msg));
+    }
 }
 
 /// Shader&program wrapper class
 class GFXshader
 {
-	protected int idVert = -1, idGeom = -1, idFrag = -1, idProg = -1;
-	protected bool linked = false;
+    protected int idVert = -1, idGeom = -1, idFrag = -1, idProg = -1;
+    protected bool linked = false;
 
-	/// Constructor
-	 public this()
-	{
-		idProg = glCreateProgram();
-		gAssertGl();
-	}
+    /// Constructor
+    public this()
+    {
+        idProg = glCreateProgram();
+        gAssertGl();
+    }
 
-	protected void compileSrc(GLenum shType, string src, string path)
-	{
-		if (linked)
-			assert(0, "Trying to load shader into an already linked program.");
-		int* id;
-		switch (shType)
-		{
-		case GL_VERTEX_SHADER:
-			id = &idVert;
-			break;
-		case GL_FRAGMENT_SHADER:
-			id = &idFrag;
-			break;
-		case GL_GEOMETRY_SHADER:
-			id = &idProg;
-			break;
-		default:
-			assert(0);
-		}
-		if ((*id) >= 0)
-			assert(0);
+    protected void compileSrc(GLenum shType, string src, string path)
+    {
+        if (linked)
+            assert(0, "Trying to load shader into an already linked program.");
+        int* id;
+        switch (shType)
+        {
+        case GL_VERTEX_SHADER:
+            id = &idVert;
+            break;
+        case GL_FRAGMENT_SHADER:
+            id = &idFrag;
+            break;
+        case GL_GEOMETRY_SHADER:
+            id = &idProg;
+            break;
+        default:
+            assert(0);
+        }
+        if ((*id) >= 0)
+            assert(0);
 
-		*id = cast(int) glCreateShader(shType);
-		int vid = *id;
-		glShaderSource(vid, 1, cast(const(char*)*)([src.ptr].ptr), [cast(int)(src.length)].ptr);
-		glCompileShader(vid);
-		gAssertGl();
-		GLint succ = 0;
-		glGetShaderiv(vid, GL_COMPILE_STATUS, &succ);
-		if (succ == GL_FALSE)
-		{
-			GLint logSize = 0;
-			glGetShaderiv(vid, GL_INFO_LOG_LENGTH, &logSize);
-			char[] loga;
-			loga.length = logSize;
-			glGetShaderInfoLog(vid, logSize, &succ, loga.ptr);
-			loga = loga[0 .. succ];
-			glDeleteShader(vid);
-			throw new ShaderCompileError(loga.idup, path);
-		}
-		glAttachShader(idProg, *id);
-		gAssertGl();
-	}
+        *id = cast(int) glCreateShader(shType);
+        int vid = *id;
+        glShaderSource(vid, 1, cast(const(char*)*)([src.ptr].ptr), [cast(int)(src.length)].ptr);
+        glCompileShader(vid);
+        gAssertGl();
+        GLint succ = 0;
+        glGetShaderiv(vid, GL_COMPILE_STATUS, &succ);
+        if (succ == GL_FALSE)
+        {
+            GLint logSize = 0;
+            glGetShaderiv(vid, GL_INFO_LOG_LENGTH, &logSize);
+            char[] loga;
+            loga.length = logSize;
+            glGetShaderInfoLog(vid, logSize, &succ, loga.ptr);
+            loga = loga[0 .. succ];
+            glDeleteShader(vid);
+            throw new ShaderCompileError(loga.idup, path);
+        }
+        glAttachShader(idProg, *id);
+        gAssertGl();
+    }
 
-	/// Loads vertex shader from VFS path vpath
-	 public void loadVertShader(string vpath)
-	{
-		string src = LoadFileAsStrRet(vpath);
-		compileSrc(GL_VERTEX_SHADER, src, vpath);
-	}
+    /// Loads vertex shader from VFS path vpath
+    public void loadVertShader(string vpath)
+    {
+        string src = LoadFileAsStrRet(vpath);
+        compileSrc(GL_VERTEX_SHADER, src, vpath);
+    }
 
-	/// Loads fragment shader from VFS path vpath
-	 public void loadFragShader(string vpath)
-	{
-		
+    /// Loads fragment shader from VFS path vpath
+    public void loadFragShader(string vpath)
+    {
 
-		string src = LoadFileAsStrRet(vpath);
-		compileSrc(GL_FRAGMENT_SHADER, src, vpath);
-	}
+        string src = LoadFileAsStrRet(vpath);
+        compileSrc(GL_FRAGMENT_SHADER, src, vpath);
+    }
 
-	/// Loads geometry shader from VFS path vpath
-	 public void loadGeomShader(string vpath)
-	{
-		
+    /// Loads geometry shader from VFS path vpath
+    public void loadGeomShader(string vpath)
+    {
 
-		string src = LoadFileAsStrRet(vpath);
-		compileSrc(GL_GEOMETRY_SHADER, src, vpath);
-	}
+        string src = LoadFileAsStrRet(vpath);
+        compileSrc(GL_GEOMETRY_SHADER, src, vpath);
+    }
 
-	/// Binds FragData location
-	 void bindFragDataLocation(GLuint colorName, string attribName)
-	{
-		if (linked)
-			assert(0, "Trying to bind fragment data location in an already linked program.");
-		glBindFragDataLocation(idProg, colorName, attribName.toStringz());
-		gAssertGl();
-	}
+    /// Binds FragData location
+    void bindFragDataLocation(GLuint colorName, string attribName)
+    {
+        if (linked)
+            assert(0, "Trying to bind fragment data location in an already linked program.");
+        glBindFragDataLocation(idProg, colorName, attribName.toStringz());
+        gAssertGl();
+    }
 
-	/// Links the program
-	 public void link()
-	{
-		glLinkProgram(idProg);
-		GLint isLinked = 0;
-		glGetProgramiv(idProg, GL_LINK_STATUS, &isLinked);
-		if (isLinked == GL_FALSE)
-		{
-			GLint maxLen;
-			glGetProgramiv(idProg, GL_INFO_LOG_LENGTH, &maxLen);
-			char[] plog;
-			plog.length = maxLen;
-			glGetProgramInfoLog(idProg, maxLen, &isLinked, plog.ptr);
-			plog = plog[0 .. isLinked];
-			throw new ShaderCompileError(plog.idup, "[program linking]");
-		}
-		else
-		{
-			if (idVert != -1)
-			{
-				glDetachShader(idProg, idVert);
-				glDeleteShader(idVert);
-			}
-			if (idFrag != -1)
-			{
-				glDetachShader(idProg, idFrag);
-				glDeleteShader(idFrag);
-			}
-			if (idGeom != -1)
-			{
-				glDetachShader(idProg, idGeom);
-				glDeleteShader(idGeom);
-			}
-		}
-		gAssertGl();
-	}
+    /// Links the program
+    public void link()
+    {
+        glLinkProgram(idProg);
+        GLint isLinked = 0;
+        glGetProgramiv(idProg, GL_LINK_STATUS, &isLinked);
+        if (isLinked == GL_FALSE)
+        {
+            GLint maxLen;
+            glGetProgramiv(idProg, GL_INFO_LOG_LENGTH, &maxLen);
+            char[] plog;
+            plog.length = maxLen;
+            glGetProgramInfoLog(idProg, maxLen, &isLinked, plog.ptr);
+            plog = plog[0 .. isLinked];
+            throw new ShaderCompileError(plog.idup, "[program linking]");
+        }
+        else
+        {
+            if (idVert != -1)
+            {
+                glDetachShader(idProg, idVert);
+                glDeleteShader(idVert);
+            }
+            if (idFrag != -1)
+            {
+                glDetachShader(idProg, idFrag);
+                glDeleteShader(idFrag);
+            }
+            if (idGeom != -1)
+            {
+                glDetachShader(idProg, idGeom);
+                glDeleteShader(idGeom);
+            }
+            linked = true;
+        }
+        gAssertGl();
+    }
 
-	/// Binds this program
-	 public void bind()
-	{
-		glUseProgram(idProg);
-		gAssertGl();
-	}
+    /// Binds this program
+    public void bind()
+    {
+        glUseProgram(idProg);
+        gAssertGl();
+    }
 
-	/// Unbinds current program
-	 public void unbind()
-	{
-		glUseProgram(0);
-		gAssertGl();
-	}
+    /// Unbinds current program
+    public void unbind()
+    {
+        glUseProgram(0);
+        gAssertGl();
+    }
 
-	protected int[string] uniIds;
+    protected int[string] uniIds;
 
-	/// Gets location of `id` uniform in the linked program.
-	 public int getUniformLocation(string id)
-	{
-		if (!linked)
-			assert(0, "You cannot get uniform location from an unlinked program");
-		int* rid = id in uniIds;
-		if (rid is null)
-		{
-			int V = glGetUniformLocation(idProg, id.toStringz());
-			uniIds[id] = V;
-			return V;
-		}
-		else
-		{
-			return *rid;
-		}
-	}
+    /// Gets location of `id` uniform in the linked program.
+    public int getUniformLocation(string id)
+    {
+        if (!linked)
+            assert(0, "You cannot get uniform location from an unlinked program");
+        int* rid = id in uniIds;
+        if (rid is null)
+        {
+            int V = glGetUniformLocation(idProg, id.toStringz());
+            uniIds[id] = V;
+            return V;
+        }
+        else
+        {
+            return *rid;
+        }
+    }
 
-	protected int[string] attrIds;
+    protected int[string] attrIds;
 
-	/// Gets location of `id` vertex attribute in the linked program
-	 public int getAttribLocation(string id)
-	{
-		if (!linked)
-			assert(0, "You cannot get attribute location from an unlinked program");
-		int* rid = id in attrIds;
-		if (rid is null)
-		{
-			int V = glGetAttribLocation(idProg, id.toStringz());
-			attrIds[id] = V;
-			return V;
-		}
-		else
-		{
-			return *rid;
-		}
-	}
+    /// Gets location of `id` vertex attribute in the linked program
+    public int getAttribLocation(string id)
+    {
+        if (!linked)
+            assert(0, "You cannot get attribute location from an unlinked program");
+        int* rid = id in attrIds;
+        if (rid is null)
+        {
+            int V = glGetAttribLocation(idProg, id.toStringz());
+            attrIds[id] = V;
+            return V;
+        }
+        else
+        {
+            return *rid;
+        }
+    }
 
-	/// Sets uniform value
-	 public void setUniform1f(string id, float v0)
-	{
-		glUniform1f(getUniformLocation(id), v0);
-	}
+    /// Sets uniform value
+    public void setUniform1f(string id, float v0)
+    {
+        glUniform1f(getUniformLocation(id), v0);
+    }
 
-	/// Sets uniform value
-	 public void setUniform1i(string id, int v0)
-	{
-		glUniform1i(getUniformLocation(id), v0);
-	}
+    /// Sets uniform value
+    public void setUniform1i(string id, int v0)
+    {
+        glUniform1i(getUniformLocation(id), v0);
+    }
 
-	/// Sets uniform value
-	 public void setUniform2f(string id, float v0, float v1)
-	{
-		glUniform2f(getUniformLocation(id), v0, v1);
-	}
+    /// Sets uniform value
+    public void setUniform2f(string id, float v0, float v1)
+    {
+        glUniform2f(getUniformLocation(id), v0, v1);
+    }
 
-	/// Sets uniform value
-	 public void setUniform2i(string id, int v0, int v1)
-	{
-		glUniform2i(getUniformLocation(id), v0, v1);
-	}
+    /// Sets uniform value
+    public void setUniform2i(string id, int v0, int v1)
+    {
+        glUniform2i(getUniformLocation(id), v0, v1);
+    }
 
-	/// Sets uniform value
-	 public void setUniform3f(string id, float v0, float v1,
-		float v2)
-	{
-		glUniform3f(getUniformLocation(id), v0, v1, v2);
-	}
+    /// Sets uniform value
+    public void setUniform3f(string id, float v0, float v1, float v2)
+    {
+        glUniform3f(getUniformLocation(id), v0, v1, v2);
+    }
 
-	/// Sets uniform value
-	 public void setUniform3i(string id, int v0, int v1,
-		int v2)
-	{
-		glUniform3i(getUniformLocation(id), v0, v1, v2);
-	}
+    /// Sets uniform value
+    public void setUniform3i(string id, int v0, int v1, int v2)
+    {
+        glUniform3i(getUniformLocation(id), v0, v1, v2);
+    }
 
-	/// Sets uniform value
-	 public void setUniform4f(string id, float v0,
-		float v1, float v2, float v3)
-	{
-		glUniform4f(getUniformLocation(id), v0, v1, v2, v3);
-	}
+    /// Sets uniform value
+    public void setUniform4f(string id, float v0, float v1, float v2, float v3)
+    {
+        glUniform4f(getUniformLocation(id), v0, v1, v2, v3);
+    }
 
-	/// Sets uniform value
-	 public void setUniform4i(string id, int v0, int v1,
-		int v2, int v3)
-	{
-		glUniform4i(getUniformLocation(id), v0, v1, v2, v3);
-	}
+    /// Sets uniform value
+    public void setUniform4i(string id, int v0, int v1, int v2, int v3)
+    {
+        glUniform4i(getUniformLocation(id), v0, v1, v2, v3);
+    }
 
-	/// Sets uniform array
-	 public void setUniformAf(string id,
-		int numComponents, float[] values)
-	{
-		int loc = getUniformLocation(id);
-		switch (numComponents)
-		{
-		case 1:
-			glUniform1fv(loc, cast(GLsizei) values.length, values.ptr);
-			break;
-		case 2:
-			glUniform2fv(loc, cast(GLsizei) values.length / 2, values.ptr);
-			break;
-		case 3:
-			glUniform3fv(loc, cast(GLsizei) values.length / 3, values.ptr);
-			break;
-		case 4:
-			glUniform4fv(loc, cast(GLsizei) values.length / 4, values.ptr);
-			break;
-		default:
-			assert(0);
-		}
-	}
+    /// Sets uniform array
+    public void setUniformAf(string id, int numComponents, float[] values)
+    {
+        int loc = getUniformLocation(id);
+        switch (numComponents)
+        {
+        case 1:
+            glUniform1fv(loc, cast(GLsizei) values.length, values.ptr);
+            break;
+        case 2:
+            glUniform2fv(loc, cast(GLsizei) values.length / 2, values.ptr);
+            break;
+        case 3:
+            glUniform3fv(loc, cast(GLsizei) values.length / 3, values.ptr);
+            break;
+        case 4:
+            glUniform4fv(loc, cast(GLsizei) values.length / 4, values.ptr);
+            break;
+        default:
+            assert(0);
+        }
+    }
 
-	/// Sets uniform array
-	 public void setUniformAi(string id,
-		int numComponents, int[] values)
-	{
-		int loc = getUniformLocation(id);
-		switch (numComponents)
-		{
-		case 1:
-			glUniform1iv(loc, cast(GLsizei) values.length, values.ptr);
-			break;
-		case 2:
-			glUniform2iv(loc, cast(GLsizei) values.length / 2, values.ptr);
-			break;
-		case 3:
-			glUniform3iv(loc, cast(GLsizei) values.length / 3, values.ptr);
-			break;
-		case 4:
-			glUniform4iv(loc, cast(GLsizei) values.length / 4, values.ptr);
-			break;
-		default:
-			assert(0);
-		}
-	}
+    /// Sets uniform array
+    public void setUniformAi(string id, int numComponents, int[] values)
+    {
+        int loc = getUniformLocation(id);
+        switch (numComponents)
+        {
+        case 1:
+            glUniform1iv(loc, cast(GLsizei) values.length, values.ptr);
+            break;
+        case 2:
+            glUniform2iv(loc, cast(GLsizei) values.length / 2, values.ptr);
+            break;
+        case 3:
+            glUniform3iv(loc, cast(GLsizei) values.length / 3, values.ptr);
+            break;
+        case 4:
+            glUniform4iv(loc, cast(GLsizei) values.length / 4, values.ptr);
+            break;
+        default:
+            assert(0);
+        }
+    }
 
-	/// Sets uniform matrix
-	 public void setUniformM3(string id, GFXmatrix3 mat)
-	{
-		glUniformMatrix3fv(getUniformLocation(id), 1, GL_TRUE, mat.ptr);
-	}
+    /// Sets uniform matrix
+    public void setUniformM3(string id, GFXmatrix3 mat)
+    {
+        glUniformMatrix3fv(getUniformLocation(id), 1, GL_TRUE, mat.ptr);
+    }
 
-	/// Sets uniform matrix
-	 public void setUniformM4(string id, GFXmatrix4 mat)
-	{
-		glUniformMatrix4fv(getUniformLocation(id), 1, GL_TRUE, mat.ptr);
-	}
+    /// Sets uniform matrix
+    public void setUniformM4(string id, GFXmatrix4 mat)
+    {
+        glUniformMatrix4fv(getUniformLocation(id), 1, GL_TRUE, mat.ptr);
+    }
 }
 
 /// -
 class GFXtexture
 {
     import image.memory : Image;
-	protected bool _loaded = false;
-	protected bool _monochrome = false;
-	protected bool _filter_linear = true;
-	protected bool _repeat = true;
-	protected int _mipmaps = 3;
-	protected uint _id = 0xFFFFFFFF;
-	protected int _w, _h;
 
-	/// -
-	public @property uint getWidth()
-	{
-		return _w;
-	}
+    protected bool _loaded = false;
+    protected bool _monochrome = false;
+    protected bool _filter_linear = true;
+    protected bool _repeat = true;
+    protected uint _id = 0xFFFFFFFF;
+    protected int _w, _h;
 
-	/// -
-	public @property uint getHeight()
-	{
-		return _h;
-	}
+    /// -
+    public @property uint getWidth()
+    {
+        return _w;
+    }
 
-	/// Constructor
-	this()
-	{
-		glGenTextures(1, &_id);
-		if (_id == 0)
-			assert(0, "Couldn't create texture");
-		gAssertGl();
-	}
+    /// -
+    public @property uint getHeight()
+    {
+        return _h;
+    }
 
-	/// Creates/recreates a texture with new image
-	public void recreateTexture(Image img)
-	{
-		_loaded = true;
+    /// Constructor
+    this()
+    {
+        glGenTextures(1, &_id);
+        if (_id == 0)
+            assert(0, "Couldn't create texture");
+        gAssertGl();
+    }
+
+    /// Creates/recreates a texture with new image
+    public void recreateTexture(Image img)
+    {
+        _loaded = true;
         _monochrome = false;
-		_w = cast(int)img.w;
-		_h = cast(int)img.h;
+        _w = cast(int) img.w;
+        _h = cast(int) img.h;
 
-		if (GL_EXT_direct_state_access)
-		{
-			glTextureImage2DEXT(_id, GL_TEXTURE_2D, 0,
-				(_monochrome) ? (GL_R8) : (GL_RGBA8), _w, _h, 0,
-				(_monochrome) ? (GL_RED) : (GL_RGBA), GL_UNSIGNED_BYTE, img.data.ptr);
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, _id);
-			glTexImage2D(GL_TEXTURE_2D, 0, (_monochrome) ? (GL_R8) : (GL_RGBA8),
-				_w, _h, 0, (_monochrome) ? (GL_RED) : (GL_RGBA), GL_UNSIGNED_BYTE,
-				img.data.ptr);
-		}
-		gAssertGl();
-	}
+        if (GL_EXT_direct_state_access)
+        {
+            glTextureImage2DEXT(_id, GL_TEXTURE_2D, 0,
+                (_monochrome) ? (GL_R8) : (GL_RGB8), _w, _h, 0,
+                (_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, _id);
+            glTexImage2D(GL_TEXTURE_2D, 0, (_monochrome) ? (GL_R8) : (GL_RGB8),
+                _w, _h, 0, (_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE,
+                img.data.ptr);
+        }
+        gAssertGl();
+    }
 
-	/// Replaces texture's image with img's image, requires img to be in the same format as the texture.
-	public void reuploadTexture(Image img)
-	{
-		_loaded || assert(0);
-		(_w == img.w) || assert(0);
-		(_h == img.h) || assert(0);
+    /// Replaces texture's image with img's image, requires img to be in the same format as the texture.
+    public void reuploadTexture(Image img)
+    {
+        _loaded || assert(0);
+        (_w == img.w) || assert(0);
+        (_h == img.h) || assert(0);
 
-		if (GL_EXT_direct_state_access)
-		{
-			glTextureSubImage2DEXT(_id, GL_TEXTURE_2D, 0, 0, 0, _w, _h,
-				(_monochrome) ? (GL_RED) : (GL_RGBA), GL_UNSIGNED_BYTE, img.data.ptr);
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, _id);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _w, _h,
-				(_monochrome) ? (GL_RED) : (GL_RGBA), GL_UNSIGNED_BYTE, img.data.ptr);
-		}
-		gAssertGl();
-	}
+        if (GL_EXT_direct_state_access)
+        {
+            glTextureSubImage2DEXT(_id, GL_TEXTURE_2D, 0, 0, 0, _w, _h,
+                (_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, _id);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _w, _h,
+                (_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
+        }
+        gAssertGl();
+    }
+    
+    /// -
+    public void generateMipmaps()
+    {
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
     
     /// Binds the texture
     public void bind()
@@ -1679,4 +1732,3 @@ class GFXtexture
     }
 
 }
-

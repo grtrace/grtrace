@@ -101,15 +101,10 @@ void main(string[] args)
 	Thread.sleep(dur!"msecs"(50));
 	Duration duration = (MonoTime.currTime - startTime);
 	writefln("Total rendering time: %s",duration);
-	if(cfgDebug || cfgAdditionalCalc)
-	{
-		VisualHelper.instance.runGraphics();
-		//auto vdbg = new VisualDebugger();
-		//vdbg.Run();
-		if(cfgAdditionalCalc && (!cfgDebug))
-		{
-			//StartTest();
-		}
-	}
+    if(cfgDebug)VisualHelper.instance.runGraphics();
+    if(cfgAdditionalCalc && (!cfgDebug))
+    {
+        //StartTest();
+    }
 	FinalizeGPU();
 }

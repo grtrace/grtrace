@@ -32,13 +32,13 @@ class Material
 {
 	alias UVFunc = Color function(Image,fpnum,fpnum);
 
-	private Image im = null;
-	private UVFunc f = null;
-	private bool isDiffuse = false;
+	protected Image im = null;
+	protected UVFunc f = null;
+	protected bool isDiffuse = false;
 
-	private Color emissionColor = Colors.Black;
-	private fpnum emissionWavelength = fpnum.nan;
-	private Color diffuseColor = Colors.Black;
+	protected Color emissionColor = Colors.Black;
+	protected fpnum emissionWavelength = fpnum.nan;
+	protected Color diffuseColor = Colors.Black;
 
 	this()
 	{

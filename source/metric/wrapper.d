@@ -118,6 +118,10 @@ class WorldSpaceWrapper : WorldSpace
 					
 					tmpc = GetSpectrumColor(l_obs);
 				}
+				else
+				{
+					tmpc = Colors.Yellow;
+				}
 			}
 			else
 			{

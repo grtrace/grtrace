@@ -170,7 +170,14 @@ class TexturablePlane : Plane
 
 		setCache(vectorString(firstStr), vectorString(secondStr));
 	}
-
+	
+	static fpnum fxmod(fpnum A, fpnum M)
+	{
+		A = fmod(A,M);
+		if(A<0.0){A+=M;}
+		return A;
+	}
+	
 	override void getUVMapping(Vectorf point, out fpnum u, out fpnum v) const
 	{
 		Vectorf tmp = point-origin;
@@ -178,11 +185,11 @@ class TexturablePlane : Plane
 		fpnum U,V;
 
 		U = (A*tmp)/(len2);
-		U = (texture_single)?clamp(U,0.0,1.0):fmod(U, 1.0);
+		U = (texture_single)?clamp(U,0.0,1.0):fxmod(U, 1.0);
 		U = U*(tex_d_u-tex_a_u) + tex_a_u;
 
 		V = (B*tmp)/(len2);
-		V = (texture_single)?clamp(V,0.0,1.0):fmod(V, 1.0);
+		V = (texture_single)?clamp(V,0.0,1.0):fxmod(V, 1.0);
 		V = V*(tex_d_v-tex_a_v) + tex_a_v;
 
 		if(U<0)
