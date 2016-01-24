@@ -7,17 +7,17 @@ import imgui.api;
 import dbg.glhelpers;
 import dbg.dispatcher;
 import std.stdio, std.string, std.file, std.math, std.exception;
-
+import std.string, std.format;
 import config, scene.camera, scene.scenemgr, math;
 
 /// -
 class TooLowGLVersion : Error
 {
     ///-
-	this()
-	{
-		super("You've got too low OpenGL version. 3.3 is required.");
-	}
+    this()
+    {
+        super("You've got too low OpenGL version. 3.3 is required.");
+    }
 }
 
 /// Class responsible for visual debugging
@@ -28,6 +28,7 @@ class VisualHelper
     {
         _inst = new VisualHelper();
     }
+
     private this()
     {
     }
@@ -39,12 +40,12 @@ class VisualHelper
     /// -
     public void initialize()
     {
-        
+
     }
-    
+
     private GLFWwindow* rwin;
-    private int winx,winy;
-    private int mousex,mousey,mousescroll,keychar;
+    private int winx, winy;
+    private int mousex, mousey, mousescroll, keychar;
     private ubyte mousebtns;
     private float bgIntensity = 0.25f;
     private GFXtexture texRendered;
@@ -56,15 +57,36 @@ class VisualHelper
         GFXtexture tex;
         void bind()
         {
-            if(vbo)vbo.bindTo(gBufferTarget.VertexArray);
-            if(veo)veo.bindTo(gBufferTarget.ElementArray);
-            if(vao)vao.bind();
-            if(tex)tex.bind();
+            if (vbo)
+                vbo.bindTo(gBufferTarget.VertexArray);
+            if (veo)
+                veo.bindTo(gBufferTarget.ElementArray);
+            if (vao)
+                vao.bind();
+            if (tex)
+                tex.bind();
         }
     }
-    private DrawnObj objRendered;
-    private GFXshader shader2D;
     
+    private static struct TCamera
+    {
+        float x=0.0f,y=0.0f,z=0.0f;
+        float pitch=0.0f,yaw=0.0f;
+        float near=0.01f, far=100.0f;
+        float fov=80.0f;
+        void normalize()
+        {
+            pitch = fmod(pitch, PI);
+            yaw = fmod(yaw, M_2_PI);
+        }
+    }
+    
+    private TCamera camera;
+    private DrawnObj objRendered;
+    private GFXshader shader2D, shader3D;
+    private GFXmatrix4 matCamera, matView;
+    private bool mouseInGui, mouseLocked;
+
     private void initVisuals()
     {
         texRendered = new GFXtexture();
@@ -80,6 +102,16 @@ class VisualHelper
         shader2D.setUniformM4("model", gIdentity4());
         shader2D.setUniformM4("view", gIdentity4());
         shader2D.setUniformM4("proj", gIdentity4());
+        shader3D = new GFXshader();
+        shader3D.loadVertShader("shaders/twod.vert");
+        shader3D.loadFragShader("shaders/twod.frag");
+        shader3D.link();
+        shader3D.bind();
+        shader3D.setUniform1i("doTexture", 1);
+        shader3D.setUniformM4("model", gIdentity4());
+        shader3D.setUniformM4("view", gIdentity4());
+        shader3D.setUniformM4("proj", gIdentity4());
+        shader2D.bind();
         int sh2Pos = shader2D.getAttribLocation("position");
         int sh2Tex = shader2D.getAttribLocation("texcoord");
         int sh2Color = shader2D.getAttribLocation("color");
@@ -88,7 +120,7 @@ class VisualHelper
         {
             int vPos, vTex, vColor;
             ubyte[] xdata;
-            with(objRendered.data)
+            with (objRendered.data)
             {
                 vPos = appendType(gDataType.Avector3); // pos
                 vTex = appendType(gDataType.Avector3); // texcoord
@@ -96,27 +128,30 @@ class VisualHelper
                 declarationComplete();
                 static struct Vert
                 {
-                    float x,y,z;
-                    float u,v,w;
-                    float r,g,b,a;
+                    float x, y, z;
+                    float u, v, w;
+                    float r, g, b, a;
                 }
+
                 Vert[6] dta;
-                dta[0] = Vert(-1,-1,0, 0,1,0, 1,1,1,1);
-                dta[1] = Vert(-1, 1,0, 0,0,0, 1,1,1,1);
-                dta[2] = Vert( 1, 1,0, 1,0,0, 1,1,1,1);
-                dta[3] = Vert( 1, 1,0, 1,0,0, 1,1,1,1);
-                dta[4] = Vert( 1,-1,0, 1,1,0, 1,1,1,1);
-                dta[5] = Vert(-1,-1,0, 0,1,0, 1,1,1,1);
+                dta[0] = Vert(-1, -1, 0, 0, 1, 0, 1, 1, 1, 1);
+                dta[1] = Vert(-1, 1, 0, 0, 0, 0, 1, 1, 1, 1);
+                dta[2] = Vert(1, 1, 0, 1, 0, 0, 1, 1, 1, 1);
+                dta[3] = Vert(1, 1, 0, 1, 0, 0, 1, 1, 1, 1);
+                dta[4] = Vert(1, -1, 0, 1, 1, 0, 1, 1, 1, 1);
+                dta[5] = Vert(-1, -1, 0, 0, 1, 0, 1, 1, 1, 1);
                 xdata = cast(ubyte[])(dta);
             }
+            objRendered.data.setLength(6);
+            objRendered.data.data = xdata.dup;
             objRendered.vbo = new GFXbufferObject(gBufferUsage.StaticPush);
-            with(objRendered.vbo)
+            with (objRendered.vbo)
             {
                 bindTo(gBufferTarget.VertexArray);
                 updateData(xdata);
             }
             objRendered.vao = new GFXvertexArrayObject();
-            with(objRendered.vao)
+            with (objRendered.vao)
             {
                 bind();
                 glEnableVertexAttribArray(sh2Pos);
@@ -128,51 +163,72 @@ class VisualHelper
             }
         }
     }
-    
+
     /// Starts the graphical part of the debugger
     public void runGraphics()
     {
         DerelictGLFW3.load();
         glfwInit();
         setupWindow();
-        enforce(imguiInit("firasans-medium.ttf",1024));
         initVisuals();
+        enforce(imguiInit("firasans-medium.ttf", 1024));
         int scroll_d = 0;
-        while(!glfwWindowShouldClose(rwin))
+        while (!glfwWindowShouldClose(rwin))
         {
+            mouseInGui = false;
+            camera.normalize();
             resetGl();
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-            
+
             shader2D.bind();
             shader2D.setUniform1i("doTexture", 1);
-            shader2D.setUniformM4("model", 
-                gMat4Mul(gMatTranslation(gVec3(-winx+60,-winy+60,0)),gMatScaling(gVec3(50,50,1)))
-                );
+            shader2D.setUniformM4("model",
+                gMat4Mul(gMatTranslation(gVec3(-winx + 60, -winy + 60, 0)),
+                gMatScaling(gVec3(50, 50, 1))));
             shader2D.setUniformM4("view", gIdentity4());
-            shader2D.setUniformM4("proj", gMatOrthographic(0,winx,0,winy,0,1));
+            shader2D.setUniformM4("proj", gMatOrthographic(0, winx, 0, winy, 0, 1));
             objRendered.bind();
             glDrawArrays(GL_TRIANGLES, 0, 6);
-            gAssertGl();
-            imguiBeginFrame(mousex,winy-mousey,mousebtns,mousescroll,cast(dchar)keychar);
-            // GUI code
             
-            imguiBeginScrollArea("Controls", 10, 10, 100, 100, &scroll_d);
+            matCamera = gMatProjection(camera.fov, cast(float)winx/winy, camera.near, camera.far);
+            matView = gMat4Mul(gMatRotPitch(camera.pitch),gMatRotYaw(camera.yaw));
+            
+            gAssertGl();
+            glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            imguiBeginFrame(mousex, winy - mousey, mouseLocked?0:mousebtns, mouseLocked?0:mousescroll, cast(dchar) keychar);
+            // GUI code
+
+            mouseInGui |= imguiBeginScrollArea("Controls", 10, winy - 510, 190, 500, &scroll_d);
             {
-                imguiSlider("BG",&bgIntensity,0.0f,1.0f,0.02f);
+                imguiSlider("BG", &bgIntensity, 0.0f, 1.0f, 0.02f);
+                static bool expView = false;
+                imguiCollapse("View controls", "", &expView);
+                if(expView)
+                {
+                    imguiIndent();
+                    imguiLabel("x y z:");
+                    imguiLabel("%.1f %.1f %.1f".format(camera.x,camera.y,camera.z));
+                    imguiLabel("Pitch: %.1f".format(camera.pitch));
+                    imguiLabel("Yaw: %.1f".format(camera.yaw));
+                    imguiSlider("FOV", &camera.fov, 20.0f, 150.0f,1.0f);
+                    imguiSlider("Near", &camera.near, 0.0001f, 1.0f, 0.0001f);
+                    imguiSlider("Far", &camera.far, camera.near, 10_000.0f, 10.0f);
+                    imguiUnindent();
+                }
             }
             imguiEndScrollArea();
-            
+
             imguiEndFrame();
             mousescroll = 0;
             keychar = 0;
-            imguiRender(winx,winy);
+            imguiRender(winx, winy);
             glfwSwapBuffers(rwin);
             glfwPollEvents();
         }
         imguiDestroy();
         glfwTerminate();
     }
-    
+
     private void resetGl()
     {
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -181,7 +237,7 @@ class VisualHelper
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
     }
-    
+
     private void setupWindow()
     {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -194,12 +250,12 @@ class VisualHelper
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
-        int W = cast(int)cfgResolutionX;
-        int H = cast(int)cfgResolutionY;
+        int W = cast(int) cfgResolutionX;
+        int H = cast(int) cfgResolutionY;
         winx = W;
         winy = H;
-        rwin = glfwCreateWindow(W,H,"GrTrace Visual Helper",null,null);
-        if(!rwin)
+        rwin = glfwCreateWindow(W, H, "GrTrace Visual Helper", null, null);
+        if (!rwin)
         {
             throw new TooLowGLVersion();
         }
@@ -225,7 +281,7 @@ class VisualHelper
         glfwSetKeyCallback(rwin, &coreKey);
         glfwSetFramebufferSizeCallback(rwin, &coreSize);
     }
-    
+
     ///-
     public bool modLShift = false;
     ///-
@@ -256,75 +312,75 @@ class VisualHelper
         t = glfwGetKey(rwin, GLFW_KEY_RIGHT_CONTROL);
         modRCtrl = (t == GLFW_PRESS);
     }
-    
+
     /// -
     public void onMouseButton(int button, int state, int x, int y)
     {
-        if(button == GLFW_MOUSE_BUTTON_LEFT)
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
         {
-            if(state==GLFW_PRESS)
+            if (state == GLFW_PRESS)
             {
                 mousebtns |= MouseButton.left;
             }
-            else if(state==GLFW_RELEASE)
+            else if (state == GLFW_RELEASE)
             {
                 mousebtns &= ~MouseButton.left;
             }
         }
-        else if(button == GLFW_MOUSE_BUTTON_RIGHT)
+        else if (button == GLFW_MOUSE_BUTTON_RIGHT)
         {
-            if(state==GLFW_PRESS)
+            if (state == GLFW_PRESS)
             {
                 mousebtns |= MouseButton.right;
             }
-            else if(state==GLFW_RELEASE)
+            else if (state == GLFW_RELEASE)
             {
                 mousebtns &= ~MouseButton.right;
             }
         }
     }
-    
+
     /// -
     public void onMouseMove(int x, int y)
     {
         mousex = x;
         mousey = y;
     }
-    
+
     /// -
     public void onScroll(double axis, double dir)
     {
-        mousescroll = cast(int)dir;
+        mousescroll = cast(int) dir;
     }
-    
+
     /// -
     public void onChar(dchar ch)
     {
-        keychar = cast(int)ch;
+        keychar = cast(int) ch;
     }
-    
+
     /// -
     public void onKey(int id, int state)
     {
-        if(id==GLFW_KEY_ESCAPE && state==GLFW_RELEASE)
+        if (id == GLFW_KEY_ESCAPE && state == GLFW_RELEASE)
         {
-            glfwSetWindowShouldClose(rwin,GL_TRUE);
+            glfwSetWindowShouldClose(rwin, GL_TRUE);
             return;
         }
-        if(id==GLFW_KEY_BACKSPACE && state!=GLFW_RELEASE)
+        if (id == GLFW_KEY_BACKSPACE && state != GLFW_RELEASE)
         {
             keychar = '\b';
         }
-        else if(id==GLFW_KEY_ENTER && state!=GLFW_RELEASE)
+        else if (id == GLFW_KEY_ENTER && state != GLFW_RELEASE)
         {
             keychar = '\n';
         }
     }
-    
+
     /// -
     public void onResize(int w, int h)
     {
-        glViewport(0,0,w,h);
+        glViewport(0, 0, w, h);
         winx = w;
         winy = h;
     }
@@ -332,72 +388,71 @@ class VisualHelper
 
 extern (C) void coreMouseButton(GLFWwindow* w, int btn, int type, int modkeys) nothrow
 {
-	try
-	{
-		double xd, yd;
-		glfwGetCursorPos(w, &xd, &yd);
-		int x = cast(int) xd, y = cast(int) yd;
-		VisualHelper.instance.onMouseButton(btn,type,x,y);
-	}
-	catch (Throwable o)
-	{
-	}
+    try
+    {
+        double xd, yd;
+        glfwGetCursorPos(w, &xd, &yd);
+        int x = cast(int) xd, y = cast(int) yd;
+        VisualHelper.instance.onMouseButton(btn, type, x, y);
+    }
+    catch (Throwable o)
+    {
+    }
 }
 
 extern (C) void coreMouseMove(GLFWwindow* w, double x, double y) nothrow
 {
-	try
-	{
-		VisualHelper.instance.onMouseMove(cast(int)x,cast(int)y);
-	}
-	catch (Throwable o)
-	{
-	}
+    try
+    {
+        VisualHelper.instance.onMouseMove(cast(int) x, cast(int) y);
+    }
+    catch (Throwable o)
+    {
+    }
 }
 
 extern (C) void coreScroll(GLFWwindow* w, double axis, double dir) nothrow
 {
-	try
-	{
-		VisualHelper.instance.onScroll(axis,dir);
-	}
-	catch (Throwable o)
-	{
-	}
+    try
+    {
+        VisualHelper.instance.onScroll(axis, dir);
+    }
+    catch (Throwable o)
+    {
+    }
 }
 
 extern (C) void coreChar(GLFWwindow* w, uint ch) nothrow
 {
-	try
-	{
-		VisualHelper.instance.onChar(cast(dchar)ch);
-	}
-	catch (Throwable o)
-	{
-	}
+    try
+    {
+        VisualHelper.instance.onChar(cast(dchar) ch);
+    }
+    catch (Throwable o)
+    {
+    }
 }
 
 extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) nothrow
 {
-	try
-	{
+    try
+    {
         VisualHelper.instance.onKey(id, state);
-	}
-	catch (Throwable o)
-	{
-	}
+    }
+    catch (Throwable o)
+    {
+    }
 }
 
 extern (C) void coreSize(GLFWwindow* win, int w, int h) nothrow
 {
-	if ((w == 0) || (h == 0))
-		return;
-	try
-	{
-		VisualHelper.instance.onResize(w,h);
-	}
-	catch (Throwable o)
-	{
-	}
+    if ((w == 0) || (h == 0))
+        return;
+    try
+    {
+        VisualHelper.instance.onResize(w, h);
+    }
+    catch (Throwable o)
+    {
+    }
 }
-

@@ -384,6 +384,39 @@ GFXmatrix4 gMatScaling(GFXvector3 v)
     ];
 }
 
+/// X
+GFXmatrix4 gMatRotRoll(float a)
+{
+    return [
+    1,0,0,0,
+    0,cos(a),-sin(a),0,
+    0,sin(a),cos(a),0,
+    0,0,0,1
+    ];
+}
+
+/// Y
+GFXmatrix4 gMatRotPitch(float a)
+{
+    return [
+    cos(a),0,-sin(a),0,
+    0,1,0,0,
+    -sin(a),0,cos(a),0,
+    0,0,0,1
+    ];
+}
+
+/// Z
+GFXmatrix4 gMatRotYaw(float a)
+{
+    return [
+    cos(a),-sin(a),0,0,
+    sin(a), cos(a),0,0,
+    0,0,1,0,
+    0,0,0,1
+    ];
+}
+
 /**
 Constructs a projection matrix with given arguments
 Params:
@@ -1073,7 +1106,7 @@ class GFXbufferObject
     protected gBufferTarget _bndX;
     protected GLuint _bnd;
     protected long _bid = 0;
-    protected static long _shbid = 1;
+    protected static long _shbid = -1;
     /// Gets the buffer id
     public uint id()
     {
@@ -1205,7 +1238,7 @@ class GFXvertexArrayObject
     protected GLuint id;
 
     protected long _bid = 0;
-    protected static long _shbid = 0;
+    protected static long _shbid = -1;
 
     /// Constructor
     public this()
@@ -1217,12 +1250,9 @@ class GFXvertexArrayObject
     /// Binds this VAO
     public void bind()
     {
-        if (_shbid != _bid)
-        {
-            _shbid++;
-            _bid = _shbid;
-            glBindVertexArray(id);
-        }
+        _shbid++;
+        _bid = _shbid;
+        glBindVertexArray(id);
         gAssertGl();
     }
 
@@ -1261,75 +1291,76 @@ class GFXvertexArrayObject
                 glVertexAttribLPointer(a1, a2, a3, a4, a5);
             };
         }
+        enum void* Z = null;
         switch (F.type)
         {
         case gDataType.Sint8:
-            glVertexAttribIPointer(shaderIndex, 1, GL_BYTE, str.stride(), str.data.ptr + F.offset);
+            glVertexAttribIPointer(shaderIndex, 1, GL_BYTE, str.stride(), Z + F.offset);
             break;
         case gDataType.Sint16:
-            glVertexAttribIPointer(shaderIndex, 1, GL_SHORT, str.stride(), str.data.ptr + F.offset);
+            glVertexAttribIPointer(shaderIndex, 1, GL_SHORT, str.stride(), Z + F.offset);
             break;
         case gDataType.Sint32:
-            glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(), str.data.ptr + F.offset);
+            glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(), Z + F.offset);
             break;
         case gDataType.Sint64:
             glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(),
-                str.data.ptr + F.offset + 4);
+                Z + F.offset + 4);
             break;
         case gDataType.Uint8:
             glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_BYTE,
-                str.stride(), str.data.ptr + F.offset);
+                str.stride(), Z + F.offset);
             break;
         case gDataType.Uint16:
             glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_SHORT,
-                str.stride(), str.data.ptr + F.offset);
+                str.stride(), Z + F.offset);
             break;
         case gDataType.Uint32:
             glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT,
-                str.stride(), str.data.ptr + F.offset);
+                str.stride(), Z + F.offset);
             break;
         case gDataType.Uint64:
             glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT,
-                str.stride(), str.data.ptr + F.offset + 4);
+                str.stride(), Z + F.offset + 4);
             break;
         case gDataType.Sfloat32:
             glVertexAttribPointer(shaderIndex, 1, GL_FLOAT,
-                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
+                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
             break;
         case gDataType.Sfloat64:
             ffVertexAttribLPointer(shaderIndex, 1, GL_DOUBLE, str.stride(),
-                str.data.ptr + F.offset);
+                Z + F.offset);
             break;
         case gDataType.Avector3:
             glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
+                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
             break;
         case gDataType.Avector4:
             glVertexAttribPointer(shaderIndex, 4, GL_FLOAT,
-                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), str.data.ptr + F.offset);
+                (normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
             break;
         case gDataType.Amatrix3x3:
             glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, str.data.ptr + F.offset);
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, Z + F.offset);
             glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
                 (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3,
-                str.data.ptr + F.offset + GFXnum.sizeof);
+                Z + F.offset + GFXnum.sizeof);
             glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
                 (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3,
-                str.data.ptr + F.offset + GFXnum.sizeof * 2);
+                Z + F.offset + GFXnum.sizeof * 2);
             break;
         case gDataType.Amatrix4x4:
             glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, str.data.ptr + F.offset);
+                (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset);
             glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
                 (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
-                str.data.ptr + F.offset + GFXnum.sizeof);
+                Z + F.offset + GFXnum.sizeof);
             glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
                 (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
-                str.data.ptr + F.offset + GFXnum.sizeof * 2);
+                Z + F.offset + GFXnum.sizeof * 2);
             glVertexAttribPointer(shaderIndex + 3, 3, GL_FLOAT,
                 (normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4,
-                str.data.ptr + F.offset + GFXnum.sizeof * 3);
+                Z + F.offset + GFXnum.sizeof * 3);
             break;
         default:
             break;
