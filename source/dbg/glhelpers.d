@@ -1279,6 +1279,7 @@ class GFXvertexArrayObject
         int shaderIndex, bool convToFloat = false, bool normalize = false)
     {
         fenceMe();
+        glEnableVertexAttribArray(shaderIndex);
         gDataTypeField F = str.fieldTypes[fieldIdx];
         auto ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
             GLsizei a4, const(GLvoid)* a5) {

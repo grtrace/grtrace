@@ -20,6 +20,14 @@ class TooLowGLVersion : Error
     }
 }
 
+struct Vert3D
+{
+    float x=0.0,y=0.0,z=0.0;
+    float tx=0.0,ty=0.0,tz=0.0;
+    float r=0.0,g=0.0,b=0.0,a=0.0;
+    float nx=0.0,ny=0.0,nz=0.0;
+}
+
 /// Class responsible for visual debugging
 class VisualHelper
 {
@@ -67,6 +75,7 @@ class VisualHelper
                 tex.bind();
         }
     }
+    private DrawnObj objSpatial;
     
     private static struct TCamera
     {
@@ -154,14 +163,32 @@ class VisualHelper
             with (objRendered.vao)
             {
                 bind();
-                glEnableVertexAttribArray(sh2Pos);
                 configureAttribute(objRendered.data, vPos, sh2Pos, false, false);
-                glEnableVertexAttribArray(sh2Tex);
                 configureAttribute(objRendered.data, vTex, sh2Tex, false, false);
-                glEnableVertexAttribArray(sh2Color);
                 configureAttribute(objRendered.data, vColor, sh2Color, false, false);
             }
         }
+        shader3D.bind();
+        int sh3Pos = shader3D.getAttribLocation("position");
+        int sh3Tex = shader3D.getAttribLocation("texcoord");
+        int sh3Color = shader3D.getAttribLocation("color");
+        int sh3Normal = shader3D.getAttribLocation("normal");
+        objSpatial.data = new GFXdataStruct();
+        int sPos = objSpatial.data.appendType(gDataType.Avector3);
+        int sTex = objSpatial.data.appendType(gDataType.Avector3);
+        int sCol = objSpatial.data.appendType(gDataType.Avector4);
+        int sNorm = objSpatial.data.appendType(gDataType.Avector3);
+        /*objSpatial.data.declarationComplete();
+        objSpatial.data.setLength(1);
+        objSpatial.vbo = new GFXbufferObject(gBufferUsage.DynamicPush);
+        objSpatial.vbo.bindTo(gBufferTarget.VertexArray);
+        objSpatial.vbo.updateData(objSpatial.data);
+        objSpatial.vao = new GFXvertexArrayObject();
+        objSpatial.vao.bind();
+        objSpatial.vao.configureAttribute(objSpatial.data, sPos, sh3Pos, false, false);
+        objSpatial.vao.configureAttribute(objSpatial.data, sTex, sh3Tex, false, false);
+        objSpatial.vao.configureAttribute(objSpatial.data, sCol, sh3Color, false, false);
+        objSpatial.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);*/
     }
 
     /// Starts the graphical part of the debugger
