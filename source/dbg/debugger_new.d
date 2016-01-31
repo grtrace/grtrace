@@ -6,8 +6,9 @@ import derelict.glfw3.glfw3;
 import imgui.api;
 import dbg.glhelpers;
 import dbg.dispatcher;
+import dbg.draws;
 import std.stdio, std.string, std.file, std.math, std.exception;
-import std.string, std.format;
+import std.string, std.format, std.algorithm, std.array, std.range;
 import config, scene.camera, scene.scenemgr, math;
 
 /// -
@@ -26,6 +27,75 @@ struct Vert3D
     float tx=0.0,ty=0.0,tz=0.0;
     float r=0.0,g=0.0,b=0.0,a=0.0;
     float nx=0.0,ny=0.0,nz=0.0;
+} // 13 floats = 52 b
+
+private class VisualPrimitives
+{
+    static int appendSphere(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+        int cnt = 0;
+        auto radius = dd.radius;
+        auto origin = dd.plane.origin;
+        enum int loops = 64;
+        enum int segmentsPerLoop = 64;
+        iv0=0;
+        auto Verng = appender!(Vert3D[])();
+        auto Eerng = appender!(ushort[])();
+        foreach(int loopSegmentNumber; 0..segmentsPerLoop)
+        {
+            float theta = 0.0;
+            float phi = loopSegmentNumber * 2 * PI / segmentsPerLoop;
+            float sinTheta = sin(theta);
+            float sinPhi = sin(phi);
+            float cosTheta = cos(theta);
+            float cosPhi = cos(phi);
+            Verng ~= Vert3D(
+                        origin.x + radius * cosPhi * sinTheta, 
+                        origin.y + radius * sinPhi * sinTheta, 
+                        origin.z + radius * cosTheta,
+                        0,0,0,
+                        0.9,0.5,0.5,1,
+                        cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
+            Eerng ~= cast(ushort)(iv0 + loopSegmentNumber);
+            Eerng ~= cast(ushort)(iv0 + segmentsPerLoop + loopSegmentNumber);
+            cnt += 2;
+        }
+        foreach(int loopNumber; 0..loops)
+        {
+            foreach(int loopSegmentNumber; 0..segmentsPerLoop)
+            {
+                float theta = (loopNumber * PI / loops) + ((PI * loopSegmentNumber) / (segmentsPerLoop * loops));
+                if (loopNumber == loops)
+                {
+                    theta = PI;
+                }
+                float phi = loopSegmentNumber * 2 * PI / segmentsPerLoop;
+                float sinTheta = sin(theta);
+                float sinPhi = sin(phi);
+                float cosTheta = cos(theta);
+                float cosPhi = cos(phi);
+                Verng ~= Vert3D(
+                        origin.x + radius * cosPhi * sinTheta, 
+                        origin.y + radius * sinPhi * sinTheta, 
+                        origin.z + radius * cosTheta,
+                        0,0,0,
+                        1,1,1,1,
+                        cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
+                Eerng ~= cast(ushort)(iv0 + ((loopNumber + 1) * segmentsPerLoop) + loopSegmentNumber);
+                Eerng ~= cast(ushort)(iv0 + ((loopNumber + 2) * segmentsPerLoop) + loopSegmentNumber);
+                cnt += 2;
+            }
+        }
+        int ne;
+        foreach(int i;0..cast(int)(Eerng.data.length-2))
+        {
+            Vrng ~= Verng.data[min(Verng.data.length-1,Eerng.data[i])];
+            Vrng ~= Verng.data[min(Verng.data.length-1,Eerng.data[i+1])];
+            Vrng ~= Verng.data[min(Verng.data.length-1,Eerng.data[i+2])];
+            ne += 3;
+        }
+        return ne;
+    }
 }
 
 /// Class responsible for visual debugging
@@ -95,7 +165,7 @@ class VisualHelper
     private GFXshader shader2D, shader3D;
     private GFXmatrix4 matCamera, matView;
     private bool mouseInGui, mouseLocked;
-
+    int numverts;
     private void initVisuals()
     {
         texRendered = new GFXtexture();
@@ -105,6 +175,9 @@ class VisualHelper
         shader2D = new GFXshader();
         shader2D.loadVertShader("shaders/twod.vert");
         shader2D.loadFragShader("shaders/twod.frag");
+        int sh2Pos = shader2D.bindAttribLocation(1,"position");
+        int sh2Tex = shader2D.bindAttribLocation(2,"texcoord");
+        int sh2Color = shader2D.bindAttribLocation(3,"color");
         shader2D.link();
         shader2D.bind();
         shader2D.setUniform1i("doTexture", 1);
@@ -112,8 +185,12 @@ class VisualHelper
         shader2D.setUniformM4("view", gIdentity4());
         shader2D.setUniformM4("proj", gIdentity4());
         shader3D = new GFXshader();
-        shader3D.loadVertShader("shaders/twod.vert");
-        shader3D.loadFragShader("shaders/twod.frag");
+        shader3D.loadVertShader("shaders/space.vert");
+        shader3D.loadFragShader("shaders/space.frag");
+        int sh3Pos = shader3D.bindAttribLocation(1,"position");
+        int sh3Tex = shader3D.bindAttribLocation(2,"texcoord");
+        int sh3Color = shader3D.bindAttribLocation(3,"color");
+        int sh3Normal = shader3D.bindAttribLocation(4,"normal");
         shader3D.link();
         shader3D.bind();
         shader3D.setUniform1i("doTexture", 1);
@@ -121,9 +198,6 @@ class VisualHelper
         shader3D.setUniformM4("view", gIdentity4());
         shader3D.setUniformM4("proj", gIdentity4());
         shader2D.bind();
-        int sh2Pos = shader2D.getAttribLocation("position");
-        int sh2Tex = shader2D.getAttribLocation("texcoord");
-        int sh2Color = shader2D.getAttribLocation("color");
         objRendered.tex = texRendered;
         objRendered.data = new GFXdataStruct();
         {
@@ -169,44 +243,65 @@ class VisualHelper
             }
         }
         shader3D.bind();
-        int sh3Pos = shader3D.getAttribLocation("position");
-        int sh3Tex = shader3D.getAttribLocation("texcoord");
-        int sh3Color = shader3D.getAttribLocation("color");
-        int sh3Normal = shader3D.getAttribLocation("normal");
         objSpatial.data = new GFXdataStruct();
         int sPos = objSpatial.data.appendType(gDataType.Avector3);
         int sTex = objSpatial.data.appendType(gDataType.Avector3);
         int sCol = objSpatial.data.appendType(gDataType.Avector4);
         int sNorm = objSpatial.data.appendType(gDataType.Avector3);
-        /*objSpatial.data.declarationComplete();
-        objSpatial.data.setLength(1);
+        objSpatial.data.declarationComplete();
+        objSpatial.data.setLength(3);
+        Vert3D[] v3d = [];
+        ushort[] e3d = [];
+        numverts = VisualPrimitives.appendSphere(v3d,e3d,0,DebugDraw(DrawType.Sphere,1.0,new Plane(vectorf(0,0,0),vectorf(0,0,0))));
+        objSpatial.data.data = cast(ubyte[])(v3d);
         objSpatial.vbo = new GFXbufferObject(gBufferUsage.DynamicPush);
         objSpatial.vbo.bindTo(gBufferTarget.VertexArray);
         objSpatial.vbo.updateData(objSpatial.data);
+        objSpatial.veo = new GFXbufferObject(gBufferUsage.DynamicPush);
+        objSpatial.veo.bindTo(gBufferTarget.ElementArray);
+        objSpatial.veo.updateData(cast(ubyte[])e3d);
         objSpatial.vao = new GFXvertexArrayObject();
         objSpatial.vao.bind();
         objSpatial.vao.configureAttribute(objSpatial.data, sPos, sh3Pos, false, false);
         objSpatial.vao.configureAttribute(objSpatial.data, sTex, sh3Tex, false, false);
         objSpatial.vao.configureAttribute(objSpatial.data, sCol, sh3Color, false, false);
-        objSpatial.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);*/
+        objSpatial.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);
     }
 
     /// Starts the graphical part of the debugger
     public void runGraphics()
     {
+        double Taccum = 0.0;
+        double dt;
         DerelictGLFW3.load();
         glfwInit();
         setupWindow();
         initVisuals();
         enforce(imguiInit("firasans-medium.ttf", 1024));
         int scroll_d = 0;
+        glfwSetTime(0.0);
         while (!glfwWindowShouldClose(rwin))
         {
+            dt = glfwGetTime();
+            Taccum += dt;
+            glfwSetTime(0.0);
             mouseInGui = false;
             camera.normalize();
             resetGl();
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+            glEnable(GL_DEPTH_TEST);
+            //glEnable(GL_CULL_FACE);
+            shader3D.bind();
+            shader3D.setUniform1i("doTexture", 0);
+            shader3D.setUniformM4("model", gMatRotPitch(Taccum));
+            shader3D.setUniformM4("view", gMatTranslation(gVec3(0.0,0.0,-5.0)));            
+            shader3D.setUniformM4("proj", gMatProjection(camera.fov*PI/180.0,winy/cast(double)winx,camera.near,camera.far));
+            objSpatial.bind();
+            //glDrawElements(GL_TRIANGLE_STRIP, 3, GL_UNSIGNED_SHORT, null);
+            glDrawArrays(GL_TRIANGLES, 0, numverts);
+            
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
             shader2D.bind();
             shader2D.setUniform1i("doTexture", 1);
             shader2D.setUniformM4("model",

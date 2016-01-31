@@ -1,9 +1,11 @@
-#version 330 core
+#version 330
 
-in vec3 position;
-in vec3 texcoord;
-in vec4 color;
-in vec3 normal;
+precision highp float;
+
+in highp vec3 position;
+in mediump vec3 texcoord;
+in lowp vec4 color;
+in mediump vec3 normal;
 
 out vec3 VPosition;
 out vec2 VTexcoord;

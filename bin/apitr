@@ -1,0 +1,4 @@
+#!/bin/sh
+rm -f grtrace.trace
+apitrace trace ./grtrace $*
+qapitrace grtrace.trace

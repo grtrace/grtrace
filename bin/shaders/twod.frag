@@ -1,4 +1,6 @@
-#version 330 core
+#version 330
+
+precision highp float;
 
 in vec3 VPosition;
 in vec2 VTexcoord;

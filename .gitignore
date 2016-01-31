@@ -182,3 +182,5 @@ perf.data.old
 .workspace
 bin/aray.txt
 rzeczy
+*.trace
+*.log

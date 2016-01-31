@@ -401,7 +401,7 @@ GFXmatrix4 gMatRotPitch(float a)
     return [
     cos(a),0,-sin(a),0,
     0,1,0,0,
-    -sin(a),0,cos(a),0,
+    sin(a),0,cos(a),0,
     0,0,0,1
     ];
 }
@@ -1463,7 +1463,16 @@ class GFXshader
         string src = LoadFileAsStrRet(vpath);
         compileSrc(GL_GEOMETRY_SHADER, src, vpath);
     }
-
+    
+    /// Binds attribute location
+    int bindAttribLocation(int loc, string attribName)
+    {
+        if (linked)
+            assert(0, "Trying to bind attribute location in an already linked program.");
+        glBindAttribLocation(idProg, loc, attribName.toStringz());
+        return loc;
+    }
+    
     /// Binds FragData location
     void bindFragDataLocation(GLuint colorName, string attribName)
     {
@@ -1556,6 +1565,7 @@ class GFXshader
         if (rid is null)
         {
             int V = glGetAttribLocation(idProg, id.toStringz());
+            //if(V==-1){throw new Exception("Could not find attribute "~id~" in shader.");}
             attrIds[id] = V;
             return V;
         }

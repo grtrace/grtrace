@@ -1,7 +1,7 @@
-configSet "ResolutionX" 800
-configSet "ResolutionY" 600
+configSet "ResolutionX" 200
+configSet "ResolutionY" 100
 configSet "Samples" 1
-#configSet "WorldSpace" "kex"
+configSet "WorldSpace" "test"
 configSet "SpaceConfig" ""
 configSet "CameraType" "linear"
 configSet "CameraX" 0
@@ -10,7 +10,8 @@ configSet "CameraZ" -300
 configSet "CameraPitch" 0
 configSet "CameraYaw" 0
 configSet "CameraRoll" 0
-configSet "CameraOptions" "-x 10 -f 30"
+configSet "CameraOptions" "-x 10 -f 40"
+configSet "MetricOptions" "-t schwarzschild -m 1 -x 0 -y 0 -z 0 -d 0.1 -n 500"
 
 loadTexture .tex1 textures/milkyway.jpg
 
