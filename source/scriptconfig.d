@@ -233,8 +233,8 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 			"transformed|T", &isTransformed,
 			"material|m", &mat_name);
 
-		if(mat_name == "" && otype != "pointlight") 
-			throw new Exception("Objects must have materials! ");
+		if(mat_name == "" && otype != "pointlight" && otype != "accretion" && otype !="texaccretion") 
+			throw new Exception("Most objects must have materials!");
 		if(mat_name != "" && otype == "pointlight")
 			throw new Exception("Lights can't have materials!");
 
@@ -259,6 +259,12 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 				break;
 			case "textriangle":
 				obj = new TexturableTriangle();
+				break;
+			case "accretion":
+				obj = new AccretionDisc();
+				break;
+			case "texaccretion":
+				obj = new TexturedAccretionDisc();
 				break;
 			case "pointlight":
 				if(oname in cfgLights)

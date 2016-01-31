@@ -25,7 +25,6 @@ class Plane : Renderable
 
 	void setupFromOptions(string[] a)
 	{
-		string mat_name;
 		dchar mode;
 
 		getopt(a,std.getopt.config.passThrough, std.getopt.config.caseSensitive,
@@ -118,7 +117,6 @@ class TexturablePlane : Plane
 
 	fpnum tex_a_u; fpnum tex_a_v;
 	fpnum tex_d_u; fpnum tex_d_v;
-
 
 	private fpnum len2;
 
