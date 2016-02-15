@@ -33,68 +33,30 @@ private class VisualPrimitives
 {
     static int appendSphere(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
     {
+		import dbg.icosphere : Icosphere;
         int cnt = 0;
         auto radius = dd.radius;
         auto origin = dd.plane.origin;
-        enum int loops = 64;
-        enum int segmentsPerLoop = 64;
-        iv0=0;
         auto Verng = appender!(Vert3D[])();
         auto Eerng = appender!(ushort[])();
-        foreach(int loopSegmentNumber; 0..segmentsPerLoop)
-        {
-            float theta = 0.0;
-            float phi = loopSegmentNumber * 2 * PI / segmentsPerLoop;
-            float sinTheta = sin(theta);
-            float sinPhi = sin(phi);
-            float cosTheta = cos(theta);
-            float cosPhi = cos(phi);
-            Verng ~= Vert3D(
-                        origin.x + radius * cosPhi * sinTheta, 
-                        origin.y + radius * sinPhi * sinTheta, 
-                        origin.z + radius * cosTheta,
-                        0,0,0,
-                        0.9,0.5,0.5,1,
-                        cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
-            Eerng ~= cast(ushort)(iv0 + loopSegmentNumber);
-            Eerng ~= cast(ushort)(iv0 + segmentsPerLoop + loopSegmentNumber);
-            cnt += 2;
-        }
-        foreach(int loopNumber; 0..loops)
-        {
-            foreach(int loopSegmentNumber; 0..segmentsPerLoop)
-            {
-                float theta = (loopNumber * PI / loops) + ((PI * loopSegmentNumber) / (segmentsPerLoop * loops));
-                if (loopNumber == loops)
-                {
-                    theta = PI;
-                }
-                float phi = loopSegmentNumber * 2 * PI / segmentsPerLoop;
-                float sinTheta = sin(theta);
-                float sinPhi = sin(phi);
-                float cosTheta = cos(theta);
-                float cosPhi = cos(phi);
-                Verng ~= Vert3D(
-                        origin.x + radius * cosPhi * sinTheta, 
-                        origin.y + radius * sinPhi * sinTheta, 
-                        origin.z + radius * cosTheta,
-                        0,0,0,
-                        1,1,1,1,
-                        cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
-                Eerng ~= cast(ushort)(iv0 + ((loopNumber + 1) * segmentsPerLoop) + loopSegmentNumber);
-                Eerng ~= cast(ushort)(iv0 + ((loopNumber + 2) * segmentsPerLoop) + loopSegmentNumber);
-                cnt += 2;
-            }
-        }
-        int ne;
-        foreach(int i;0..cast(int)(Eerng.data.length-2))
-        {
-            Vrng ~= Verng.data[min(Verng.data.length-1,Eerng.data[i])];
-            Vrng ~= Verng.data[min(Verng.data.length-1,Eerng.data[i+1])];
-            Vrng ~= Verng.data[min(Verng.data.length-1,Eerng.data[i+2])];
-            ne += 3;
-        }
-        return ne;
+        Icosphere iso = Icosphere(0);
+		foreach(v ; iso.vertices[])
+		{
+			Verng ~= Vert3D(
+				radius*v.x + origin.x, radius*v.y + origin.y, radius*v.z + origin.z,
+				0, 0, 0,
+				1.0, 1.0, 1.0, 1.0,
+				v.x, v.y, v.z
+			);
+		}
+		foreach(t; iso.triangles[])
+		{
+			Eerng ~= [cast(short)(iv0 + t.a), cast(short)(iv0 + t.b), cast(short)(iv0 + t.c)];
+			cnt += 3;
+		}
+		Vrng ~= Verng.data;
+		Erng ~= Eerng.data;
+        return cnt;
     }
 }
 
@@ -169,6 +131,11 @@ class VisualHelper
     private void initVisuals()
     {
         texRendered = new GFXtexture();
+		if(DebugDispatcher.renderResult is null)
+		{
+			import image.memory : Image;
+			DebugDispatcher.renderResult = new Image(8,8);
+		}
         texRendered.recreateTexture(DebugDispatcher.renderResult);
         texRendered.bind();
         texRendered.generateMipmaps();
@@ -262,10 +229,14 @@ class VisualHelper
         objSpatial.veo.updateData(cast(ubyte[])e3d);
         objSpatial.vao = new GFXvertexArrayObject();
         objSpatial.vao.bind();
+		objRendered.vao.disableAttribs();
         objSpatial.vao.configureAttribute(objSpatial.data, sPos, sh3Pos, false, false);
         objSpatial.vao.configureAttribute(objSpatial.data, sTex, sh3Tex, false, false);
         objSpatial.vao.configureAttribute(objSpatial.data, sCol, sh3Color, false, false);
         objSpatial.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);
+		objSpatial.vao.disableAttribs();
+		objSpatial.vbo.unbindFrom(gBufferTarget.VertexArray);
+		objSpatial.veo.unbindFrom(gBufferTarget.ElementArray);
     }
 
     /// Starts the graphical part of the debugger
@@ -297,8 +268,10 @@ class VisualHelper
             shader3D.setUniformM4("view", gMatTranslation(gVec3(0.0,0.0,-5.0)));            
             shader3D.setUniformM4("proj", gMatProjection(camera.fov*PI/180.0,winy/cast(double)winx,camera.near,camera.far));
             objSpatial.bind();
-            //glDrawElements(GL_TRIANGLE_STRIP, 3, GL_UNSIGNED_SHORT, null);
-            glDrawArrays(GL_TRIANGLES, 0, numverts);
+			objRendered.vao.disableAttribs();
+			objSpatial.vao.enableAttribs();
+            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, null);
+            //glDrawArrays(GL_TRIANGLES, 9, numverts);
             
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
@@ -309,6 +282,8 @@ class VisualHelper
                 gMatScaling(gVec3(50, 50, 1))));
             shader2D.setUniformM4("view", gIdentity4());
             shader2D.setUniformM4("proj", gMatOrthographic(0, winx, 0, winy, 0, 1));
+			objRendered.vao.enableAttribs();
+			objSpatial.vao.disableAttribs();
             objRendered.bind();
             glDrawArrays(GL_TRIANGLES, 0, 6);
             

@@ -7,7 +7,7 @@ in mediump vec3 texcoord;
 in lowp vec4 color;
 in mediump vec3 normal;
 
-out vec3 VPosition;
+flat out vec3 VPosition;
 out vec2 VTexcoord;
 out vec4 VColor;
 out vec3 VNormal;

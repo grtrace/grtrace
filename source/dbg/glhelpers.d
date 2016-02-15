@@ -1239,6 +1239,7 @@ class GFXvertexArrayObject
 
     protected long _bid = 0;
     protected static long _shbid = -1;
+	protected int[] attribs;
 
     /// Constructor
     public this()
@@ -1268,7 +1269,23 @@ class GFXvertexArrayObject
                 _bid = _shbid;
         }
     }
-
+	
+	public void enableAttribs()
+	{
+		foreach(int attr; attribs)
+		{
+			glEnableVertexAttribArray(attr);
+		}
+	}
+	
+	public void disableAttribs()
+	{
+		foreach(int attr; attribs)
+		{
+			glDisableVertexAttribArray(attr);
+		}
+	}
+	
     /**
 		Configures an attribute in the vertex array (wraps glVertexAttrib[I]Pointer)
 		shaderIndex is the location in shader of the specified attribute.
@@ -1280,6 +1297,7 @@ class GFXvertexArrayObject
     {
         fenceMe();
         glEnableVertexAttribArray(shaderIndex);
+		attribs ~= shaderIndex;
         gDataTypeField F = str.fieldTypes[fieldIdx];
         auto ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
             GLsizei a4, const(GLvoid)* a5) {

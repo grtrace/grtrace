@@ -2,7 +2,7 @@
 
 precision highp float;
 
-in vec3 VPosition;
+flat in vec3 VPosition;
 in vec2 VTexcoord;
 in vec4 VColor;
 in vec3 VNormal;
@@ -14,7 +14,7 @@ uniform sampler2D tex;
 
 void main() 
 {
-    vec4 col = VColor;
+    vec4 col = vec4(VPosition,1.0);//VColor;
     if(doTexture>0)
     {
         col *= texture(tex, VTexcoord);
