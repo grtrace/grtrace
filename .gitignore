@@ -1,3 +1,8 @@
+*.ninja*
+.reggae
+objs
+/grtrace
+compile_commands.json
 # Created by https://www.gitignore.io
 
 ### C++ ###
