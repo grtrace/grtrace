@@ -93,7 +93,7 @@ class Sphere : Renderable
 
 	DebugDraw getDebugDraw()
 	{
-		return DebugDraw(DrawType.Sphere, radius, new Plane(center,vectorf(0,0,0)), null);
+		return DebugDraw(DrawType.Sphere, radius, 0, new Plane(center,vectorf(0,0,0)), null);
 	}
 
 }

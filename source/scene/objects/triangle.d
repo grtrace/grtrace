@@ -112,7 +112,7 @@ class Triangle : Renderable
 
 	DebugDraw getDebugDraw()
 	{
-		return DebugDraw(DrawType.Triangle, 0, null, &this.triangle);
+		return DebugDraw(DrawType.Triangle, 0, 0, null, &this.triangle);
 	}
 }
 

@@ -35,7 +35,7 @@ private class VisualPrimitives
     {
 		import dbg.icosphere : Icosphere;
         int cnt = 0;
-        auto radius = dd.radius;
+        auto radius = dd.radius_one;
         auto origin = dd.plane.origin;
         auto Verng = appender!(Vert3D[])();
         auto Eerng = appender!(ushort[])();
@@ -57,6 +57,51 @@ private class VisualPrimitives
 		Vrng ~= Verng.data;
 		Erng ~= Eerng.data;
         return cnt;
+    }
+    
+    static int appendAccretionDisc(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+    	double inner_radius = sqrt(dd.radius_two);
+    	double outer_radius = sqrt(dd.radius_one);
+    	
+    	GFXvector4[] points;
+    	GFXmatrix4 rot;
+    	
+    	for(int i = 0; i<=360; i++)
+    	{
+    		double cosi = cos(cast(double)i);
+    		double sini = sin(cast(double)i);
+    		points ~= GFXvector4(cosi*inner_radius, sini*inner_radius, 0, 0);
+    		points ~= GFXvector4(cosi*outer_radius, sini*outer_radius, 0, 0);
+    	}
+    	
+    	return 0;
+    }
+    
+    static int appendPlane(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+    	return 0;
+    }
+    
+    static int appendTriangle(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+    	Vectorf a = dd.tri.plane.origin;
+    	Vectorf[3] tab = [a, a+dd.tri.b, a+dd.tri.c];
+    	Vectorf normal = dd.tri.plane.normal;
+    	
+    	foreach(Vectorf vert; tab)
+    	{
+    		Vrng ~= Vert3D(
+				vert.x, vert.y, vert.z,
+				0, 0, 0,
+				1.0, 1.0, 1.0, 1.0,
+				normal.x, normal.y, normal.z
+				);
+    	}
+    	
+    	Erng ~= [cast(short)(iv0), cast(short)(iv0 + 1), cast(short)(iv0 + 2)];
+    	
+    	return 3;
     }
 }
 
@@ -217,9 +262,43 @@ class VisualHelper
         int sNorm = objSpatial.data.appendType(gDataType.Avector3);
         objSpatial.data.declarationComplete();
         objSpatial.data.setLength(3);
+        
         Vert3D[] v3d = [];
         ushort[] e3d = [];
-        numverts = VisualPrimitives.appendSphere(v3d,e3d,0,DebugDraw(DrawType.Sphere,1.0,new Plane(vectorf(0,0,0),vectorf(0,0,0))));
+        
+        import scene.objects.interfaces;
+        numverts = 0;
+        foreach(shared Renderable obj; DebugDispatcher.space.objects)
+        {
+        	auto OBJ = cast(Renderable)obj;
+        	DebugDraw deb = OBJ.getDebugDraw();
+        	
+        	switch(deb.type)
+        	{
+			case DrawType.None:
+        		continue;
+    		
+    		case DrawType.Sphere:
+    			numverts += VisualPrimitives.appendSphere(v3d, e3d, numverts, deb);
+    			continue;
+    		
+    		case DrawType.Triangle:
+    			numverts += VisualPrimitives.appendTriangle(v3d, e3d, numverts, deb);
+    			continue;
+			
+			case DrawType.Plane:
+				numverts += VisualPrimitives.appendPlane(v3d, e3d, numverts, deb);
+    			continue;
+    			
+			case DrawType.AccretionDisc:
+				numverts += VisualPrimitives.appendAccretionDisc(v3d, e3d, numverts, deb);
+    			continue;
+			
+			default:
+				continue;
+			}
+        }
+        
         objSpatial.data.data = cast(ubyte[])(v3d);
         objSpatial.vbo = new GFXbufferObject(gBufferUsage.DynamicPush);
         objSpatial.vbo.bindTo(gBufferTarget.VertexArray);

@@ -80,7 +80,7 @@ class Plane : Renderable
 
 	DebugDraw getDebugDraw()
 	{
-		return DebugDraw(DrawType.Plane, 0, &this.plane, null);
+		return DebugDraw(DrawType.Plane, 0, 0, &this.plane, null);
 	}
 
 	override string toString()

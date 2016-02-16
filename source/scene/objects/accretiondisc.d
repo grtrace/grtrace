@@ -69,7 +69,7 @@ class AccretionDisc : Renderable
 
 	DebugDraw getDebugDraw()
 	{
-		return DebugDraw(DrawType.None);
+		return DebugDraw(DrawType.AccretionDisc, oRadius2, iRadius2, &plane.plane, null);
 	}
 }
 
