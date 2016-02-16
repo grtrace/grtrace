@@ -343,8 +343,8 @@ class VisualHelper
             //glEnable(GL_CULL_FACE);
             shader3D.bind();
             shader3D.setUniform1i("doTexture", 0);
-            shader3D.setUniformM4("model", gMatRotPitch(Taccum));
-            shader3D.setUniformM4("view", gMatTranslation(gVec3(0.0,0.0,-5.0)));            
+            shader3D.setUniformM4("model", gIdentity4());
+            shader3D.setUniformM4("view", gMat4Mul(gMatTranslation(gVec3(0.0,0.0,-5.0)),gMatRotPitch(Taccum)));            
             shader3D.setUniformM4("proj", gMatProjection(camera.fov*PI/180.0,winy/cast(double)winx,camera.near,camera.far));
             objSpatial.bind();
 			objRendered.vao.disableAttribs();
