@@ -39,7 +39,7 @@ private class VisualPrimitives
         auto origin = dd.plane.origin;
         auto Verng = appender!(Vert3D[])();
         auto Eerng = appender!(ushort[])();
-        Icosphere iso = Icosphere(0);
+        Icosphere iso = Icosphere(5);
 		foreach(v ; iso.vertices[])
 		{
 			Verng ~= Vert3D(
@@ -97,12 +97,12 @@ class VisualHelper
         GFXtexture tex;
         void bind()
         {
+        	if (vao)
+                vao.bind();
             if (vbo)
                 vbo.bindTo(gBufferTarget.VertexArray);
             if (veo)
                 veo.bindTo(gBufferTarget.ElementArray);
-            if (vao)
-                vao.bind();
             if (tex)
                 tex.bind();
         }
@@ -270,7 +270,7 @@ class VisualHelper
             objSpatial.bind();
 			objRendered.vao.disableAttribs();
 			objSpatial.vao.enableAttribs();
-            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, null);
+            glDrawElements(GL_TRIANGLES, numverts, GL_UNSIGNED_SHORT, null);
             //glDrawArrays(GL_TRIANGLES, 9, numverts);
             
             glDisable(GL_DEPTH_TEST);

@@ -10,7 +10,7 @@ private struct Vert
 
 private struct Trgl
 {
-	short a, b, c;
+	uint a, b, c;
 }
 
 struct Icosphere
@@ -18,11 +18,31 @@ struct Icosphere
     @disable this();
     @disable this(this);
 	Vert[] vertices;
+	uint[ulong] vert_map;
 	Trgl[] triangles;
     /// -
     this(int subdivisions)
     {
+    	if(subdivisions<0) throw new Error("Cannot create a icosphere with a negative recursion level");
         makeBase();
+        while(subdivisions--)
+        {
+        	Trgl[] triangles2;
+        	
+        	foreach(Trgl trg; triangles)
+        	{
+        		int a = getMidlePoint(trg.a, trg.b);
+        		int b = getMidlePoint(trg.a, trg.c);
+        		int c = getMidlePoint(trg.b, trg.c);
+        		
+        		triangles2 ~= Trgl(trg.a, a, b);
+        		triangles2 ~= Trgl(trg.b, c, a);
+        		triangles2 ~= Trgl(trg.c, b, c);
+        		triangles2 ~= Trgl(a, b, c);
+        	}
+        	
+        	triangles = triangles2;        	
+        }
     }
 	
 	void makeBase()
@@ -67,10 +87,28 @@ struct Icosphere
 	
 	void addVert(double x, double y, double z)
 	{
-		double R = sqrt(x*x + y*y + z*z);
-		x /= R;
-		y /= R;
-		z /= R;
+		double invR = 1./sqrt(x*x + y*y + z*z);
+		x *= invR;
+		y *= invR;
+		z *= invR;
 		vertices ~= Vert(x,y,z);
+	}
+	
+	uint getMidlePoint(uint a, uint b)
+	{
+		if(a>b) swap(a, b);
+		ulong key = ((cast(ulong)a)<<32)+b;
+		
+		if(key in vert_map)
+			return vert_map[key];
+		
+		Vert v1 = vertices[a];
+		Vert v2 = vertices[b];
+		
+		addVert((v1.x+v2.x)/2, (v1.y+v2.y)/2, (v1.z+v2.z)/2);
+		
+		uint res = cast(uint)vertices.length-1;
+		vert_map[key] = res;
+		return res;
 	}
 }
