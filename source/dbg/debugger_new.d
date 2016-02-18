@@ -64,18 +64,35 @@ private class VisualPrimitives
     	double inner_radius = sqrt(dd.radius_two);
     	double outer_radius = sqrt(dd.radius_one);
     	
-    	GFXvector4[] points;
-    	GFXmatrix4 rot;
+    	GFXvector3[] points;
+    	GFXmatrix3 rot = gMat3RotateVectorOntoVector(
+    		gVec3(0, 1, 0),
+    		gVec3(dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z));
     	
+    	int cnt = 0;
     	for(int i = 0; i<=360; i++)
     	{
     		double cosi = cos(cast(double)i);
     		double sini = sin(cast(double)i);
-    		points ~= GFXvector4(cosi*inner_radius, sini*inner_radius, 0, 0);
-    		points ~= GFXvector4(cosi*outer_radius, sini*outer_radius, 0, 0);
+    		points ~= gMat3MulVec3(rot, GFXvector3(cosi*inner_radius, sini*inner_radius, 0));
+    		points ~= gMat3MulVec3(rot, GFXvector3(cosi*outer_radius, sini*outer_radius, 0));
+    		
+    		Erng ~= [cast(short)(iv0+cnt+0), cast(short)(iv0+cnt+1), cast(short)(iv0+cnt+4)];
+    		Erng ~= [cast(short)(iv0+cnt+0), cast(short)(iv0+cnt+2), cast(short)(iv0+cnt+3)];
+    		cnt += 6;
     	}
     	
-    	return 0;
+    	foreach(GFXvector3 vec; points)
+    	{
+    		Vrng ~= Vert3D(
+    			vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y, vec.z + dd.plane.origin.z,
+    			0, 0, 0,
+    			1.0, 1.0, 1.0, 1.0,
+    			dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z
+    		);
+    	}
+    	
+    	return cnt;
     }
     
     static int appendPlane(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)

@@ -417,6 +417,38 @@ GFXmatrix4 gMatRotYaw(float a)
     ];
 }
 
+GFXvector3 gMat3MulVec3(GFXmatrix3 mat, GFXvector3 vec)
+{
+	return gVec3(
+		mat[0]*vec.x + mat[1]*vec.y + mat[2]*vec.z,
+		mat[3]*vec.x + mat[4]*vec.y + mat[5]*vec.z,
+		mat[6]*vec.x + mat[7]*vec.y + mat[8]*vec.z);
+}
+
+//Based on
+//math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+GFXmatrix3 gMat3RotateVectorOntoVector(GFXvector3 vec, GFXvector3 target)
+{
+	vec = gNormalize3(vec);
+	target = gNormalize3(target);
+	
+	GFXvector3 v = gCross3(vec, target);
+	double s = gLength3(v);
+	double c = gDot3(vec, target);
+
+	GFXmatrix3 v_mat = 
+		[ 0, -v.z, v.y,
+		 v.z,  0, -v.x,
+		-v.y, v.x, 0];
+		
+	GFXmatrix3 res = 
+		gIdentity3()[] + 
+		v_mat[] + 
+		gMat3Scale(gMat3Mul(v_mat, v_mat), (1-c)/(s*s))[];
+	
+	return res;	
+}
+
 /**
 Constructs a projection matrix with given arguments
 Params:
