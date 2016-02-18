@@ -259,6 +259,16 @@ GFXmatrix3 gMat3Mul(GFXmatrix3 A, GFXmatrix3 B)
     return O;
 }
 
+GFXvector4 gVecMatTransform(GFXmatrix4 M, GFXvector4 V)
+{
+	return gVec4(
+		M[0]*(V.x) + M[1]*(V.y) + M[2]*V.z + M[3]*V.w,
+		M[4]*(V.x) + M[5]*(V.y) + M[6]*V.z + M[7]*V.w,
+		M[8]*(V.x) + M[9]*(V.y) + M[10]*V.z + M[11]*V.w,
+		M[12]*(V.x) + M[13]*(V.y) + M[14]*V.z + M[15]*V.w
+	);
+}
+
 /// Returns product of 4x4 matrices (A x B)
 GFXmatrix4 gMat4Mul(GFXmatrix4 A, GFXmatrix4 B)
 {
@@ -385,7 +395,7 @@ GFXmatrix4 gMatScaling(GFXvector3 v)
 }
 
 /// X
-GFXmatrix4 gMatRotRoll(float a)
+GFXmatrix4 gMatRotX(float a)
 {
     return [
     1,0,0,0,
@@ -396,7 +406,7 @@ GFXmatrix4 gMatRotRoll(float a)
 }
 
 /// Y
-GFXmatrix4 gMatRotPitch(float a)
+GFXmatrix4 gMatRotY(float a)
 {
     return [
     cos(a),0,-sin(a),0,
@@ -407,7 +417,7 @@ GFXmatrix4 gMatRotPitch(float a)
 }
 
 /// Z
-GFXmatrix4 gMatRotYaw(float a)
+GFXmatrix4 gMatRotZ(float a)
 {
     return [
     cos(a),-sin(a),0,0,
