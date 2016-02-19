@@ -40,7 +40,7 @@ private class VisualPrimitives
         auto origin = dd.plane.origin;
         auto Verng = appender!(Vert3D[])();
         auto Eerng = appender!(ushort[])();
-        Icosphere iso = Icosphere(5);
+        Icosphere iso = Icosphere(2);
         foreach (v; iso.vertices[])
         {
             Verng ~= Vert3D(radius * v.x + origin.x, radius * v.y + origin.y,
@@ -176,14 +176,15 @@ class VisualHelper
         float near = 0.01f, far = 100.0f;
         float fov = 80.0f;
 		GFXvector3 dirFwd, dirRight, dirUp;
-		GFXmatrix4 matrix, rmatrix;
+		GFXmatrix4 matrix, rmatrix, rinvmatrix;
         void normalize()
         {
             pitch = fmod(pitch, PI);
             yaw = fmod(yaw, 2.0*PI);
-			dirFwd = gVecMatTransform(rmatrix, gVec4(0,0,1,0)).to3;// gVec3(-sin(yaw),sin(pitch),cos(yaw));
-			dirRight = gVecMatTransform(rmatrix, gVec4(1,0,0,0)).to3; //dirRight = gVec3(cos(yaw),0,sin(yaw));
-			dirUp = gVecMatTransform(rmatrix, gVec4(0,1,0,0)).to3;
+            
+			dirFwd = gVecMatTransform(rinvmatrix, gVec4(0,0,1,0)).to3;// gVec3(-sin(yaw),sin(pitch),cos(yaw));
+			dirRight = gVecMatTransform(rinvmatrix, gVec4(1,0,0,0)).to3; //dirRight = gVec3(cos(yaw),0,sin(yaw));
+			dirUp = gVecMatTransform(rinvmatrix, gVec4(0,1,0,0)).to3;
         }
 		void addVec(GFXvector3 V, double scale = 1.0)
 		{
@@ -368,6 +369,7 @@ class VisualHelper
             mouseInGui = false;
 			camera.normalize();
 			camera.rmatrix = gMat4Mul(gMatRotX(camera.pitch),gMatRotY(camera.yaw));
+			camera.rinvmatrix = gMat4Inverse(camera.rmatrix);
 			camera.matrix = gMat4Mul(camera.rmatrix,gMatTranslation(gVec3(-camera.x,
                 -camera.y, -camera.z)));
 			camMover();

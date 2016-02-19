@@ -356,6 +356,97 @@ GFXnum gMat4Det(GFXmatrix4 A)
         1] * A[10] * A[15] + A[0] * A[5] * A[10] * A[15];
 }
 
+/// Calculates the inverse of a 4x4 matrix
+GFXmatrix4 gMat4Inverse(GFXmatrix4 vals)
+{
+	GFXmatrix4 tmp;
+
+	tmp[0] = gMat3Det([
+		vals[5],  vals[6],  vals[7],
+		vals[9],  vals[10], vals[11],
+		vals[13], vals[14], vals[15]]);
+
+	tmp[1] = -gMat3Det([
+		vals[4],  vals[6],  vals[7],
+		vals[8],  vals[10], vals[11],
+		vals[12], vals[14], vals[15]]);
+
+	tmp[2] = gMat3Det([
+		vals[4],  vals[5],  vals[7],
+		vals[8],  vals[9],  vals[11],
+		vals[12], vals[13], vals[15]]);
+
+	tmp[3] = -gMat3Det([
+		vals[4], vals[5], vals[6],
+		vals[8], vals[9], vals[10],
+		vals[12], vals[13], vals[14]]);
+
+
+	tmp[4] = -gMat3Det([
+		vals[1],  vals[2],  vals[3],
+		vals[9],  vals[10], vals[11],
+		vals[13], vals[14], vals[15]]);
+	
+	tmp[5] = gMat3Det([
+		vals[0],  vals[2],  vals[3],
+		vals[8],  vals[10], vals[11],
+		vals[12], vals[14], vals[15]]);
+	
+	tmp[6] = -gMat3Det([
+		vals[0],  vals[1],  vals[3],
+		vals[8],  vals[9],  vals[11],
+		vals[12], vals[13], vals[15]]);
+	
+	tmp[7] = gMat3Det([
+		vals[0],  vals[1],  vals[2],
+		vals[8],  vals[9],  vals[10],
+		vals[12], vals[13], vals[14]]);
+
+
+	tmp[8] = gMat3Det([
+		vals[1],  vals[2],  vals[3],
+		vals[5],  vals[6],  vals[7],
+		vals[13], vals[14], vals[15]]);
+	
+	tmp[9] = -gMat3Det([
+		vals[0],  vals[2],  vals[3],
+		vals[4],  vals[6],  vals[7],
+		vals[12], vals[14], vals[15]]);
+	
+	tmp[10] = gMat3Det([
+		vals[0],  vals[1],  vals[3],
+		vals[4],  vals[5],  vals[7],
+		vals[12], vals[13], vals[15]]);
+	
+	tmp[11] = -gMat3Det([
+		vals[0],  vals[1],  vals[2],
+		vals[4],  vals[5],  vals[6],
+		vals[12], vals[13], vals[14]]);
+
+
+	tmp[12] = -gMat3Det([
+		vals[1],  vals[2],  vals[3],
+		vals[5],  vals[6],  vals[7],
+		vals[9],  vals[10], vals[11]]);
+	
+	tmp[13] = gMat3Det([
+		vals[0],  vals[2],  vals[3],
+		vals[4],  vals[6],  vals[7],
+		vals[8],  vals[10], vals[11]]);
+	
+	tmp[14] = -gMat3Det([
+		vals[0],  vals[1],  vals[3],
+		vals[4],  vals[5],  vals[7],
+		vals[8],  vals[9],  vals[11]]);
+	
+	tmp[15] = gMat3Det([
+		vals[0], vals[1], vals[2],
+		vals[4], vals[5], vals[6],
+		vals[8], vals[9], vals[10]]);
+
+	return gMat4Scale(gMat4Transpose(tmp),1/gMat4Det(vals));
+}
+
 /// Returns 3x3 matrix multiplied by a scalar (A*n)
 GFXmatrix3 gMat3Scale(GFXmatrix3 A, GFXnum n)
 {
