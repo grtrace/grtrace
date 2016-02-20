@@ -12,6 +12,7 @@ import std.string, std.getopt, std.array, std.range, std.math, std.algorithm;
 
 class Triangle : Renderable
 {
+	mixin RenderableNameHandler;
 	private Material mat;
 	private math.Triangle triangle;
 

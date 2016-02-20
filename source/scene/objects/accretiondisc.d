@@ -12,6 +12,7 @@ import std.string, std.getopt, std.array, std.range, std.math, std.algorithm, st
 
 class AccretionDisc : Renderable
 {
+	mixin RenderableNameHandler;
 	protected Material accMaterial = null;
 	private scene.Plane plane = null;
 	private fpnum iRadius2 = 0.0, oRadius2 = 1.0;

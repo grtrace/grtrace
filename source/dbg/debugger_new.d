@@ -10,6 +10,7 @@ import dbg.draws;
 import std.stdio, std.string, std.file, std.math, std.exception;
 import std.string, std.format, std.algorithm, std.array, std.range;
 import config, scene.camera, scene.scenemgr, math;
+import scene.objects.interfaces;
 
 /// -
 class TooLowGLVersion : Error
@@ -39,8 +40,8 @@ private class VisualPrimitives
         auto radius = dd.radius_one;
         auto origin = dd.plane.origin;
         auto Verng = appender!(Vert3D[])();
-        auto Eerng = appender!(ushort[])();
-        Icosphere iso = Icosphere(2);
+        auto Eerng = appender!(uint[])();
+        Icosphere iso = Icosphere(4);
         foreach (v; iso.vertices[])
         {
             Verng ~= Vert3D(radius * v.x + origin.x, radius * v.y + origin.y,
@@ -48,7 +49,7 @@ private class VisualPrimitives
         }
         foreach (t; iso.triangles[])
         {
-            Eerng ~= [cast(short)(iv0 + t.a), cast(short)(iv0 + t.b), cast(short)(iv0 + t.c)];
+            Eerng ~= [cast(uint)(iv0 + t.a), cast(uint)(iv0 + t.b), cast(uint)(iv0 + t.c)];
             cnt += 3;
         }
         Vrng ~= Verng.data;
@@ -58,44 +59,41 @@ private class VisualPrimitives
 
     static int appendAccretionDisc(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
     {
-    	double inner_radius = sqrt(dd.radius_two);
-    	double outer_radius = sqrt(dd.radius_one);
-    	
-    	GFXvector3[] points;
-    	GFXmatrix3 rot = gMat3RotateVectorOntoVector(
-    		gVec3(0, 1, 0),
-    		gVec3(dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z));
-    	
-    	int vrt = 0;
-    	const int deg_step = 1;
-    	const int mod = 2*360/deg_step;
-    	for(int i = 0; i<=360; i+=deg_step)
-    	{
-    		double cosi = cos(cast(double)PI*i/180);
-    		double sini = sin(cast(double)PI*i/180);
-    		points ~= gMat3MulVec3(rot, GFXvector3(cosi*inner_radius, sini*inner_radius, 0));
-    		points ~= gMat3MulVec3(rot, GFXvector3(cosi*outer_radius, sini*outer_radius, 0));
-    		
-    		Erng ~= [cast(short)((iv0+vrt+0)%mod), cast(short)((iv0+vrt+1)%mod), cast(short)((iv0+vrt+2)%mod)];
-    		Erng ~= [cast(short)((iv0+vrt+1)%mod), cast(short)((iv0+vrt+3)%mod), cast(short)((iv0+vrt+2)%mod)];
-    		vrt += 2;
-    	}
-    	
-    	for(int i = 0; i<points.length; i++)
-    	{
-    		auto vec = points[i];
-    		//writeln(vec.x, '\t', vec.y);
-    		Vrng ~= Vert3D(
-    			vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y, vec.z + dd.plane.origin.z,
-    			0, 0, 0,
-    			1.0, 1.0, 1.0, 1.0,
-    			dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z
-    		);
-    	}
-    	
-    	return vrt*3;
+        double inner_radius = sqrt(dd.radius_two);
+        double outer_radius = sqrt(dd.radius_one);
+
+        GFXvector3 vec;
+        GFXmatrix3 rot = gMat3RotateVectorOntoVector(gVec3(0, 1, 0),
+            gVec3(dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z));
+
+        int vrt = 0;
+        const int deg_step = 1;
+        const int mod = 2 * 361 / deg_step;
+        for (int i = 0; i <= 360; i += deg_step)
+        {
+            double cosi = cos(cast(double) PI * i / 180);
+            double sini = sin(cast(double) PI * i / 180);
+            vec = gMat3MulVec3(rot, GFXvector3(cosi * inner_radius, sini * inner_radius,
+                0));
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, 1.0, 1.0, 1.0, 1.0,
+                dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z);
+            vec = gMat3MulVec3(rot, GFXvector3(cosi * outer_radius, sini * outer_radius,
+                0));
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, 1.0, 1.0, 1.0, 1.0,
+                dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z);
+
+            Erng ~= [cast(uint)(iv0 + ((vrt + 0) % mod)),
+                cast(uint)(iv0 + ((vrt + 1) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            Erng ~= [cast(uint)(iv0 + ((vrt + 1) % mod)),
+                cast(uint)(iv0 + ((vrt + 3) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            vrt += 6;
+        }
+
+        return vrt;
     }
-    
+
     static int appendPlane(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
     {
         return 0;
@@ -113,7 +111,7 @@ private class VisualPrimitives
                 normal.x, normal.y, normal.z);
         }
 
-        Erng ~= [cast(short)(iv0), cast(short)(iv0 + 1), cast(short)(iv0 + 2)];
+        Erng ~= [cast(uint)(iv0), cast(uint)(iv0 + 1), cast(uint)(iv0 + 2)];
 
         return 3;
     }
@@ -171,33 +169,47 @@ class VisualHelper
 
     private static struct TCamera
     {
-        float x = 0.0f, y = 0.0f, z = 5.0f;
+        float x = 0.0f, y = 0.0f, z = 0.0f;
         float pitch = 0.0f, yaw = 0.0f;
         float near = 0.01f, far = 100.0f;
+		float speed = 12.0f;
         float fov = 80.0f;
-		GFXvector3 dirFwd, dirRight, dirUp;
-		GFXmatrix4 matrix, rmatrix, rinvmatrix;
+        GFXvector3 dirFwd, dirRight, dirUp;
+        GFXmatrix4 matrix, rmatrix, rinvmatrix;
         void normalize()
         {
-            pitch = fmod(pitch, PI);
-            yaw = fmod(yaw, 2.0*PI);
-            
-			dirFwd = gVecMatTransform(rinvmatrix, gVec4(0,0,1,0)).to3;// gVec3(-sin(yaw),sin(pitch),cos(yaw));
-			dirRight = gVecMatTransform(rinvmatrix, gVec4(1,0,0,0)).to3; //dirRight = gVec3(cos(yaw),0,sin(yaw));
-			dirUp = gVecMatTransform(rinvmatrix, gVec4(0,1,0,0)).to3;
+			pitch = clamp(pitch, -PI/2.0, PI/2.0);
+            yaw = fmod(yaw, 2.0 * PI);
+
+            dirFwd = gVecMatTransform(rinvmatrix, gVec4(0, 0, 1, 0)).to3; // gVec3(-sin(yaw),sin(pitch),cos(yaw));
+            dirRight = gVecMatTransform(rinvmatrix, gVec4(1, 0, 0, 0)).to3; //dirRight = gVec3(cos(yaw),0,sin(yaw));
+            dirUp = gVecMatTransform(rinvmatrix, gVec4(0, 1, 0, 0)).to3;
         }
-		void addVec(GFXvector3 V, double scale = 1.0)
-		{
-			x += V.x * scale;
-			y += V.y * scale;
-			z += V.z * scale;
-		}
+
+        void addVec(GFXvector3 V, double scale = 1.0)
+        {
+            x += V.x * scale;
+            y += V.y * scale;
+            z += V.z * scale;
+        }
+    }
+
+    private static struct TSObject
+    {
+        string id;
+        Renderable obj;
+        int vertIndex;
+        int vertCount;
+        bool visible = true;
+		bool opanel = true;
     }
 
     private TCamera camera;
     private DrawnObj objRendered;
     private GFXshader shader2D, shader3D;
     private GFXmatrix4 matProjection;
+    private TSObject*[string] sceneObjects;
+    private TSObject*[] sortedObjects;
     private bool mouseInGui, mouseLocked;
     int numverts;
     private void initVisuals()
@@ -292,14 +304,27 @@ class VisualHelper
         objSpatial.data.setLength(3);
 
         Vert3D[] v3d = [];
-        ushort[] e3d = [];
+        uint[] e3d = [];
 
-        import scene.objects.interfaces;
+        {
+            TSObject *tso = new TSObject();
+            tso.id = "@camera";
+            tso.obj = null;
+            tso.vertIndex = 0;
+            tso.vertCount = 0;
+            tso.visible = false;
+            // TODO: Add camera model
+            sceneObjects[tso.id] = tso;
+        }
 
         numverts = 0;
         foreach (shared Renderable obj; DebugDispatcher.space.objects)
         {
             auto OBJ = cast(Renderable) obj;
+            TSObject* tso = new TSObject();
+            tso.id = OBJ.getName();
+            tso.obj = OBJ;
+            tso.vertIndex = cast(int) e3d.length;
             DebugDraw deb = OBJ.getDebugDraw();
 
             switch (deb.type)
@@ -308,23 +333,59 @@ class VisualHelper
                 continue;
 
             case DrawType.Sphere:
-                numverts += VisualPrimitives.appendSphere(v3d, e3d, cast(int)v3d.length, deb);
+                tso.vertCount = VisualPrimitives.appendSphere(v3d, e3d, cast(int) v3d.length,
+                    deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
                 continue;
 
             case DrawType.Triangle:
-                numverts += VisualPrimitives.appendTriangle(v3d, e3d, cast(int)v3d.length, deb);
+                tso.vertCount = VisualPrimitives.appendTriangle(v3d, e3d,
+                    cast(int) v3d.length, deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
                 continue;
 
             case DrawType.Plane:
-                numverts += VisualPrimitives.appendPlane(v3d, e3d, cast(int)v3d.length, deb);
+                tso.vertCount = VisualPrimitives.appendPlane(v3d, e3d, cast(int) v3d.length,
+                    deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
                 continue;
 
             case DrawType.AccretionDisc:
-                numverts += VisualPrimitives.appendAccretionDisc(v3d, e3d, cast(int)v3d.length, deb);
+                tso.vertCount = VisualPrimitives.appendAccretionDisc(v3d, e3d,
+                    cast(int) v3d.length, deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
                 continue;
 
             default:
                 continue;
+            }
+        }
+		foreach(ref Vert3D v; v3d)
+		{
+			v.z = -v.z;
+		}
+		sortedObjects.length = sceneObjects.keys.length;
+		int sobji = 0;
+		foreach(string k, TSObject* v; sceneObjects)
+		{
+			sortedObjects[sobji] = v;
+			sobji++;
+		}
+		sort!("a.id < b.id")(sortedObjects);
+        if (cfgVerbose)
+        {
+            writeln("[VDBG] Number of evertices registered: ", numverts);
+            writeln("[VDBG] Number of elements total: ", e3d.length);
+            writeln("[VDBG] Number of vertices total: ", v3d.length);
+            writeln("[VDBG] Scene objects: ");
+            foreach (string id, TSObject* obj; sceneObjects)
+            {
+                writefln("\t%s [Vi:%d,Vn:%d,Ve:%d]", id, obj.vertIndex,
+                    obj.vertCount, obj.vertIndex + obj.vertCount - 1);
             }
         }
 
@@ -347,9 +408,9 @@ class VisualHelper
         objSpatial.vbo.unbindFrom(gBufferTarget.VertexArray);
         objSpatial.veo.unbindFrom(gBufferTarget.ElementArray);
     }
-	
-	private double dt;
-	
+
+    private double dt;
+
     /// Starts the graphical part of the debugger
     public void runGraphics()
     {
@@ -361,19 +422,24 @@ class VisualHelper
         enforce(imguiInit("firasans-medium.ttf", 1024));
         int scroll_d = 0;
         glfwSetTime(0.0);
+        size_t[] vbegins;
+        GLsizei[] vends;
+        GLsizei numvs;
+        vbegins.length = sceneObjects.keys.length;
+        vends.length = vbegins.length;
         while (!glfwWindowShouldClose(rwin))
         {
             dt = glfwGetTime();
             Taccum += dt;
             glfwSetTime(0.0);
             mouseInGui = false;
-			camera.normalize();
-			camera.rmatrix = gMat4Mul(gMatRotX(camera.pitch),gMatRotY(camera.yaw));
-			camera.rinvmatrix = gMat4Inverse(camera.rmatrix);
-			camera.matrix = gMat4Mul(camera.rmatrix,gMatTranslation(gVec3(-camera.x,
-                -camera.y, -camera.z)));
-			camMover();
-			matProjection = gMatProjection(camera.fov * PI / 180.0,
+            camera.normalize();
+            camera.rmatrix = gMat4Mul(gMatRotX(camera.pitch), gMatRotY(camera.yaw));
+            camera.rinvmatrix = gMat4Inverse(camera.rmatrix);
+            camera.matrix = gMat4Mul(camera.rmatrix,
+                gMatTranslation(gVec3(-camera.x, -camera.y, -camera.z)));
+            camMover();
+            matProjection = gMatProjection(camera.fov * PI / 180.0,
                 winy / cast(double) winx, camera.near, camera.far);
             resetGl();
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -387,7 +453,25 @@ class VisualHelper
             objSpatial.bind();
             objRendered.vao.disableAttribs();
             objSpatial.vao.enableAttribs();
-            glDrawElements(GL_TRIANGLES, numverts, GL_UNSIGNED_SHORT, null);
+            numvs = 0;
+            foreach (string id, TSObject* tso; sceneObjects)
+            {
+                if ((tso.visible) && (tso.vertCount > 0))
+                {
+                    vbegins[numvs] = tso.vertIndex * uint.sizeof;
+                    vends[numvs] = tso.vertCount;
+                    numvs++;
+                }
+            }
+            glMultiDrawElements(GL_TRIANGLES, cast(const(int)*)(vends.ptr),
+                GL_UNSIGNED_INT, cast(const(void*)*)(vbegins.ptr), cast(GLsizei) numvs);
+            /*const(void)* nptr = null;
+			for(int i=0;i<numvs;i++)
+			{
+				void* begin = null;
+				begin += vbegins[i];
+				glDrawElements(GL_TRIANGLES, vends[i], GL_UNSIGNED_INT, begin);
+			}*/
 
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
@@ -413,7 +497,7 @@ class VisualHelper
                 &scroll_d);
             {
                 imguiSlider("BG", &bgIntensity, 0.0f, 1.0f, 0.02f);
-                static bool expView = false;
+                static bool expView = true;
                 imguiCollapse("View controls", "", &expView);
                 if (expView)
                 {
@@ -422,19 +506,53 @@ class VisualHelper
                     imguiLabel("%.1f %.1f %.1f".format(camera.x, camera.y, camera.z));
                     imguiLabel("Pitch: %.1f".format(camera.pitch));
                     imguiLabel("Yaw: %.1f".format(camera.yaw));
+					imguiSlider("Cam Speed", &camera.speed, 1.0f, 80.0f, 0.5f);
                     imguiSlider("FOV", &camera.fov, 20.0f, 150.0f, 1.0f);
                     imguiSlider("Near", &camera.near, 0.0001f, 1.0f, 0.0001f);
-                    imguiSlider("Far", &camera.far, camera.near, 10_000.0f, 10.0f);
+                    imguiSlider("Far", &camera.far, 2.0f, 10_000.0f, 10.0f);
                     imguiUnindent();
                 }
             }
-            imguiEndScrollArea();
+			imguiEndScrollArea();
+			if(glfwGetKey(rwin,GLFW_KEY_F1)==GLFW_PRESS)
+			{
+				static int scroll_cs;
+				mouseInGui |= imguiBeginScrollArea("Help", winx/2-150, winy/2 - 250, 300, 500,
+                	&scroll_cs);
+                imguiLabel("Keys:");
+				imguiLabel("F1 - this help");
+				imguiLabel("W,A,S,D,Q,E - Camera movement");
+				imguiLabel("Tab - Object list");
+				imguiLabel("R - Reset camera to raytrace settings");
+				imguiLabel("Shift+R - Reset camera to 0,0,0");
+				//imguiLabel("");
+				imguiEndScrollArea();
+            }
+			if(glfwGetKey(rwin,GLFW_KEY_TAB)==GLFW_PRESS)
+			{
+				static int scroll_ol;
+				mouseInGui |= imguiBeginScrollArea("Objects", winx/2-150, winy/2 - 250, 300, 500,
+                	&scroll_ol);
+				foreach(TSObject *obj; sortedObjects)
+				{
+					imguiCollapse(obj.id, "", &obj.opanel);
+					if(obj.opanel)
+					{
+						imguiIndent();
+						imguiCheck("Visible", &obj.visible);
+						imguiUnindent();
+					}
+				}
+				imguiEndScrollArea();
+			}
+            
 
             imguiEndFrame();
             mousescroll = 0;
             keychar = 0;
             imguiRender(winx, winy);
             glfwSwapBuffers(rwin);
+			updateMods();
             glfwPollEvents();
         }
         imguiDestroy();
@@ -528,32 +646,36 @@ class VisualHelper
     /// -
     public void onMouseButton(int button, int state, int x, int y)
     {
-		if(mouseLocked)
-		{
-			if(button == GLFW_MOUSE_BUTTON_LEFT)
-			{
-				if(state==GLFW_RELEASE)
-				{
-					mouseLocked = false;
-					glfwSetInputMode(rwin, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        if (mouseLocked)
+        {
+            if (button == GLFW_MOUSE_BUTTON_LEFT)
+            {
+                if (state == GLFW_RELEASE)
+                {
+                    mouseLocked = false;
+                    glfwSetInputMode(rwin, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    double xd, yd;
+                    glfwGetCursorPos(rwin, &xd, &yd);
+                    mousex = cast(int) xd;
+                    mousey = cast(int) yd;
+                }
+            }
+        }
+        else if (!mouseInGui)
+        {
+            if (button == GLFW_MOUSE_BUTTON_LEFT)
+            {
+                if (state == GLFW_PRESS)
+                {
 					double xd, yd;
-        			glfwGetCursorPos(rwin, &xd, &yd);
-        			mousex = cast(int) xd;
-					mousey = cast(int) yd;
-				}
-			}
-		}
-		else if(!mouseInGui)
-		{
-			if(button == GLFW_MOUSE_BUTTON_LEFT)
-			{
-				if(state==GLFW_PRESS)
-				{
-					mouseLocked = true;
-					glfwSetInputMode(rwin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-				}
-			}
-		}
+                    glfwGetCursorPos(rwin, &xd, &yd);
+                    mousex = cast(int) xd;
+                    mousey = cast(int) yd;
+                    mouseLocked = true;
+                    glfwSetInputMode(rwin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
+            }
+        }
         if (button == GLFW_MOUSE_BUTTON_LEFT)
         {
             if (state == GLFW_PRESS)
@@ -581,17 +703,17 @@ class VisualHelper
     /// -
     public void onMouseMove(int x, int y)
     {
-		if(mouseLocked)
-		{
-			int dx = x-mousex;
-			int dy = y-mousey;
-			double dYaw = dx * M_2_PI / 100.0;
-			double dPitch = dy * PI / 100.0;
-			camera.yaw -= dYaw;
-			camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
-		}
-		mousex = x;
-		mousey = y;
+        if (mouseLocked)
+        {
+            int dx = x - mousex;
+            int dy = y - mousey;
+            double dYaw = dx * M_2_PI / 150.0;
+            double dPitch = dy * PI / 200.0;
+            camera.yaw -= dYaw;
+            camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
+        }
+        mousex = x;
+        mousey = y;
     }
 
     /// -
@@ -622,36 +744,58 @@ class VisualHelper
         {
             keychar = '\n';
         }
+		if(id == GLFW_KEY_R && state==GLFW_PRESS)
+		{
+			if(modLShift||modRShift) // reset to 0,0,0
+			{
+				camera.x = 0.0;
+				camera.y = 0.0;
+				camera.z = 0.0;
+				camera.pitch = 0.0;
+				camera.yaw = 0.0;
+				sceneObjects["@camera"].visible = true;
+			}
+			else
+			{
+				auto rcam = DebugDispatcher.space.getCamera();
+				camera.x = rcam.origin.x;
+				camera.y = rcam.origin.y;
+				camera.z = -rcam.origin.z;
+				camera.pitch = acos(rcam.lookdir.z);
+				camera.yaw = atan2(rcam.lookdir.y,rcam.lookdir.x);
+				sceneObjects["@camera"].visible = false;
+			}
+		}
     }
-	
-	void camMover()
-	{
-		double CamSpeed = 15.0*dt;
-		if(glfwGetKey(rwin, GLFW_KEY_W) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirFwd,-CamSpeed);
-		}
-		if(glfwGetKey(rwin, GLFW_KEY_S) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirFwd,CamSpeed);
-		}
-		if(glfwGetKey(rwin, GLFW_KEY_A) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirRight,-CamSpeed);
-		}
-		if(glfwGetKey(rwin, GLFW_KEY_D) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirRight,CamSpeed);
-		}
-		if(glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirUp,CamSpeed);
-		}
-		if(glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirUp,-CamSpeed);
-		}
-	}
+
+    void camMover()
+    {
+        double CamSpeed = camera.speed * dt;
+        if (glfwGetKey(rwin, GLFW_KEY_W) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirFwd, -CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_S) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirFwd, CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_A) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirRight, -CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_D) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirRight, CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirUp, CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirUp, -CamSpeed);
+        }
+    }
 
     /// -
     public void onResize(int w, int h)

@@ -272,11 +272,13 @@ extern(C) int tclAddObject(ClientData clientData, Tcl_Interp* interp, int objc, 
 					throw new Exception("Light named "~oname~" already exists in the light list!");
 				}
 				cfgLights[oname] = new PointLight();
+				cfgLights[oname].setName(oname);
 				cfgLights[oname].setupFromOptions(args);
 				return TCL_OK;
 			default:
 				throw new Exception("Wrong object type "~otype);
 		}
+		obj.setName(oname);
 		if(isTransformed)
 		{
 			Renderable o2 = new Transformed(obj);

@@ -9,6 +9,7 @@ import config;
 
 class PointLight : Light
 {
+	mixin RenderableNameHandler;
 	Vectorf position;
 	Color color;
 

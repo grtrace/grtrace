@@ -10,6 +10,7 @@ import std.string, std.getopt, std.array, std.range, std.math, std.algorithm, st
 
 class Plane : Renderable
 {
+	mixin RenderableNameHandler;
 	private Material mat;
 	public math.Plane plane;
 

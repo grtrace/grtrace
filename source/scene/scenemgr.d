@@ -45,6 +45,11 @@ abstract class WorldSpace
 		Color ambientLight;
 	}
 	
+	public static final ICamera getCamera() nothrow @nogc
+	{
+		return cast(ICamera)camera;
+	}
+	
 	//public void DoRay(Tid owner, Line ray, unum x, unum y, int tnum);
 	alias RayFunc = Color function(Tid owner, Line ray, unum x, unum y, int tnum);
 	public RayFunc GetRayFunc();

@@ -21,6 +21,7 @@ addMaterial .mat2 -D -e 1.0,0.0,0.0 -f b
 #addObject .plane1 -m .mat2 -t texplane -c a -o 0,0,20 -a0 -b0 -F -90,90,20 -S -70,90,20 -G1 -H1 -I0 -J0
 addObject .acr -m .mat2 -t accretion -c a -o 0,0,0 -a90 -b90 --inner_radius 3 --outer_radius 6
 addObject .sph1 -m .mat1 -t sphere -c 0,0,0 -r 3
+#addObject .sph2 -m .mat1 -t sphere -c 0,0,7 -r 3
 
 makeScene
 puts "Tcl config finished"

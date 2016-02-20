@@ -10,15 +10,28 @@ import image.color;
 import scriptconfig;
 public import dbg.draws;
 
+template RenderableNameHandler()
+{
+	shared(string) name_;
+	
+	string getName() nothrow const
+	{
+		return cast(string)name_;
+	}
+	void setName(string nm) nothrow
+	{
+		name_ = cast(shared(string))(nm.idup);
+	}
+}
+
 interface Renderable
 {
 	void setupFromOptions(string[] a);
+	
+	string getName() nothrow const;
+	void setName(string nm) nothrow;
 
-	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
-	in
-	{
-		assert(fabs(*ray.direction)<eps);
-	}
+	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const;
 
 	@property ref Material material();
 
@@ -34,6 +47,8 @@ interface Light
 	Color getColor();
 	Vectorf getPosition() shared;
 	Color getColor() shared;
+	string getName() nothrow const;
+	void setName(string nm) nothrow;
 }
 
 class Transformed : Renderable
@@ -47,6 +62,16 @@ class Transformed : Renderable
 		object = obj;
 		transform = tr;
 		invTransform = tr.inverse;
+	}
+	
+	string getName() nothrow const
+	{
+		return object.getName;
+	}
+	
+	void setName(string nm) nothrow
+	{
+		object.setName(nm);
 	}
 
 	void setupFromOptions(string[] a)

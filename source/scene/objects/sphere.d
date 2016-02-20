@@ -11,6 +11,7 @@ import std.getopt, std.string;
 
 class Sphere : Renderable
 {
+	mixin RenderableNameHandler;
 	private Material mat;
 	private Vectorf center;
 	private fpnum radius;
