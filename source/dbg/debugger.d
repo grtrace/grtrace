@@ -227,7 +227,15 @@ class VisualHelper
 
             DebugDispatcher.renderResult = new Image(8, 8);
         }
-        texRendered.recreateTexture(DebugDispatcher.renderResult);
+		if(cfgNoImage)
+		{
+			import image.imgio : ReadImage;
+			texRendered.recreateTexture(ReadImage(cfgOutputFile));
+		}
+		else
+		{
+        	texRendered.recreateTexture(DebugDispatcher.renderResult);
+		}
         texRendered.bind();
         texRendered.generateMipmaps();
         shader2D = new GFXshader();
@@ -551,9 +559,16 @@ class VisualHelper
             glDisable(GL_CULL_FACE);
             shader2D.bind();
             shader2D.setUniform1i("doTexture", 1);
-            shader2D.setUniformM4("model",
-                gMat4Mul(gMatTranslation(gVec3(-winx + 60, -winy + 60, 0)),
-                gMatScaling(gVec3(50, 50, 1))));
+			if (glfwGetKey(rwin, GLFW_KEY_F) == GLFW_RELEASE)
+			{
+            	shader2D.setUniformM4("model",
+                	gMat4Mul(gMatTranslation(gVec3(-winx + 60, -winy + 60, 0)),
+                	gMatScaling(gVec3(50, 50, 1))));
+			}
+			else
+			{
+				shader2D.setUniformM4("model",gMat4Mul(gMatTranslation(gVec3(-winx/2,-winy/2,0)),gMatScaling(gVec3(winx/2.0,winy/2.0,1))));
+			}
             shader2D.setUniformM4("view", gIdentity4());
             shader2D.setUniformM4("proj", gMatOrthographic(0, winx, 0, winy, 0, 1));
             objRendered.vao.enableAttribs();
@@ -600,6 +615,8 @@ class VisualHelper
 				imguiLabel("Tab - Object list");
 				imguiLabel("R - Reset camera to raytrace settings");
 				imguiLabel("Shift+R - Reset camera to 0,0,0");
+				imguiLabel("F - Show fullscreen image");
+				imguiLabel("F+Left Click - Raytrace from image");
 				imguiLabel("1 - Do a raytrace");
 				//imguiLabel("");
 				imguiEndScrollArea();
@@ -643,6 +660,7 @@ class VisualHelper
         glViewport(0, 0, winx, winy);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
+		glEnable(GL_LINE_SMOOTH);
     }
 
     private void setupWindow()
@@ -776,6 +794,23 @@ class VisualHelper
     /// -
     public void onMouseButton(int button, int state, int x, int y)
     {
+		if(glfwGetKey(rwin,GLFW_KEY_F)==GLFW_PRESS)
+		{
+			if(button == GLFW_MOUSE_BUTTON_LEFT)
+			{
+				if(state != GLFW_RELEASE)
+				{
+					double xd, yd;
+                    glfwGetCursorPos(rwin, &xd, &yd);
+					xd = (xd/winx)*2.0 - 1.0;
+					yd = (yd/winy)*2.0 - 1.0;
+					Line ray;
+					DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+					traceSingleRay(ray.origin, ray.direction);
+					return;
+				}
+			}
+		}
         if (mouseLocked)
         {
             if (button == GLFW_MOUSE_BUTTON_LEFT)
@@ -838,7 +873,7 @@ class VisualHelper
             int dx = x - mousex;
             int dy = y - mousey;
             double dYaw = dx * M_2_PI / 150.0;
-            double dPitch = -dy * PI / 200.0;
+            double dPitch = dy * PI / 200.0;
             camera.yaw -= dYaw;
             camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
         }
@@ -924,11 +959,11 @@ class VisualHelper
         {
             camera.addVec(camera.dirRight, CamSpeed);
         }
-        if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
+        if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
         {
             camera.addVec(camera.dirUp, CamSpeed);
         }
-        if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
+        if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
         {
             camera.addVec(camera.dirUp, -CamSpeed);
         }

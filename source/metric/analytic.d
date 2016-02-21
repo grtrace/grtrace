@@ -100,10 +100,10 @@ class Analytic : AnalyticMetricContainer
 		if(dh && mdist<=travel_dist)
 		{
 			*didHit=true;
-			DebugDispatcher.saveRay(ray, *hitpoint, RayDebugType.CustomColor, Colors.White);
+			DebugDispatcher.saveRay(ray, *hitpoint, RayDebugType.Default);
 			return mdist;
 		}
-		DebugDispatcher.saveRay(ray, to, RayDebugType.CustomColor, Colors.White);
+		DebugDispatcher.saveRay(ray, to, RayDebugType.Default);
 		return travel_dist;
 	}
 
