@@ -45,6 +45,16 @@ abstract class WorldSpace
 		Color ambientLight;
 	}
 	
+	public ubyte[] allocNewRayData()
+	{
+		return [];
+	}
+	
+	public int getStageCount()
+	{
+		return 1;
+	}
+	
 	public static final ICamera getCamera() nothrow @nogc
 	{
 		return cast(ICamera)camera;

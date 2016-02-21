@@ -9,6 +9,7 @@ import math;
 import image.color;
 import image.memory;
 import metric;
+import scene.raymgr;
 
 /// -
 struct RaySaver
@@ -21,10 +22,12 @@ struct DebugDispatcher
 {
     @disable this();
     @disable this(this);
+	WorldSpace space() nothrow @nogc
+	{
+		return Raytracer.space;
+	}
     __gshared
     {
-        /// World space
-        WorldSpace space;
         /// Rendering result
         Image renderResult;
     }
