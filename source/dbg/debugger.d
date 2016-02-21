@@ -221,13 +221,13 @@ class VisualHelper
     private void initVisuals()
     {
         texRendered = new GFXtexture();
+		import std.file:exists;
         if (DebugDispatcher.renderResult is null)
         {
             import image.memory : Image;
-
             DebugDispatcher.renderResult = new Image(8, 8);
         }
-		if(cfgNoImage)
+		if(cfgNoImage&&exists(cfgOutputFile))
 		{
 			import image.imgio : ReadImage;
 			texRendered.recreateTexture(ReadImage(cfgOutputFile));
