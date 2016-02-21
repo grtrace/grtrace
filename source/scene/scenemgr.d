@@ -18,6 +18,7 @@ import image.color;
 import scene.camera;
 import scene.objects.interfaces;
 import scene.objects.sphere;
+import scene.materials.material;
 import scene.camera;
 import scene.compute;
 import core.cpuid;
@@ -46,9 +47,13 @@ abstract class WorldSpace
 		Color ambientLight;
 	}
 	
-	public ubyte[] allocNewRayData()
+	public int allocNewRayData()
 	{
-		return [];
+		return 0;
+	}
+	
+	public void freeRayData()
+	{
 	}
 	
 	public int getStageCount()
@@ -237,6 +242,106 @@ abstract class WorldSpace
 
 class EuclideanSpace : WorldSpace
 {
+	static struct RayData
+	{
+		fpnum u,v;
+		Vectorf normal;
+		int nlights;
+		int slights;
+		Material material;
+		Material.LightHit[32] lights;
+	}
+	__gshared RayData[] rdata;
+	ComputeStep[RayState.Finished] steps;
+	
+	this()
+	{
+		steps[RayState.Initialised] = ComputeStep(RayState.Initialised, RayState.InComputation1, &computeRay1, false, "");
+		steps[RayState.InComputation1] = ComputeStep(RayState.Initialised, RayState.Finished, &computeRayLight, false, "");
+	}
+	
+	override public int allocNewRayData()
+	{
+		int idx = cast(int)rdata.length;
+		rdata ~= RayData();
+		return idx;
+	}
+	
+	override public void freeRayData()
+	{
+		rdata = [];
+	}
+	
+	override public int getStageCount()
+	{
+		return 1;
+	}
+	
+	override public ComputeStep[RayState.Finished] getComputeStages()
+	{
+		return steps;
+	}
+	
+	private static RayState computeRay1(RayComputation* rc)
+	{
+		Vectorf rayhit;
+		Vectorf normal;
+		Renderable closest;
+		bool hit=false;
+		Raytrace!(true,true,true)(rc.curRay, &hit, &rayhit, &normal, &closest);
+		if(!hit)
+		{
+			rc.color = Colors.Black;
+			return RayState.Finished;
+		}
+		if(!closest.material)
+		{
+			rc.color = Colors.Magenta;
+			return RayState.Finished;
+		}
+		rc.curRay.origin = rayhit + normal*0.01;
+		fpnum u,v;
+		closest.getUVMapping(rayhit, u, v);
+		rdata[rc.dataIdx].u = u;
+		rdata[rc.dataIdx].v = v;
+		rdata[rc.dataIdx].normal = normal;
+		rdata[rc.dataIdx].material = closest.material;
+		return RayState.InComputation1;
+	}
+	
+	private static RayState computeRayLight(RayComputation* rc)
+	{
+		RayData* rd = &rdata[rc.dataIdx];
+		if(rd.slights<WorldSpace.lights.length)
+		{
+			Light L = cast(Light)WorldSpace.lights[rd.slights];
+			Line hitRay = LinePoints(rc.curRay.origin, L.getPosition());
+			hitRay.ray = true;
+			bool unlit = false;
+			fpnum dst = Raytrace!(false,false,false)(hitRay, &unlit);
+			if(unlit)
+			{
+				fpnum dLO = *(L.getPosition() - rc.curRay.origin);
+				if(dLO < (dst^^2))
+				{
+					unlit = false;
+				}
+			}
+			if(!unlit)
+			{
+				rd.lights[rd.nlights] = Material.LightHit(L.getPosition(), hitRay.direction, L.getColor());
+				rd.nlights++;
+			}
+			rd.slights++;
+		}
+		else
+		{
+			rc.color = rd.material.calculateColor(rd.u, rd.v, rd.normal, rd.lights[0..rd.nlights]);
+			return RayState.Finished;
+		}
+		return RayState.InComputation1;
+	}
+	
 	override protected RayFunc GetRayFunc()
 	{
 		return &DoRay;

@@ -32,7 +32,7 @@ addMaterial .cr5 -l 450 -f b
 addMaterial .tablel -l 460 -f b 
 addMaterial .tableb -l 470 -f b
 
-#addObject .light1 -t pointlight -p 0,0,-5 -c white
+#addObject .light1 -t pointlight -p 0,0,0 -c white
 
 #addObject .sph1 -m .mat1 -t sphere -c 0,0,-9 -r 0.125
 #addObject .sph2 -m .mat1 -t sphere -c 0,0,-13 -r 0.125
@@ -209,6 +209,7 @@ addObject .blt2 -m .tableb -t triangle -a 0.9,0.2,-9.9  -b 0.9,0.2,-12 -c -0.2,0
 
 makeScene
 puts "Tcl config finished"
-doTrace
-waitForTrace
+dbgTrace
+#doTrace
+#waitForTrace
 puts "Tcl script finished"

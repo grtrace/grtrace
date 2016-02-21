@@ -34,6 +34,6 @@ struct DebugDispatcher
     static:
     void progress(int done, int total)
 	{
-		//
+		stderr.writef("\r%30c\rProgress: %d/%d",' ',done,total);
 	}
 }

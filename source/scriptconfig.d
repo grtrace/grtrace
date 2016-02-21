@@ -38,6 +38,7 @@ void InitScripting(string arg0)
 	Tcl_Init(tcl);
 	Tcl_CreateObjCommand(tcl, "loadGUI", &tclLoadGUI, null, null);
 	Tcl_CreateObjCommand(tcl, "makeScene", &tclMakeScene, null, null);
+	Tcl_CreateObjCommand(tcl, "dbgTrace", &tclDbgTrace, null, null);
 	Tcl_CreateObjCommand(tcl, "doTrace", &tclDoTrace, null, null);
 	Tcl_CreateObjCommand(tcl, "waitForTrace", &tclFinishTrace, null, null);
 	Tcl_CreateObjCommand(tcl, "configSet", &tclConfigSet, null, null);
@@ -91,6 +92,7 @@ extern(C) int tclMakeScene(ClientData clientData, Tcl_Interp* interp, int objc, 
 {
 	try
 	{
+		import scene.raymgr : Raytracer;
 		auto space = CreateSpace(cfgWorldSpace);
 		SetupCamera(cfgCameraType, vectorf(cfgCameraX,cfgCameraY,cfgCameraZ), cfgCameraPitch, cfgCameraYaw, cfgCameraRoll, cfgCameraOptions);
 		foreach(name,object;cfgObjects)
@@ -106,7 +108,26 @@ extern(C) int tclMakeScene(ClientData clientData, Tcl_Interp* interp, int objc, 
 				writeln("Added "~name);
 		}
 		cfgSpace = cast(shared(WorldSpace))(space);
+		Raytracer.setSpace(space);
 		FinalizeObjects();
+	}
+	catch(Exception e)
+	{
+		Tcl_AppendResult(interp, ("D exception "~e.msg~"\0").ptr,null);
+		return TCL_ERROR;
+	}
+	return TCL_OK;
+}
+
+extern(C) int tclDbgTrace(ClientData clientData, Tcl_Interp* interp, int objc, const(Tcl_Obj*)* objv) nothrow
+{
+	try
+	{
+		import scene.raymgr : Raytracer;
+		Raytracer.prepareSubimageTrace(0,0,cast(int)cfgResolutionX,cast(int)cfgResolutionY);
+		Raytracer.computeMultiThread();
+		Raytracer.saveImage();
+		Raytracer.cleanup();
 	}
 	catch(Exception e)
 	{

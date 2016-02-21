@@ -63,7 +63,7 @@ struct RayComputation
 	/// Owner of the computation, for example a thread id
 	uint owner;
 	/// Additional data associated with the ray
-	ubyte[] data;
+	int dataIdx;
 }
 
 /** Definition of a CPU computation function
