@@ -18,7 +18,7 @@ import core.cpuid;
 import std.algorithm, std.array, std.string;
 import std.random, std.getopt;
 import scene.scenemgr;
-import dbg.debugger;
+import dbg.dispatcher;
 private alias RPlane = scene.objects.plane.Plane;
 
 class KexMetric : WorldSpace
@@ -137,10 +137,10 @@ class KexMetric : WorldSpace
 			writeln(da);
 			newRay.direction = Matrix4f.RotateV(bhrp.normal,(-da),ray.direction);
 			newRay.ray = true;
-			VisualDebugger.DebugRayB(ray, newRay.origin, null);
+			DebugDispatcher.saveRay(ray, newRay.origin, RayDebugType.Default);
 			return Raytrace!(doP,doN,doO,doD)(newRay,didHit,hitpoint, hitnormal,hit,cnt+1);
 		}
-		VisualDebugger.DebugRayA(ray, mdist, null);
+		DebugDispatcher.saveRay(ray, mdist, RayDebugType.Default);
 		if(dh){*didHit=true;}
 		static if(doO)
 		{
@@ -203,7 +203,7 @@ class KexMetric : WorldSpace
 					}
 					if(unlit==false) // lit
 					{
-						VisualDebugger.FoundLight(l.getPosition());
+						//VisualDebugger.FoundLight(l.getPosition());
 						fpnum DP = normal*(hitRay.direction);
 						if(DP>0)
 							tmpc = tmpc + diffuseColor*l.getColor()*(DP);

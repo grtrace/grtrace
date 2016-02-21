@@ -1,858 +1,1014 @@
-﻿module dbg.debugger;
+module dbg.debugger_new;
 
-import derelict.glfw3.glfw3;
 import glad.gl.all;
 import glad.gl.loader;
-import config;
-import std.stdio, std.math, std.array, std.string, std.format;
-import scene.scenemgr;
-import scene.camera;
+import derelict.glfw3.glfw3;
+import imgui.api;
+import dbg.glhelpers;
+import dbg.dispatcher;
+import dbg.draws;
+import std.stdio, std.string, std.file, std.math, std.exception;
+import std.string, std.format, std.algorithm, std.array, std.range;
+import config, scene.camera, scene.scenemgr, math;
 import scene.objects.interfaces;
-import math;
 import image.color;
-import image.spectrum;
-import metric;
 
-// Source: http://www.cburch.com/cs/490/sched/feb8/
-private void drawSphereGen(int lats, int longs) {
-	int i, j;
-	enum double PI2 = 2.0*PI;
-	for(i = 0; i <= lats; i++)
-	{
-		double lat0 = PI * (-0.5 + cast(double) (i - 1) / lats);
-		double z0  = sin(lat0);
-		double zr0 =  cos(lat0);
+/// -
+class TooLowGLVersion : Error
+{
+    ///-
+    this()
+    {
+        super("You've got too low OpenGL version. 3.3 is required.");
+    }
+}
 
-		double lat1 = PI * (-0.5 + cast(double) i / lats);
-		double z1 = sin(lat1);
-		double zr1 = cos(lat1);
+struct Vert3D
+{
+    float x = 0.0, y = 0.0, z = 0.0;
+    float tx = 0.0, ty = 0.0, tz = 0.0;
+    float r = 0.0, g = 0.0, b = 0.0, a = 0.0;
+    float nx = 0.0, ny = 0.0, nz = 0.0;
+} // 13 floats = 52 b
 
-	/*	glBegin(GL_QUAD_STRIP);
-		for(j = 0; j <= longs; j++)
+private __gshared Color oColor;
+
+private class VisualPrimitives
+{
+    static int appendSphere(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+        import dbg.icosphere : Icosphere;
+
+        int cnt = 0;
+        auto radius = dd.radius_one;
+        auto origin = dd.plane.origin;
+        auto Verng = appender!(Vert3D[])();
+        auto Eerng = appender!(uint[])();
+        Icosphere iso = Icosphere(4);
+        foreach (v; iso.vertices[])
+        {
+            Verng ~= Vert3D(radius * v.x + origin.x, radius * v.y + origin.y,
+                radius * v.z + origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0, v.x, v.y, v.z);
+        }
+        foreach (t; iso.triangles[])
+        {
+            Eerng ~= [cast(uint)(iv0 + t.a), cast(uint)(iv0 + t.b), cast(uint)(iv0 + t.c)];
+            cnt += 3;
+        }
+        Vrng ~= Verng.data;
+        Erng ~= Eerng.data;
+        return cnt;
+    }
+
+    static int appendAccretionDisc(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+        double inner_radius = sqrt(dd.radius_two);
+        double outer_radius = sqrt(dd.radius_one);
+
+		Vectorf qvec;
+		qvec = (vectorf(1.0f, 0.75f, -0.8f) % dd.plane.normal).normalized;
+		Vectorf pvec = (qvec%dd.plane.normal).normalized;
+        Vectorf vec, nvec;
+        //GFXmatrix3 rot = gMat3RotateVectorOntoVector(gVec3(0, 1, 0),
+        //    gVec3(rvec.x, rvec.y, rvec.z));
+
+        int vrt = 0;
+        const int deg_step = 1;
+        const int mod = 2 * 361 / deg_step;
+        for (int i = 0; i <= 360; i += deg_step)
+        {
+            double cosi = cos(cast(double) PI * i / 180);
+            double sini = sin(cast(double) PI * i / 180);
+            vec = (qvec*cosi + pvec*sini)*inner_radius;
+			nvec = vectorf(dd.plane.normal.x - vec.x,dd.plane.normal.y - vec.y,dd.plane.normal.z - vec.z).normalized;
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
+                nvec.x, nvec.y, nvec.z);
+            vec = vec*(outer_radius/inner_radius);
+			nvec = vectorf(dd.plane.normal.x + vec.x,dd.plane.normal.y + vec.y,dd.plane.normal.z + vec.z).normalized;
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
+                nvec.x, nvec.y, nvec.z);
+
+            Erng ~= [cast(uint)(iv0 + ((vrt + 0) % mod)),
+                cast(uint)(iv0 + ((vrt + 1) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            Erng ~= [cast(uint)(iv0 + ((vrt + 1) % mod)),
+                cast(uint)(iv0 + ((vrt + 3) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            vrt += 6;
+        }
+
+        return vrt;
+    }
+
+    static int appendPlane(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+        return 0;
+    }
+
+    static int appendTriangle(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
+    {
+        Vectorf a = dd.tri.plane.origin;
+        Vectorf[3] tab = [a, a + dd.tri.b, a + dd.tri.c];
+        Vectorf normal = dd.tri.plane.normal;
+
+        foreach (Vectorf vert; tab)
+        {
+            Vrng ~= Vert3D(vert.x, vert.y, vert.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
+                normal.x, normal.y, normal.z);
+        }
+
+        Erng ~= [cast(uint)(iv0), cast(uint)(iv0 + 1), cast(uint)(iv0 + 2)];
+
+        return 3;
+    }
+}
+
+/// Class responsible for visual debugging
+class VisualHelper
+{
+    private __gshared VisualHelper _inst;
+    shared static this()
+    {
+        _inst = new VisualHelper();
+    }
+
+    private this()
+    {
+    }
+    /// -
+    public static @property VisualHelper instance()
+    {
+        return _inst;
+    }
+    /// -
+    public void initialize()
+    {
+
+    }
+
+    private GLFWwindow* rwin;
+    private int winx, winy;
+    private int mousex, mousey, mousescroll, keychar;
+    private ubyte mousebtns;
+    private float bgIntensity = 0.25f;
+    private GFXtexture texRendered;
+    private static struct DrawnObj
+    {
+        GFXdataStruct data;
+        GFXbufferObject vbo, veo;
+        GFXvertexArrayObject vao;
+        GFXtexture tex;
+        void bind()
+        {
+            if (vao)
+                vao.bind();
+            if (vbo)
+                vbo.bindTo(gBufferTarget.VertexArray);
+            if (veo)
+                veo.bindTo(gBufferTarget.ElementArray);
+            if (tex)
+                tex.bind();
+        }
+    }
+
+    private DrawnObj objSpatial, objRays;
+
+    private static struct TCamera
+    {
+        float x = 0.0f, y = 0.0f, z = 0.0f;
+        float pitch = 0.0f, yaw = 0.0f;
+        float near = 0.01f, far = 100.0f;
+		float speed = 12.0f;
+        float fov = 80.0f;
+        GFXvector3 dirFwd, dirRight, dirUp;
+        GFXmatrix4 matrix, rmatrix, rinvmatrix;
+        void normalize()
+        {
+			pitch = clamp(pitch, -PI/2.0, PI/2.0);
+            yaw = fmod(yaw, 2.0 * PI);
+
+            dirFwd = gVecMatTransform(rinvmatrix, gVec4(0, 0, 1, 0)).to3; // gVec3(-sin(yaw),sin(pitch),cos(yaw));
+            dirRight = gVecMatTransform(rinvmatrix, gVec4(1, 0, 0, 0)).to3; //dirRight = gVec3(cos(yaw),0,sin(yaw));
+            dirUp = gVecMatTransform(rinvmatrix, gVec4(0, 1, 0, 0)).to3;
+        }
+
+        void addVec(GFXvector3 V, double scale = 1.0)
+        {
+            x += V.x * scale;
+            y += V.y * scale;
+            z += V.z * scale;
+        }
+    }
+
+    private static struct TSObject
+    {
+        string id;
+        Renderable obj;
+        int vertIndex;
+        int vertCount;
+        bool visible = true;
+		bool opanel = true;
+    }
+
+    private TCamera camera;
+    private DrawnObj objRendered;
+    private GFXshader shader2D, shader3D;
+    private GFXmatrix4 matProjection;
+    private TSObject*[string] sceneObjects;
+    private TSObject*[] sortedObjects;
+    private bool mouseInGui, mouseLocked;
+    int numverts, numRays;
+    private void initVisuals()
+    {
+        texRendered = new GFXtexture();
+        if (DebugDispatcher.renderResult is null)
+        {
+            import image.memory : Image;
+
+            DebugDispatcher.renderResult = new Image(8, 8);
+        }
+        texRendered.recreateTexture(DebugDispatcher.renderResult);
+        texRendered.bind();
+        texRendered.generateMipmaps();
+        shader2D = new GFXshader();
+        shader2D.loadVertShader("shaders/twod.vert");
+        shader2D.loadFragShader("shaders/twod.frag");
+        int sh2Pos = shader2D.bindAttribLocation(1, "position");
+        int sh2Tex = shader2D.bindAttribLocation(2, "texcoord");
+        int sh2Color = shader2D.bindAttribLocation(3, "color");
+        shader2D.link();
+        shader2D.bind();
+        shader2D.setUniform1i("doTexture", 1);
+        shader2D.setUniformM4("model", gIdentity4());
+        shader2D.setUniformM4("view", gIdentity4());
+        shader2D.setUniformM4("proj", gIdentity4());
+        shader3D = new GFXshader();
+        shader3D.loadVertShader("shaders/space.vert");
+        shader3D.loadFragShader("shaders/space.frag");
+        int sh3Pos = shader3D.bindAttribLocation(1, "position");
+        int sh3Tex = shader3D.bindAttribLocation(2, "texcoord");
+        int sh3Color = shader3D.bindAttribLocation(3, "color");
+        int sh3Normal = shader3D.bindAttribLocation(4, "normal");
+        shader3D.link();
+        shader3D.bind();
+        shader3D.setUniform1i("doTexture", 1);
+        shader3D.setUniformM4("model", gIdentity4());
+        shader3D.setUniformM4("view", gIdentity4());
+        shader3D.setUniformM4("proj", gIdentity4());
+        shader2D.bind();
+        objRendered.tex = texRendered;
+        objRendered.data = new GFXdataStruct();
+        {
+            int vPos, vTex, vColor;
+            ubyte[] xdata;
+            with (objRendered.data)
+            {
+                vPos = appendType(gDataType.Avector3); // pos
+                vTex = appendType(gDataType.Avector3); // texcoord
+                vColor = appendType(gDataType.Avector4); // color
+                declarationComplete();
+                static struct Vert
+                {
+                    float x, y, z;
+                    float u, v, w;
+                    float r, g, b, a;
+                }
+
+                Vert[6] dta;
+                dta[0] = Vert(-1, -1, 0, 0, 1, 0, 1, 1, 1, 1);
+                dta[1] = Vert(-1, 1, 0, 0, 0, 0, 1, 1, 1, 1);
+                dta[2] = Vert(1, 1, 0, 1, 0, 0, 1, 1, 1, 1);
+                dta[3] = Vert(1, 1, 0, 1, 0, 0, 1, 1, 1, 1);
+                dta[4] = Vert(1, -1, 0, 1, 1, 0, 1, 1, 1, 1);
+                dta[5] = Vert(-1, -1, 0, 0, 1, 0, 1, 1, 1, 1);
+                xdata = cast(ubyte[])(dta);
+            }
+            objRendered.data.setLength(6);
+            objRendered.data.data = xdata.dup;
+            objRendered.vbo = new GFXbufferObject(gBufferUsage.StaticPush);
+            with (objRendered.vbo)
+            {
+                bindTo(gBufferTarget.VertexArray);
+                updateData(xdata);
+            }
+            objRendered.vao = new GFXvertexArrayObject();
+            with (objRendered.vao)
+            {
+                bind();
+                configureAttribute(objRendered.data, vPos, sh2Pos, false, false);
+                configureAttribute(objRendered.data, vTex, sh2Tex, false, false);
+                configureAttribute(objRendered.data, vColor, sh2Color, false, false);
+            }
+        }
+        shader3D.bind();
+        objSpatial.data = new GFXdataStruct();
+        int sPos = objSpatial.data.appendType(gDataType.Avector3);
+        int sTex = objSpatial.data.appendType(gDataType.Avector3);
+        int sCol = objSpatial.data.appendType(gDataType.Avector4);
+        int sNorm = objSpatial.data.appendType(gDataType.Avector3);
+        objSpatial.data.declarationComplete();
+        objSpatial.data.setLength(3);
+
+        Vert3D[] v3d = [];
+        uint[] e3d = [];
+		numverts = 0;
+        {
+			ICamera cam = DebugDispatcher.space.getCamera();
+            TSObject *tso = new TSObject();
+            tso.id = "@camera";
+            tso.obj = null;
+            tso.vertIndex = 0;
+            tso.vertCount = 18;
+            tso.visible = true;
+            // TODO: Add camera model
+			float csz = 1.0f;
+			float cyx = cam.yxratio;
+			float ax,ay,ah;
+			float cx = cam.origin.x;
+			float cy = cam.origin.y;
+			float cz = cam.origin.z;
+			float cux = csz * cam.updir.x * cyx;
+			float cuy = csz * cam.updir.y * cyx;
+			float cuz = csz * cam.updir.z * cyx;
+			float crx = csz * cam.rightdir.x;
+			float cry = csz * cam.rightdir.y;
+			float crz = csz * cam.rightdir.z;
+			float cfx = csz * cam.lookdir.x;
+			float cfy = csz * cam.lookdir.y;
+			float cfz = csz * cam.lookdir.z;
+			float nm = 1.0f/(csz*csz*csz*3.0f);
+			enum float CamR = 1.0f, CamG = 0.8f, CamB = 0.1f;
+			enum float CamXR = 0.7f, CamXG = 0.7f, CamXB = 0.7f;
+			v3d ~= Vert3D(cx - 4*cfx, cy - 4*cfy, cz - 4*cfz, 0, 0, 0, CamR, CamG, CamB, 1.0,
+                -cam.lookdir.x, -cam.lookdir.y, -cam.lookdir.z); // 0 - top
+			v3d ~= Vert3D(cx + cux + crx, cy + cuy + cry, cz + cuz + crz, 0, 0, 0, CamXR, CamXG, CamXB, 1.0,
+                nm*(cux + crx + cfx), nm*(cuy + cry + cfy), nm*(cuz + crz + cfz)); // 1 - ^>
+			v3d ~= Vert3D(cx - cux + crx, cy - cuy + cry, cz - cuz + crz, 0, 0, 0, CamXR, CamXG, CamXB, 1.0,
+                nm*(-cux + crx + cfx), nm*(-cuy + cry + cfy), nm*(-cuz + crz + cfz)); // 2 - V>
+			v3d ~= Vert3D(cx - cux - crx, cy - cuy - cry, cz - cuz - crz, 0, 0, 0, CamXR, CamXG, CamXB, 1.0,
+                nm*(-cux - crx + cfx), nm*(-cuy - cry + cfy), nm*(-cuz - crz + cfz)); // 3 - <V
+			v3d ~= Vert3D(cx + cux - crx, cy + cuy - cry, cz + cuz - crz, 0, 0, 0, CamXR, CamXG, CamXB, 1.0,
+                nm*(cux - crx + cfx), nm*(cuy - cry + cfy), nm*(cuz - crz + cfz)); // 4 - <^
+			e3d ~= [0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1, 1, 2, 3, 3, 4, 1];
+			numverts += 18;
+            sceneObjects[tso.id] = tso;
+        }
+
+        foreach (shared Renderable obj; DebugDispatcher.space.objects)
+        {
+            auto OBJ = cast(Renderable) obj;
+			oColor = OBJ.material.emission_color;
+            TSObject* tso = new TSObject();
+            tso.id = OBJ.getName();
+            tso.obj = OBJ;
+            tso.vertIndex = cast(int) e3d.length;
+            DebugDraw deb = OBJ.getDebugDraw();
+
+            switch (deb.type)
+            {
+            case DrawType.None:
+                continue;
+
+            case DrawType.Sphere:
+                tso.vertCount = VisualPrimitives.appendSphere(v3d, e3d, cast(int) v3d.length,
+                    deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
+                continue;
+
+            case DrawType.Triangle:
+                tso.vertCount = VisualPrimitives.appendTriangle(v3d, e3d,
+                    cast(int) v3d.length, deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
+                continue;
+
+            case DrawType.Plane:
+                tso.vertCount = VisualPrimitives.appendPlane(v3d, e3d, cast(int) v3d.length,
+                    deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
+                continue;
+
+            case DrawType.AccretionDisc:
+                tso.vertCount = VisualPrimitives.appendAccretionDisc(v3d, e3d,
+                    cast(int) v3d.length, deb);
+                numverts += tso.vertCount;
+                sceneObjects[tso.id] = tso;
+                continue;
+
+            default:
+                continue;
+            }
+        }
+		foreach(ref Vert3D v; v3d)
 		{
-			double lng = PI2 * cast(double) (j - 1) / longs;
-			double x = cos(lng);
-			double y = sin(lng);
-			glColor3f(.5+x * zr1/2.0, .5+y * zr1/2.0, .5+z1/2.0);
-			glNormal3f(x * zr0, y * zr0, z0);
-			glVertex3f(x * zr0, y * zr0, z0);
-			glNormal3f(x * zr1, y * zr1, z1);
-			glVertex3f(x * zr1, y * zr1, z1);
+			v.z = -v.z;
 		}
-		glEnd();*/
-	}
-}
-
-public Color[7] rayColors = [Colors.Red, Colors.Green, Colors.Blue,
-							Colors.Magenta, Colors.Yellow, Colors.Cyan, Colors.White];
-
-private struct SavedRay
-{
-	Vectorf origin;
-	Vectorf destination;
-	Vectorf direction;
-	fpnum distance;
-	Color col;
-	string toString()
-	{
-		return "#%-2d %s -> %s".format(col,origin,destination);
-	}
-}
-
-bool rayMode=false;
-
-extern (C) private void corexMouseButton(GLFWwindow* w, int btn, int type, int modkeys) nothrow
-{
-	try
-	{
-		if(btn==GLFW_MOUSE_BUTTON_1)
+		sortedObjects.length = sceneObjects.keys.length;
+		int sobji = 0;
+		foreach(string k, TSObject* v; sceneObjects)
 		{
-			double xd, yd;
-			glfwGetCursorPos(w, &xd, &yd);
-			int x = cast(int) xd, y = cast(int) yd;
-			double xR = xd/cfgResolutionX;
-			double yR = yd/cfgResolutionY;
-			xR*=2.0;
-			yR*=2.0;
-			xR-=1.0;
-			yR-=1.0;
-			if (type == GLFW_PRESS)
+			sortedObjects[sobji] = v;
+			sobji++;
+		}
+		sort!("a.id < b.id")(sortedObjects);
+        if (cfgVerbose)
+        {
+            writeln("[VDBG] Number of evertices registered: ", numverts);
+            writeln("[VDBG] Number of elements total: ", e3d.length);
+            writeln("[VDBG] Number of vertices total: ", v3d.length);
+            writeln("[VDBG] Scene objects: ");
+            foreach (string id, TSObject* obj; sceneObjects)
+            {
+                writefln("\t%s [Vi:%d,Vn:%d,Ve:%d]", id, obj.vertIndex,
+                    obj.vertCount, obj.vertIndex + obj.vertCount - 1);
+            }
+        }
+
+        objSpatial.data.data = cast(ubyte[])(v3d);
+        objSpatial.vbo = new GFXbufferObject(gBufferUsage.StaticPush);
+        objSpatial.vbo.bindTo(gBufferTarget.VertexArray);
+        objSpatial.vbo.updateData(objSpatial.data);
+        objSpatial.veo = new GFXbufferObject(gBufferUsage.StaticPush);
+        objSpatial.veo.bindTo(gBufferTarget.ElementArray);
+        objSpatial.veo.updateData(cast(ubyte[]) e3d);
+        objSpatial.vao = new GFXvertexArrayObject();
+        objSpatial.vao.bind();
+        objRendered.vao.disableAttribs();
+        objSpatial.vao.configureAttribute(objSpatial.data, sPos, sh3Pos, false, false);
+        objSpatial.vao.configureAttribute(objSpatial.data, sTex, sh3Tex, false, false);
+        objSpatial.vao.configureAttribute(objSpatial.data, sCol, sh3Color, false, false);
+        objSpatial.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false,
+            false);
+        objSpatial.vao.disableAttribs();
+        
+		Vert3D[] dummy;
+		dummy.length = 3;
+        objRays.vbo = new GFXbufferObject(gBufferUsage.DynamicPush);
+        objRays.vbo.bindTo(gBufferTarget.VertexArray);
+        objRays.vbo.updateData(cast(ubyte[])dummy);
+        objRays.vao = new GFXvertexArrayObject();
+        objRays.vao.bind();
+		objSpatial.vao.disableAttribs();
+        objRays.vao.configureAttribute(objSpatial.data, sPos, sh3Pos, false, false);
+        objRays.vao.configureAttribute(objSpatial.data, sTex, sh3Tex, false, false);
+        objRays.vao.configureAttribute(objSpatial.data, sCol, sh3Color, false, false);
+        objRays.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false,
+            false);
+        objRays.vao.enableAttribs();
+		
+    }
+	
+	private void rebuildRays()
+	{
+		Vert3D[] v3d = [];
+		foreach(SavedRay ray; DebugDispatcher.saver.rays)
+		{
+			v3d ~= Vert3D(ray.start.x, ray.start.y, -ray.start.z, 0.0f, 0.0f, 0.0f, ray.color.r, ray.color.g, ray.color.b, 1.0f, 0.0f, 1.0f, 0.0f);
+			if(*(ray.end - ray.start) > 10_000_000.0f)
 			{
-				rayMode = true;
-				Line ray;
-				if(VisualDebugger.inst.camera.fetchRay(xR,yR,ray))
+				ray.end = ray.start + ray.dir * 100.0f;
+			}
+			v3d ~= Vert3D(ray.end.x, ray.end.y, -ray.end.z, 0.0f, 0.0f, 0.0f, ray.color.r, ray.color.g, ray.color.b, 1.0f, 0.0f, 1.0f, 0.0f);
+		}
+		numRays = cast(int)v3d.length;
+		if(numRays>0)objRays.vbo.updateData(cast(ubyte[])v3d);
+		DebugDispatcher.saver.dirty = false;
+	}
+	
+    private double dt;
+	enum DWindow
+	{
+		None,
+		Raytrace
+	}
+	private DWindow window;
+
+    /// Starts the graphical part of the debugger
+    public void runGraphics()
+    {
+        double Taccum = 0.0;
+        DerelictGLFW3.load();
+        glfwInit();
+        setupWindow();
+        initVisuals();
+		DebugDispatcher.saver.enable();
+		DebugDispatcher.saver.clear();
+        enforce(imguiInit("firasans-medium.ttf", 1024));
+        int scroll_d = 0;
+        glfwSetTime(0.0);
+        size_t[] vbegins;
+        GLsizei[] vends;
+        GLsizei numvs;
+        vbegins.length = sceneObjects.keys.length;
+        vends.length = vbegins.length;
+        while (!glfwWindowShouldClose(rwin))
+        {
+            dt = glfwGetTime();
+            Taccum += dt;
+            glfwSetTime(0.0);
+            mouseInGui = false;
+            camera.normalize();
+            camera.rmatrix = gMat4Mul(gMatRotX(camera.pitch), gMatRotY(camera.yaw));
+            camera.rinvmatrix = gMat4Inverse(camera.rmatrix);
+            camera.matrix = gMat4Mul(camera.rmatrix,
+                gMatTranslation(gVec3(-camera.x, -camera.y, -camera.z)));
+            camMover();
+            matProjection = gMatProjection(camera.fov * PI / 180.0,
+                winy / cast(double) winx, camera.near, camera.far);
+            resetGl();
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            //glEnable(GL_CULL_FACE);
+            shader3D.bind();
+            shader3D.setUniform1i("doTexture", 0);
+            shader3D.setUniformM4("model", gIdentity4());
+            shader3D.setUniformM4("view", camera.matrix);
+            shader3D.setUniformM4("proj", matProjection);
+            objSpatial.bind();
+            objRendered.vao.disableAttribs();
+            objSpatial.vao.enableAttribs();
+            numvs = 0;
+            foreach (string id, TSObject* tso; sceneObjects)
+            {
+                if ((tso.visible) && (tso.vertCount > 0))
+                {
+                    vbegins[numvs] = tso.vertIndex * uint.sizeof;
+                    vends[numvs] = tso.vertCount;
+                    numvs++;
+                }
+            }
+            glMultiDrawElements(GL_TRIANGLES, cast(const(int)*)(vends.ptr),
+                GL_UNSIGNED_INT, cast(const(void*)*)(vbegins.ptr), cast(GLsizei) numvs);
+            
+			objRays.bind();
+			objRays.vao.enableAttribs();
+			if(DebugDispatcher.saver.dirty)rebuildRays();
+			glDrawArrays(GL_LINES, 0, numRays);
+
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            shader2D.bind();
+            shader2D.setUniform1i("doTexture", 1);
+            shader2D.setUniformM4("model",
+                gMat4Mul(gMatTranslation(gVec3(-winx + 60, -winy + 60, 0)),
+                gMatScaling(gVec3(50, 50, 1))));
+            shader2D.setUniformM4("view", gIdentity4());
+            shader2D.setUniformM4("proj", gMatOrthographic(0, winx, 0, winy, 0, 1));
+            objRendered.vao.enableAttribs();
+            objSpatial.vao.disableAttribs();
+            objRendered.bind();
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            gAssertGl();
+            glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            imguiBeginFrame(mousex, winy - mousey, mouseLocked ? 0 : mousebtns,
+                mouseLocked ? 0 : mousescroll, cast(dchar) keychar);
+            // GUI code
+
+            mouseInGui |= imguiBeginScrollArea("Controls", 10, winy - 510, 190, 500,
+                &scroll_d);
+            {
+                imguiSlider("BG", &bgIntensity, 0.0f, 1.0f, 0.02f);
+                static bool expView = true;
+                imguiCollapse("View controls", "", &expView);
+                if (expView)
+                {
+                    imguiIndent();
+                    imguiLabel("x y z:");
+                    imguiLabel("%.1f %.1f %.1f".format(camera.x, camera.y, camera.z));
+                    imguiLabel("Pitch: %.1f".format(camera.pitch));
+                    imguiLabel("Yaw: %.1f".format(camera.yaw));
+					imguiSlider("Cam Speed", &camera.speed, 1.0f, 80.0f, 0.5f);
+                    imguiSlider("FOV", &camera.fov, 20.0f, 150.0f, 1.0f);
+                    imguiSlider("Near", &camera.near, 0.0001f, 1.0f, 0.0001f);
+                    imguiSlider("Far", &camera.far, 2.0f, 10_000.0f, 10.0f);
+                    imguiUnindent();
+                }
+            }
+			imguiEndScrollArea();
+			if(glfwGetKey(rwin,GLFW_KEY_F1)==GLFW_PRESS)
+			{
+				static int scroll_cs;
+				mouseInGui |= imguiBeginScrollArea("Help", winx/2-150, winy/2 - 250, 300, 500,
+                	&scroll_cs);
+                imguiLabel("Keys:");
+				imguiLabel("F1 - this help");
+				imguiLabel("W,A,S,D,Q,E - Camera movement");
+				imguiLabel("Tab - Object list");
+				imguiLabel("R - Reset camera to raytrace settings");
+				imguiLabel("Shift+R - Reset camera to 0,0,0");
+				imguiLabel("1 - Do a raytrace");
+				//imguiLabel("");
+				imguiEndScrollArea();
+            }
+			if(glfwGetKey(rwin,GLFW_KEY_TAB)==GLFW_PRESS)
+			{
+				static int scroll_ol;
+				mouseInGui |= imguiBeginScrollArea("Objects", winx/2-150, winy/2 - 250, 300, 500,
+                	&scroll_ol);
+				foreach(TSObject *obj; sortedObjects)
 				{
-					//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
-					VisualDebugger.inst.rays = [];
-					VisualDebugger.DebugRayA = &VisualDebugger.SaveRay;
-					VisualDebugger.DebugRayB = &VisualDebugger.SaveRay;
-					VisualDebugger.inst.DebugRayA = &VisualDebugger.SaveRay;
-					VisualDebugger.inst.DebugRayB = &VisualDebugger.SaveRay;
-					VisualDebugger.inst.start_col = Colors.Red;
-					//TODO:remove
-					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(1,0.01,0).normalized);
-					//writeln(ray);
-					//double h = 0;
-					/*for(double h = -1; h<=1; h+=0.1)
+					imguiCollapse(obj.id, "", &obj.opanel);
+					if(obj.opanel)
 					{
-						ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(h,0,1).normalized);
-						//writeln(h);
-						VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
-					}*/
-					
-					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(3,h,1).normalized);
-					Color outcol = VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
-					if( (x>=0) && (y>=0) && (x<cfgResolutionX) && (y<cfgResolutionY))
-					{
-						ubyte[] pixel = [outcol.ru,outcol.gu,outcol.bu];
-						glfwMakeContextCurrent(VisualDebugger.inst.rwin);
-						glBindTexture(GL_TEXTURE_2D, VisualDebugger.inst.texId);
-						glTexSubImage2D(GL_TEXTURE_2D,0,x,y,1,1,GL_RGB,GL_UNSIGNED_BYTE,pixel.ptr);
+						imguiIndent();
+						imguiCheck("Visible", &obj.visible);
+						imguiUnindent();
 					}
-					
-					if(isFinite(VisualDebugger.inst.cur_src_lambda)) VisualizeRedshift(VisualDebugger.inst.cur_src_lambda);
-
-					VisualDebugger vd = VisualDebugger.inst;
-					/*for(int i=1;i<vd.rays.length;i++)
-					{
-						SavedRay r0,r1;
-						r0 = vd.rays[i-1];
-						r1 = vd.rays[i];
-						Vectorf d1,d2;
-						d1 = (r0.destination - r0.origin).normalized;
-						d2 = (r1.destination - r1.origin).normalized;
-						//writeln(r0);
-						auto dot = d1*d2;
-						if((-1<=dot)&&(dot<=1)) //TODO:COMMENTED
-						{
-							writefln("Angle #%d->#%d: %s",i,i+1,acos(dot)*180.0/PI);
-						}
-						else
-						{
-							writefln("Xxxxx #%d->#%d: %s",i,i+1,dot);
-						}
-					}*/
 				}
+				imguiEndScrollArea();
 			}
-			else if(type==GLFW_RELEASE)
+			mouseInGui |= windowRaytrace();
+            
+
+            imguiEndFrame();
+            mousescroll = 0;
+            keychar = 0;
+            imguiRender(winx, winy);
+            glfwSwapBuffers(rwin);
+			updateMods();
+            glfwPollEvents();
+        }
+        imguiDestroy();
+        glfwTerminate();
+    }
+
+    private void resetGl()
+    {
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glClearColor(bgIntensity, bgIntensity, bgIntensity, 1.0f);
+        glViewport(0, 0, winx, winy);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+    }
+
+    private void setupWindow()
+    {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_FOCUSED, GL_TRUE);
+        glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
+        glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwWindowHint(GLFW_CONTEXT_RELEASE_BEHAVIOR, GLFW_RELEASE_BEHAVIOR_NONE);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+        glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+        int W = cast(int) cfgResolutionX;
+        int H = cast(int) cfgResolutionY;
+        winx = W;
+        winy = H;
+        rwin = glfwCreateWindow(W, H, "GrTrace Visual Helper", null, null);
+        if (!rwin)
+        {
+            throw new TooLowGLVersion();
+        }
+        glfwMakeContextCurrent(rwin);
+        glfwSwapInterval(1);
+        if (!gladLoadGL())
+        {
+            throw new TooLowGLVersion();
+        }
+        if (GLVersion.major < 3)
+        {
+            throw new TooLowGLVersion();
+        }
+        if ((GLVersion.major == 3) && (GLVersion.minor < 3))
+        {
+            throw new TooLowGLVersion();
+        }
+        glfwSwapBuffers(rwin);
+        glfwSetMouseButtonCallback(rwin, &coreMouseButton);
+        glfwSetScrollCallback(rwin, &coreScroll);
+        glfwSetCursorPosCallback(rwin, &coreMouseMove);
+        glfwSetCharCallback(rwin, &coreChar);
+        glfwSetKeyCallback(rwin, &coreKey);
+        glfwSetFramebufferSizeCallback(rwin, &coreSize);
+    }
+	
+	__gshared Color lastRayColor;
+	
+	private void traceSingleRay(Vectorf origin, Vectorf direction)
+	{
+		import std.concurrency : thisTid;
+		DebugDispatcher.saver.clear();
+		WorldSpace.RayFunc rf = DebugDispatcher.space.GetRayFunc();
+		lastRayColor = rf(thisTid, Line(origin, direction, true), 0, 0, 0);
+	}
+	
+	private bool windowRaytrace()
+	{
+		if(window != DWindow.Raytrace)return false;
+		static int scroll;
+		bool mig = imguiBeginScrollArea("Raytrace", winx-200, winy/2 - 250, 190, 500,
+                	&scroll);
+		static float X=0.0,Y=0.0;
+		static bool Cont = false;
+		if(imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f)&&Cont)
+		{
+			float cx = (X/cfgResolutionX)*2.0 - 1.0;
+			float cy = (Y/cfgResolutionY)*2.0 - 1.0;
+			Line ray;
+			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+			traceSingleRay(ray.origin, ray.direction);
+		}
+		if(imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f)&&Cont)
+		{
+			float cx = (X/cfgResolutionX)*2.0 - 1.0;
+			float cy = (Y/cfgResolutionY)*2.0 - 1.0;
+			Line ray;
+			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+			traceSingleRay(ray.origin, ray.direction);
+		}
+		imguiCheck("Continuous", &Cont);
+		if(imguiButton("Trace"))
+		{
+			float cx = (X/cfgResolutionX)*2.0 - 1.0;
+			float cy = (Y/cfgResolutionY)*2.0 - 1.0;
+			Line ray;
+			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+			traceSingleRay(ray.origin, ray.direction);
+		}
+		if(imguiButton("Close"))
+		{
+			window = DWindow.None;
+		}
+		
+		imguiEndScrollArea();
+		
+		return mig;
+	}
+	
+    ///-
+    public bool modLShift = false;
+    ///-
+    public bool modRShift = false;
+    ///-
+    public bool modLAlt = false;
+    ///-
+    public bool modRAlt = false;
+    ///-
+    public bool modLCtrl = false;
+    ///-
+    public bool modRCtrl = false;
+
+    // Updates the modifier key variables.
+    private void updateMods()
+    {
+        int t;
+        t = glfwGetKey(rwin, GLFW_KEY_LEFT_SHIFT);
+        modLShift = (t == GLFW_PRESS);
+        t = glfwGetKey(rwin, GLFW_KEY_RIGHT_SHIFT);
+        modRShift = (t == GLFW_PRESS);
+        t = glfwGetKey(rwin, GLFW_KEY_LEFT_ALT);
+        modLAlt = (t == GLFW_PRESS);
+        t = glfwGetKey(rwin, GLFW_KEY_RIGHT_ALT);
+        modRAlt = (t == GLFW_PRESS);
+        t = glfwGetKey(rwin, GLFW_KEY_LEFT_CONTROL);
+        modLCtrl = (t == GLFW_PRESS);
+        t = glfwGetKey(rwin, GLFW_KEY_RIGHT_CONTROL);
+        modRCtrl = (t == GLFW_PRESS);
+    }
+
+    /// -
+    public void onMouseButton(int button, int state, int x, int y)
+    {
+        if (mouseLocked)
+        {
+            if (button == GLFW_MOUSE_BUTTON_LEFT)
+            {
+                if (state == GLFW_RELEASE)
+                {
+                    mouseLocked = false;
+                    glfwSetInputMode(rwin, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    double xd, yd;
+                    glfwGetCursorPos(rwin, &xd, &yd);
+                    mousex = cast(int) xd;
+                    mousey = cast(int) yd;
+                }
+            }
+        }
+        else if (!mouseInGui)
+        {
+            if (button == GLFW_MOUSE_BUTTON_LEFT)
+            {
+                if (state == GLFW_PRESS)
+                {
+					double xd, yd;
+                    glfwGetCursorPos(rwin, &xd, &yd);
+                    mousex = cast(int) xd;
+                    mousey = cast(int) yd;
+                    mouseLocked = true;
+                    glfwSetInputMode(rwin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
+            }
+        }
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            if (state == GLFW_PRESS)
+            {
+                mousebtns |= MouseButton.left;
+            }
+            else if (state == GLFW_RELEASE)
+            {
+                mousebtns &= ~MouseButton.left;
+            }
+        }
+        else if (button == GLFW_MOUSE_BUTTON_RIGHT)
+        {
+            if (state == GLFW_PRESS)
+            {
+                mousebtns |= MouseButton.right;
+            }
+            else if (state == GLFW_RELEASE)
+            {
+                mousebtns &= ~MouseButton.right;
+            }
+        }
+    }
+
+    /// -
+    public void onMouseMove(int x, int y)
+    {
+        if (mouseLocked)
+        {
+            int dx = x - mousex;
+            int dy = y - mousey;
+            double dYaw = dx * M_2_PI / 150.0;
+            double dPitch = dy * PI / 200.0;
+            camera.yaw -= dYaw;
+            camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
+        }
+        mousex = x;
+        mousey = y;
+    }
+
+    /// -
+    public void onScroll(double axis, double dir)
+    {
+        mousescroll = cast(int) dir;
+    }
+
+    /// -
+    public void onChar(dchar ch)
+    {
+        keychar = cast(int) ch;
+    }
+
+    /// -
+    public void onKey(int id, int state)
+    {
+        if (id == GLFW_KEY_ESCAPE && state == GLFW_RELEASE)
+        {
+            glfwSetWindowShouldClose(rwin, GL_TRUE);
+            return;
+        }
+        if (id == GLFW_KEY_BACKSPACE && state != GLFW_RELEASE)
+        {
+            keychar = '\b';
+        }
+        else if (id == GLFW_KEY_ENTER && state != GLFW_RELEASE)
+        {
+            keychar = '\n';
+        }
+		if(window == DWindow.None)
+		{
+			if(id == GLFW_KEY_R && state==GLFW_PRESS)
 			{
-				rayMode = false;
-			}
-		}
-	}
-	catch (Throwable o)
-	{
-	}
-}
-
-extern (C) void corexRayMove(GLFWwindow* w, double x, double y) nothrow
-{
-	try
-	{
-		if(rayMode)
-		{
-			corexMouseButton(w,GLFW_MOUSE_BUTTON_1,GLFW_PRESS,0);
-		}
-	}
-	catch (Throwable o)
-	{
-	}
-}
-
-private static bool inCamera=false;
-private static double lastX=0.0,lastY=0.0;
-
-extern (C) private void corexMouseCamera(GLFWwindow* w, int btn, int type, int modkeys) nothrow
-{
-	try
-	{
-		double xd, yd;
-		glfwGetCursorPos(w, &xd, &yd);
-		int x = cast(int) xd, y = cast(int) yd;
-		if(btn==GLFW_MOUSE_BUTTON_1)
-		{
-			if(type==GLFW_PRESS)
-			{
-				glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-				inCamera = true;
-				lastX = double.nan;
-				lastY = double.nan;
-			}
-			else
-			{
-				glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-				inCamera = false;
-			}
-		}
-	}
-	catch (Throwable o)
-	{
-	}
-}
-
-extern (C) void corexCameraMove(GLFWwindow* w, double x, double y) nothrow
-{
-	try
-	{
-		if(inCamera)
-		{
-			if(!isNaN(lastX))
-			{
-				double dx,dy;
-				enum double sens = 0.01;
-				dx = (x-lastX)*sens;
-				dy = (y-lastY)*sens;
-				Vectorf right = vectorf(-1,0,0);
-				right = (VisualDebugger.inst.rot * right);
-				VisualDebugger.inst.rot = new Quaternion(right,dy)*VisualDebugger.inst.rot;
-				VisualDebugger.inst.rot = new Quaternion(vectorf(0,-1,0),dx)*VisualDebugger.inst.rot;
-				VisualDebugger.inst.rot.normalize;
-			}
-			lastX = x;
-			lastY = y;
-		}
-	}
-	catch (Throwable o)
-	{
-	}
-}
-
-Vectorf vel = Vectorf(0,0,0,1);
-
-extern (C) void corexKey(GLFWwindow* w, int id, int scan, int state, int mods) nothrow
-{
-	try
-	{
-		double spd = 0.2;
-		VisualDebugger vd = VisualDebugger.inst;
-		Vectorf fwd = vectorf(0,0,-1),right = vectorf(1,0,0),up = vectorf(0,-1,0);
-		if(mods & GLFW_MOD_SHIFT)
-		{
-			spd /= 3.0;
-		}
-		if(mods & GLFW_MOD_CONTROL)
-		{
-			spd /= 9.0;
-		}
-		if(mods & GLFW_MOD_ALT)
-		{
-			spd /= 6.0;
-		}
-		fwd *= spd;
-		right *= spd;
-		up *= spd;
-		vel = vectorf(0,0,0,1);
-		if(glfwGetKey(w,GLFW_KEY_W))
-		{
-			vel += fwd*spd;
-		}
-		if(glfwGetKey(w,GLFW_KEY_S))
-		{
-			vel -= fwd*spd;
-		}
-		if(glfwGetKey(w,GLFW_KEY_A))
-		{
-			vel -= right*spd;
-		}
-		if(glfwGetKey(w,GLFW_KEY_D))
-		{
-			vel += right*spd;
-		}
-		if(glfwGetKey(w,GLFW_KEY_Q))
-		{
-			vel += up*spd;
-		}
-		if(glfwGetKey(w,GLFW_KEY_E))
-		{
-			vel -= up*spd;
-		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F1))
-		{
-			vd.SaveCurRayToFile();
-		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F2))
-		{
-			StartTest();
-		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F3))
-		{
-			VisualizeRedshift();
-		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F4))
-		{
-			changeDefaultLambda();
-		}
-		if(id==GLFW_KEY_ESCAPE)
-		{
-			glfwSetWindowShouldClose(w, GL_TRUE);
-		}
-	}
-	catch (Throwable o)
-	{
-	}
-}
-
-void StartTest()
-{
-	writef("Are you sure to start a calculation? (y/n): ");
-	char ans;
-	readf(" %c", &ans);
-	if(ans=='y')
-	{
-		writef("Chose Calculation to Perform: \n");
-		writef("1) Schwarzschild photon sphere stability\n");
-		
-		int inp;
-		readf(" %d", &inp);
-		
-		if(inp == 1)
-		{
-			//BH_mass Timestep numOfCircles
-			double mass=0.0, min_timestep=0.0, max_timestep=0.0, step_timestep=0.0;
-			int numOfCircles;
-			string path;
-			do
-			{
-				writefln("Enter: mass min_timestep max_timestep step_timestep maxNumOfCircles:");
-				scanf(" %lf %lf %lf %lf %d", &mass, &min_timestep, &max_timestep, &step_timestep, &numOfCircles);
-			}while(((
-						mass<=0. || min_timestep<=0. || 
-						max_timestep<=0. || min_timestep>=max_timestep || 
-						step_timestep<=0. || numOfCircles<0)?(writefln("Try Again"),1):0)); //RIP syntax
-			//writef(" %f %f %f %f %d", mass, min_timestep, max_timestep, step_timestep, numOfCircles);
-			writefln("Enter file path to save results at:");
-
-			do
-			{
-				path = stdin.readln().strip();
-			}while(path.length < 1);
-			writeln(path);
-			PhotonSphereStability(mass, min_timestep, max_timestep, step_timestep, numOfCircles, path);
-		}
-	}
-}
-
-void VisualizeRedshift()
-{
-	writef("Are you sure to visualize redshift? (y/n): ");
-	char ans;
-	readf(" %c", &ans);
-	if(ans=='y')
-	{
-		double lambda;
-		do
-		{
-			writefln("Enter desired source wavelenght in nanometers: ");
-			scanf("%lf", &lambda);
-		}while((lambda<=0?(writefln("Try Again"),1):0));
-		VisualizeRedshift(cast(fpnum)lambda);
-	}
-}
-
-void VisualizeRedshift(fpnum lambda)
-{
-	if(VisualDebugger.inst.rays.length == 0) writefln("Trace rays first");
-	
-	VisualDebugger.inst.start_col = GetSpectrumColor(lambda);
-	
-	auto s = cast(WorldSpaceWrapper) VisualDebugger.inst.space;
-	if(s is null)
-	{
-		foreach(ref SavedRay ray; VisualDebugger.inst.rays)
-		{
-			ray.col = VisualDebugger.inst.start_col;
-		}
-	}
-	auto k = cast(AnalyticMetricContainer)(s.smetric);
-	if(k is null) return;
-	auto met = k.initiator;
-	
-	auto first = VisualDebugger.inst.rays[0];
-	met.prepareForRequest(first.origin);
-	auto met_src = met.getMetricAtPoint()[0,0];
-	
-	foreach(ref SavedRay ray; VisualDebugger.inst.rays)
-	{
-		met.prepareForRequest(ray.destination);
-		auto met_rec = met.getMetricAtPoint()[0,0];
-		ray.col = GetSpectrumColor(lambda*sqrt(met_rec/met_src));
-	}
-}
-
-void changeDefaultLambda()
-{
-	fpnum* lambda = &VisualDebugger.inst.cur_src_lambda;
-	writeln("Current wavelenght of light source is: ", *lambda);
-	writeln("Enter new wavelenght: ");
-	scanf("%lf", lambda);
-	if(!isFinite(*lambda) || (*lambda) <= 0) *lambda = fpnum.nan;
-}
-
-void PhotonSphereStability(fpnum mass, fpnum min_timestep, fpnum max_timestep, fpnum step_timestep, int numOfCircles, string fpath)
-{
-	WorldSpaceWrapper s = cast(WorldSpaceWrapper) VisualDebugger.inst.space;
-	if(s is null)
-	{
-		printf("Change Space to Schwarzschild!\n");
-		return;
-	}
-	
-	Analytic k = cast(Analytic) cast(AnalyticMetricContainer) s.smetric;
-	if(k is null)
-	{
-		printf("Change Space to Schwarzschild\n");
-		return;
-	}
-	
-	Schwarzschild v = cast(Schwarzschild) k.initiator();
-	if(v is null)
-	{
-		printf("Change Space to Schwarzschild\n");
-		return;
-	}
-	
-	//prepare simulation
-	v.origin = Vectorf(0,0,0);
-	v.cord = new Radial(Vectorf(0,0,0));
-	v.schwarzschild_radius = 2*mass;
-	v.mass = mass;
-	
-	VisualDebugger.inst.rays = [];
-	VisualDebugger.inst.rayProcesorData_f = [9*mass*mass, 0.0, 0.0, 0.0];
-	VisualDebugger.DebugRayA = &VisualDebugger.PhotonSphereStabilityRayProcesor;
-	VisualDebugger.DebugRayB = &VisualDebugger.PhotonSphereStabilityRayProcesor;
-	
-	Line ray = Line(vectorf(0, 3*mass, 0), vectorf(1,0,1).normalized);
-	
-	File f = File(fpath,"a");
-	f.writef("Mass \t DT \t Circles \t Dist \n"); // header
-	f.flush();
-	int i = 0;
-	fpnum timestep = min_timestep;
-	long numsteps = cast(long)((max_timestep-min_timestep)/step_timestep);
-	long step = 0;
-	for(; timestep<max_timestep;step++)
-	{
-		timestep = min_timestep + step*step_timestep;
-		writef("\r%60c\rProgress: %d/%d",' ',step,numsteps);
-		stdout.flush();
-		VisualDebugger.inst.rayProcesorData_i = [cast(size_t)0];
-		
-		//ray trace
-		k.paramStep = timestep;
-		k.maxNumberOfSteps = cast(int)(6*PI*mass*numOfCircles/timestep);
-		
-		try
-		{
-			VisualDebugger.inst.space.GetRayFunc()(renderTid,ray,0,0,0);
-		}
-		catch(Throwable a)
-		{
-		}
-		
-		//write result
-		f.writef("%#.16e \t %#.16e \t %d %#.16e \n", mass, timestep, numOfCircles, VisualDebugger.inst.rayProcesorData_i[0]*timestep);
-		f.flush();
-	}
-	writeln();
-	VisualDebugger.DebugRayA = &VisualDebugger.SaveRay;
-	VisualDebugger.DebugRayB = &VisualDebugger.SaveRay;
-	writeln("Finished\n");
-}
-
-class VisualDebugger
-{
-	static VisualDebugger inst;
-	__gshared GLFWwindow* rwin;
-	__gshared GLFWwindow* dwin;
-	GLuint texId;
-	GLuint drawBg, drawSphere;
-	WorldSpace space;
-	ICamera camera;
-	static bool glLoaded = false;
-	float aspect;
-	SavedRay[] rays;
-	Color start_col = Colors.Red;
-	fpnum cur_src_lambda = fpnum.nan;
-	
-	fpnum[] rayProcesorData_f;
-	size_t[] rayProcesorData_i;
-	
-	Vectorf pos;
-	Quaternion rot;
-
-	static public void function(Line, fpnum, Color*) DebugRayA = &ign;
-	static public void function(Line, Vectorf, Color*) DebugRayB = &ign;
-
-	static public void ign(Line, fpnum, Color*)
-	{ 
-		return;
-	}
-	static public void ign(Line, Vectorf, Color*)
-	{ 
-		return;
-	}
-
-	static void FoundLight(Vectorf pos)
-	{
-		if(inst)
-		{
-			inst.rays[$-1].destination = pos;
-			inst.rays[$-1].col = rayColors[6];
-		}
-	}
-
-	static public void SaveRay(Line ray, Vectorf newp, Color* col = null)
-	{
-		if(inst)
-		{
-			Vectorf dif = newp - ray.origin;
-			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
-			inst.rays ~= SavedRay(ray.origin,newp,ray.direction,~dif,*col);
-		}
-	}
-	
-	static public void SaveRay(Line ray, fpnum dist, Color* col = null)
-	{
-		if(inst)
-		{
-			if(!isFinite(dist))
-			{
-				dist = 100.0;
-			}
-			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
-			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,ray.direction,dist,*col);
-		}
-	}
-	
-	static public void PhotonSphereStabilityRayProcesor(Line ray, Vectorf newp, Color* col = null)
-	{
-		Vectorf half = (ray.origin+newp)/2;
-		fpnum a = half.x-inst.rayProcesorData_f[1];
-		fpnum b = half.y-inst.rayProcesorData_f[2];
-		fpnum c = half.z-inst.rayProcesorData_f[3];
-		fpnum rad = a*a+b*b+c*c;
-		fpnum eps = sqrt(rad/inst.rayProcesorData_f[0]);
-		
-		//the ray has escaped
-		if(fabs(eps-1) > 0.01) throw new Exception("");
-		
-		inst.rayProcesorData_i[0]++;
-		
-		if(inst.rayProcesorData_i[0]%(cast(size_t)1e7)==0) writeln(inst.rayProcesorData_i[0]);
-	}
-	
-	static public void PhotonSphereStabilityRayProcesor(Line ray, fpnum dist, Color* col = null)
-	{
-		if(isFinite(dist))
-		PhotonSphereStabilityRayProcesor(ray, ray.origin+ray.direction*dist, col);
-	}
-	
-	void SaveCurRayToFile(string path="aray.txt")
-	{
-		File fp = File(path,"w");
-		fp.write("x y z dx dy dz len\n");
-		auto app = appender!string();
-		foreach(const ref SavedRay s; rays)
-		{
-			formattedWrite(app, "%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\n",
-				s.origin.x, s.origin.y, s.origin.z,
-				s.direction.x, s.direction.y, s.direction.z,
-				s.distance
-				);
-		}
-		fp.write(app.data);
-		fp.flush();
-		fp.close();
-	}
-	
-	this()
-	{
-		inst = this;
-		if(cfgDebug)
-			{
-			DebugRayA = &SaveRay;
-			DebugRayB = &SaveRay;
-			VisualDebugger.DebugRayA = &SaveRay;
-			VisualDebugger.DebugRayB = &SaveRay;
-			DerelictGLFW3.load();
-			glfwInit();
-			rwin = makeWin("grtrace raytrace");
-			dwin = makeWin("grtrace showrays",rwin);
-			glfwSetMouseButtonCallback(rwin, &corexMouseButton);
-			glfwSetMouseButtonCallback(dwin, &corexMouseCamera);
-			glfwSetCursorPosCallback(rwin, &corexRayMove);
-			glfwSetCursorPosCallback(dwin, &corexCameraMove);
-			glfwSetKeyCallback(dwin, &corexKey);
-		}
-		else
-		{
-			DebugRayA = &ign;
-			DebugRayB = &ign;
-			VisualDebugger.DebugRayA = &ign;
-			VisualDebugger.DebugRayB = &ign;
-		}
-	}
-
-	GLFWwindow* makeWin(string title, GLFWwindow* share=null)
-	{
-		GLFWwindow* w;
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-		glfwWindowHint(GLFW_FOCUSED, GL_TRUE);
-		glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
-		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-		glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
-		w = glfwCreateWindow(cast(int)cfgResolutionX, cast(int)cfgResolutionY, title.toStringz(), null, share);
-		aspect = cast(float)(cfgResolutionX)/cast(float)(cfgResolutionY);
-		if(w is null)
-		{
-			throw new Exception("Couldn't create glfw3 window");
-		}
-		glfwMakeContextCurrent(w);
-		glfwSwapInterval(1);
-		if(!glLoaded)
-		{
-			glLoaded=true;
-			if(!gladLoadGL())
-			{
-				throw new Exception("Couldn't load OpenGL functions");
-			}
-			writeln("Loaded OpenGL ",GLVersion.major,".",GLVersion.minor);
-		}
-		glfwSwapBuffers(w);
-		glfwPollEvents();
-		glClearColor(0, 0, 0, 1);
-		glViewport(0, 0, cast(int)cfgResolutionX, cast(int)cfgResolutionY);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		glLineWidth(2.0f);
-		glPointSize(3.5f);
-		glEnable(GL_LINE_SMOOTH);
-	//	glEnable(GL_POINT_SMOOTH);
-		glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-		glfwSwapBuffers(w);
-		return w;
-	}
-
-	~this()
-	{
-		if(rwin)
-		{
-			glDeleteTextures(1,&texId);
-			glfwDestroyWindow(rwin);
-			rwin = null;
-		}
-	}
-
-	void ResetCamera()
-	{
-		pos = camera.origin;
-		rot = new Quaternion();//Quaternion.lookAt(pos, vectorf(0,0,0));
-	}
-
-	void LoadTex()
-	{
-		glEnable(GL_TEXTURE_2D);
-		glGenTextures(1,&texId);
-		glBindTexture(GL_TEXTURE_2D, texId);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 
-			cast(int)cfgResolutionX, cast(int)cfgResolutionY, 0, 
-			GL_RGB, GL_UNSIGNED_BYTE, cast(ubyte*)(space.fullray.data.ptr));
-		glDisable(GL_TEXTURE_2D);
-
-	/*	drawBg = glGenLists(1);
-		glNewList(drawBg, GL_COMPILE);
-		glColor3f(1.0f,1.0f,1.0f);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, texId);
-		glBegin(GL_QUADS);
-
-		glTexCoord2f(0.0,1.0);
-		glVertex2f(-1.0,-1.0);
-
-		glTexCoord2f(0.0,0.0);
-		glVertex2f(-1.0,1.0);
-		
-		glTexCoord2f(1.0,0.0);
-		glVertex2f(1.0,1.0);
-		
-		glTexCoord2f(1.0,1.0);
-		glVertex2f(1.0,-1.0);
-		
-		glEnd();
-		glDisable(GL_TEXTURE_2D);
-		glEndList();
-
-		glfwMakeContextCurrent(dwin);
-		drawSphere = glGenLists(1);
-		glNewList(drawSphere,GL_COMPILE);
-		drawSphereGen(32,32);
-		glEndList();*/
-	}
-
-	void makeFrustum(double fovY, double aspectRatio, double front, double back)
-	{
-		
-		double tangent = tan(fovY/2 * DEG2RAD);   // tangent of half fovY
-		double height = front * tangent;          // half height of near plane
-		double width = height * aspectRatio;      // half width of near plane
-		
-		// params: left, right, bottom, top, near, far
-		//glFrustum(-width, width, -height, height, front, back);
-	}
-
-	void Run()
-	{
-		space = cast(WorldSpace)(cfgSpace);
-		camera = cast(ICamera)(cfgSpace.camera);
-		if(!cfgDebug)return;
-		glfwMakeContextCurrent(rwin);
-		ResetCamera();
-		Vectorf camo = camera.origin;
-		LoadTex();
-		double dt = glfwGetTime();
-		glfwSetTime(0.0);
-		while(!(glfwWindowShouldClose(rwin)||glfwWindowShouldClose(dwin)))
-		{
-			// rwin
-			/*glfwMakeContextCurrent(rwin);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-			glMatrixMode(GL_MODELVIEW);
-			glLoadIdentity();
-
-			glCallList(drawBg);
-
-			glfwSwapBuffers(rwin);
-			// dwin
-			glfwMakeContextCurrent(dwin);
-			glEnable(GL_DEPTH_TEST);
-			glDepthFunc(GL_LEQUAL);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-			//makeFrustum(60.0,aspect,1.0,2000.0);
-			makeFrustum(60.0,aspect,0.00003,2000.0);
-
-			Vectorf camAx;fpnum camAn;
-			rot.toAxisAngle(camAx,camAn);
-			camAn /= -DEG2RAD;
-			glRotated(camAn,camAx.x,camAx.y,camAx.z);
-			glTranslated(-pos.x,-pos.y,-pos.z);
-
-			glMatrixMode(GL_MODELVIEW);
-			glLoadIdentity();
-
-			glColor3f(1.0f,1.0f,1.0f);
-			foreach(obji; space.objects)
-			{
-				Renderable obj = cast(Renderable)(obji);
-				DebugDraw dd = obj.getDebugDraw();
-				switch(dd.type)
+				if(modLShift||modRShift) // reset to 0,0,0
 				{
-					case DrawType.None:
-						break;
-					case DrawType.Sphere:
-						Vectorf o = dd.plane.origin;
-						glPushMatrix();
-						glTranslated(o.x,o.y,o.z);
-						glScaled(dd.radius,dd.radius,dd.radius);
-						glCallList(drawSphere);
-						glPopMatrix();
-						break;
-					case DrawType.Triangle:
-						Triangle tr = *(dd.tri);
-						glBegin(GL_TRIANGLES);
-						glColor3f(1.0f,1.0f,0.0f);
-						glVertex3d(tr.plane.origin.x,tr.plane.origin.y,tr.plane.origin.z);
-						glColor3f(1.0f,0.0f,1.0f);
-						glVertex3d(tr.b.x+tr.plane.origin.x,tr.b.y+tr.plane.origin.y,tr.b.z+tr.plane.origin.z);
-						glColor3f(0.0f,1.0f,1.0f);
-						glVertex3d(tr.c.x+tr.plane.origin.x,tr.c.y+tr.plane.origin.y,tr.c.z+tr.plane.origin.z);
-						glEnd();
-						break;
-					case DrawType.Plane:
-						Plane pl = *(dd.plane);
-						glBegin(GL_QUADS);
-						glColor3f(1.0f,1.0f,0.0f);
-						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
-						glColor3f(1.0f,0.0f,1.0f);
-						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
-						glColor3f(0.0f,1.0f,1.0f);
-						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
-						glColor3f(0.0f,1.0f,0.0f);
-						glVertex3d(pl.origin.x, pl.origin.y, pl.origin.z);
-						glEnd();
-						break;
-					default:
-						break;
+					camera.x = 0.0;
+					camera.y = 0.0;
+					camera.z = 0.0;
+					camera.pitch = 0.0;
+					camera.yaw = 0.0;
+					sceneObjects["@camera"].visible = true;
+				}
+				else
+				{
+					auto rcam = DebugDispatcher.space.getCamera();
+					camera.x = rcam.origin.x;
+					camera.y = rcam.origin.y;
+					camera.z = -rcam.origin.z;
+					camera.pitch = acos(rcam.lookdir.z);
+					camera.yaw = atan2(rcam.lookdir.y,rcam.lookdir.x);
+					sceneObjects["@camera"].visible = false;
 				}
 			}
-			glLoadIdentity();
-			//glDisable(GL_DEPTH_TEST);
-			glBegin(GL_LINES);
-			glColor3f(start_col.r, start_col.g, start_col.b);
-			foreach(SavedRay ray;rays)
+			else if(id == GLFW_KEY_1 && state==GLFW_PRESS)
 			{
-				glVertex3d(ray.origin.x, ray.origin.y, ray.origin.z);
-				glColor3f(ray.col.r,ray.col.g,ray.col.b);
-				glVertex3d(ray.destination.x, ray.destination.y, ray.destination.z);
+				window = DWindow.Raytrace;
 			}
-			glEnd();
-			glColor3f(0.1f,0.1f,1.0f);
-			/*enum double BScale=1.0;
-			glScaled(1.0/BScale,1.0/BScale,1.0/BScale);
-			foreach(SavedRay ray;rays)
-			{
-				glPushMatrix();
-				glTranslated(ray.origin.x*BScale, ray.origin.y*BScale, ray.origin.z*BScale);
-				glCallList(drawSphere);
-				glPopMatrix();
-				glPushMatrix();
-				glTranslated(ray.destination.x*BScale, ray.destination.y*BScale, ray.destination.z*BScale);
-				glCallList(drawSphere);
-				glPopMatrix();
-			}*/
-			/*glColor3f(1.0f,0.0f,0.0f);
-			glLoadIdentity();
-			glBegin(GL_POINTS);
-			glVertex3d(camera.origin.x,camera.origin.y,camera.origin.z);
-			glEnd();
-
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-			glMatrixMode(GL_MODELVIEW);
-			glLoadIdentity();
-			glTranslated(-0.75,-0.75,0);
-			glScaled(0.1,0.1*aspect,0.1);
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-			glRotated(camAn,camAx.x,camAx.y,camAx.z);
-			Matrix4f tmat;
-			glGetDoublev(GL_TRANSPOSE_PROJECTION_MATRIX, tmat.vals.ptr);
-			glMatrixMode(GL_MODELVIEW);
-
-			glfwSwapBuffers(dwin);
-			glfwPollEvents();
-
-			pos += ((tmat.inverse)*vel)*dt*1000.0;
-
-			dt = glfwGetTime();
-			glfwSetTime(0.0);
-			if(dt>0)
-			{
-				string T = "grtrace showrays %.1f FPS".format(1/dt);
-				//glfwSetWindowTitle(dwin,T.toStringz());
-			}*/
 		}
-	}
+    }
+
+    void camMover()
+    {
+        double CamSpeed = camera.speed * dt;
+        if (glfwGetKey(rwin, GLFW_KEY_W) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirFwd, -CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_S) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirFwd, CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_A) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirRight, -CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_D) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirRight, CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirUp, CamSpeed);
+        }
+        if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
+        {
+            camera.addVec(camera.dirUp, -CamSpeed);
+        }
+    }
+
+    /// -
+    public void onResize(int w, int h)
+    {
+        glViewport(0, 0, w, h);
+        winx = w;
+        winy = h;
+    }
 }
 
+extern (C) void coreMouseButton(GLFWwindow* w, int btn, int type, int modkeys) nothrow
+{
+    try
+    {
+        double xd, yd;
+        glfwGetCursorPos(w, &xd, &yd);
+        int x = cast(int) xd, y = cast(int) yd;
+        VisualHelper.instance.onMouseButton(btn, type, x, y);
+    }
+    catch (Throwable o)
+    {
+    }
+}
+
+extern (C) void coreMouseMove(GLFWwindow* w, double x, double y) nothrow
+{
+    try
+    {
+        VisualHelper.instance.onMouseMove(cast(int) x, cast(int) y);
+    }
+    catch (Throwable o)
+    {
+    }
+}
+
+extern (C) void coreScroll(GLFWwindow* w, double axis, double dir) nothrow
+{
+    try
+    {
+        VisualHelper.instance.onScroll(axis, dir);
+    }
+    catch (Throwable o)
+    {
+    }
+}
+
+extern (C) void coreChar(GLFWwindow* w, uint ch) nothrow
+{
+    try
+    {
+        VisualHelper.instance.onChar(cast(dchar) ch);
+    }
+    catch (Throwable o)
+    {
+    }
+}
+
+extern (C) void coreKey(GLFWwindow* w, int id, int scan, int state, int mods) nothrow
+{
+    try
+    {
+        VisualHelper.instance.onKey(id, state);
+    }
+    catch (Throwable o)
+    {
+    }
+}
+
+extern (C) void coreSize(GLFWwindow* win, int w, int h) nothrow
+{
+    if ((w == 0) || (h == 0))
+        return;
+    try
+    {
+        VisualHelper.instance.onResize(w, h);
+    }
+    catch (Throwable o)
+    {
+    }
+}

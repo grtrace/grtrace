@@ -384,7 +384,7 @@ class EuclideanSpace : WorldSpace
 				}
 			}
 		}
-		VisualDebugger.DebugRayA(ray, mdist, null);
+		DebugDispatcher.saveRay(ray, mdist, RayDebugType.Default);
 		if(dh){*didHit=true;}
 		static if(doO)
 		{
@@ -449,7 +449,7 @@ class EuclideanSpace : WorldSpace
 						}
 						if(unlit==false) // lit
 						{
-							VisualDebugger.FoundLight(l.getPosition());
+							//VisualDebugger.FoundLight(l.getPosition());
 							fpnum DP = normal*(hitRay.direction);
 							if(DP>0)
 								tmpc = tmpc + diffuseColor*l.getColor()*(DP);

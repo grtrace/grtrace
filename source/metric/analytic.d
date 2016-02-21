@@ -8,7 +8,7 @@ import image;
 import scene;
 import std.concurrency;
 import std.math;
-import dbg.debugger;
+import dbg.dispatcher;
 
 import core.atomic;
 
@@ -100,10 +100,10 @@ class Analytic : AnalyticMetricContainer
 		if(dh && mdist<=travel_dist)
 		{
 			*didHit=true;
-			VisualDebugger.DebugRayB(ray, *hitpoint, &dbg.debugger.rayColors[6]);
+			DebugDispatcher.saveRay(ray, *hitpoint, RayDebugType.CustomColor, Colors.White);
 			return mdist;
 		}
-		VisualDebugger.DebugRayB(ray, to, &dbg.debugger.rayColors[6]);
+		DebugDispatcher.saveRay(ray, to, RayDebugType.CustomColor, Colors.White);
 		return travel_dist;
 	}
 
