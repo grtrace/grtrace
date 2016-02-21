@@ -9,6 +9,7 @@ import math.geometric;
 import image.color;
 import scene.scenemgr;
 import scene.compute;
+import dbg.dispatcher;
 
 private void getSample(uint number, out double sx, out double sy)
 {
@@ -82,6 +83,29 @@ class Raytracer
 		}
 	}
 	
-	
-	
+	/// Computes all rays in the buffer in a single thread
+	static void computeSingleThread()
+	{
+		bool done = false;
+		int totalRays = cast(int)raybuffer.length;
+		int doneRays = 0;
+		while(!done)
+		{
+			done = true;
+			doneRays = 0;
+			foreach(ref RayComputation rc; raybuffer[])
+			{
+				if(rc.state < RayState.Finished)
+				{
+					rc.state = space.getComputeStages()[rc.state].cpuFun(&rc);
+					done = false;
+				}
+				else
+				{
+					doneRays++;
+				}
+			}
+			DebugDispatcher.progress(doneRays, totalRays);
+		}
+	}
 }

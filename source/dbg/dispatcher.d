@@ -32,5 +32,8 @@ struct DebugDispatcher
         Image renderResult;
     }
     static:
-    
+    void progress(int done, int total)
+	{
+		//
+	}
 }

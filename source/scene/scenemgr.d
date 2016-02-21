@@ -19,6 +19,7 @@ import scene.camera;
 import scene.objects.interfaces;
 import scene.objects.sphere;
 import scene.camera;
+import scene.compute;
 import core.cpuid;
 import std.algorithm;
 import std.random;
@@ -53,6 +54,12 @@ abstract class WorldSpace
 	public int getStageCount()
 	{
 		return 1;
+	}
+	
+	public ComputeStep[RayState.Finished] getComputeStages()
+	{
+		static ComputeStep[RayState.Finished] steps;
+		return steps;
 	}
 	
 	public static final ICamera getCamera() nothrow @nogc
