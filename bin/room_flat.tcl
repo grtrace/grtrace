@@ -55,8 +55,8 @@ addObject .tyl2 -m .cr3 -t triangle -a -1.5,2.5,-9 -b -1.5,-0.5,-9 -c 1.5,-0.5,-
 addObject .lef1 -m .cr4 -t triangle -a -1.5,2.5,-13 -b -1.5,2.5,-9 -c -1.5,-0.5,-9
 addObject .lef2 -m .cr4 -t triangle -a -1.5,2.5,-13 -b -1.5,-0.5,-13 -c -1.5,-0.5,-9
 #prawo
-#addObject .rig1 -m .cr5 -t triangle -a 1.5,2.5,-13 -b 1.5,2.5,-9 -c 1.5,-0.5,-9
-#addObject .rig2 -m .cr5 -t triangle -a 1.5,2.5,-13 -b 1.5,-0.5,-13 -c 1.5,-0.5,-9
+addObject .rig1 -m .cr5 -t triangle -a 1.5,2.5,-13 -b 1.5,2.5,-9 -c 1.5,-0.5,-9
+addObject .rig2 -m .cr5 -t triangle -a 1.5,2.5,-13 -b 1.5,-0.5,-13 -c 1.5,-0.5,-9
 #====================================================================================
 #====================================================================================
 #stol
@@ -209,7 +209,7 @@ addObject .blt2 -m .tableb -t triangle -a 0.9,0.2,-9.9  -b 0.9,0.2,-12 -c -0.2,0
 
 makeScene
 puts "Tcl config finished"
-dbgTrace
-#doTrace
-#waitForTrace
+#dbgTrace
+doTrace
+waitForTrace
 puts "Tcl script finished"

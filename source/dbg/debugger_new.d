@@ -11,6 +11,7 @@ import std.stdio, std.string, std.file, std.math, std.exception;
 import std.string, std.format, std.algorithm, std.array, std.range;
 import config, scene.camera, scene.scenemgr, math;
 import scene.objects.interfaces;
+import image.color;
 
 /// -
 class TooLowGLVersion : Error
@@ -30,6 +31,8 @@ struct Vert3D
     float nx = 0.0, ny = 0.0, nz = 0.0;
 } // 13 floats = 52 b
 
+private __gshared Color oColor;
+
 private class VisualPrimitives
 {
     static int appendSphere(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
@@ -45,7 +48,7 @@ private class VisualPrimitives
         foreach (v; iso.vertices[])
         {
             Verng ~= Vert3D(radius * v.x + origin.x, radius * v.y + origin.y,
-                radius * v.z + origin.z, 0, 0, 0, 1.0, 1.0, 1.0, 1.0, v.x, v.y, v.z);
+                radius * v.z + origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0, v.x, v.y, v.z);
         }
         foreach (t; iso.triangles[])
         {
@@ -76,12 +79,12 @@ private class VisualPrimitives
             vec = gMat3MulVec3(rot, GFXvector3(cosi * inner_radius, sini * inner_radius,
                 0));
             Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
-                vec.z + dd.plane.origin.z, 0, 0, 0, 1.0, 1.0, 1.0, 1.0,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
                 dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z);
             vec = gMat3MulVec3(rot, GFXvector3(cosi * outer_radius, sini * outer_radius,
                 0));
             Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
-                vec.z + dd.plane.origin.z, 0, 0, 0, 1.0, 1.0, 1.0, 1.0,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
                 dd.plane.normal.x, dd.plane.normal.y, dd.plane.normal.z);
 
             Erng ~= [cast(uint)(iv0 + ((vrt + 0) % mod)),
@@ -107,7 +110,7 @@ private class VisualPrimitives
 
         foreach (Vectorf vert; tab)
         {
-            Vrng ~= Vert3D(vert.x, vert.y, vert.z, 0, 0, 0, 1.0, 1.0, 1.0, 1.0,
+            Vrng ~= Vert3D(vert.x, vert.y, vert.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
                 normal.x, normal.y, normal.z);
         }
 
@@ -321,6 +324,7 @@ class VisualHelper
         foreach (shared Renderable obj; DebugDispatcher.space.objects)
         {
             auto OBJ = cast(Renderable) obj;
+			oColor = OBJ.material.emission_color;
             TSObject* tso = new TSObject();
             tso.id = OBJ.getName();
             tso.obj = OBJ;
