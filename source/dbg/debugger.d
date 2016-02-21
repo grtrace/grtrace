@@ -570,6 +570,7 @@ class VisualHelper
             mouseInGui |= imguiBeginScrollArea("Controls", 10, winy - 510, 190, 500,
                 &scroll_d);
             {
+				imguiLabel("FPS: %.1f".format(1.0/dt));
                 imguiSlider("BG", &bgIntensity, 0.0f, 1.0f, 0.02f);
                 static bool expView = true;
                 imguiCollapse("View controls", "", &expView);
@@ -837,7 +838,7 @@ class VisualHelper
             int dx = x - mousex;
             int dy = y - mousey;
             double dYaw = dx * M_2_PI / 150.0;
-            double dPitch = dy * PI / 200.0;
+            double dPitch = -dy * PI / 200.0;
             camera.yaw -= dYaw;
             camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
         }
@@ -923,11 +924,11 @@ class VisualHelper
         {
             camera.addVec(camera.dirRight, CamSpeed);
         }
-        if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
+        if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
         {
             camera.addVec(camera.dirUp, CamSpeed);
         }
-        if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
+        if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
         {
             camera.addVec(camera.dirUp, -CamSpeed);
         }

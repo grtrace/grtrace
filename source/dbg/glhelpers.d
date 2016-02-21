@@ -562,7 +562,7 @@ GFXmatrix4 gMatProjection(GFXnum fov, GFXnum aspectratio, GFXnum near, GFXnum fa
 {
     GFXnum e = 1.0 / (tan(fov * 0.5));
     auto a = aspectratio;
-    return [e, 0, 0, 0, 0, e / a, 0, 0, 0, 0, (far + near) / (near - far),
+    return [e, 0, 0, 0, 0, -e / a, 0, 0, 0, 0, (far + near) / (near - far),
         (2 * far * near) / (near - far), 0, 0, -1, 0];
 }
 
