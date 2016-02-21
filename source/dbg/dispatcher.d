@@ -22,7 +22,7 @@ struct DebugDispatcher
 {
     @disable this();
     @disable this(this);
-	WorldSpace space() nothrow @nogc
+	static WorldSpace space() nothrow @nogc
 	{
 		return Raytracer.space;
 	}

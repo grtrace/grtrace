@@ -77,7 +77,7 @@ abstract class WorldSpace
 	public void StartTracing(string outfile)
 	{
 		auto cam = cast(ICamera)(camera);
-        DebugDispatcher.space = this;
+        //DebugDispatcher.space = this;
 		ambientLight = cast(shared(Color))(Colors.White);
 		pixelsx = cfgResolutionX;
 		pixelsy = cfgResolutionY;
