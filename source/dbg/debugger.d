@@ -742,7 +742,28 @@ class VisualHelper
                 	&scroll);
 		static float X=0.0,Y=0.0;
 		static bool Cont = false;
-		if(imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f)&&Cont)
+		bool mod = false;
+		if(glfwGetKey(rwin, GLFW_KEY_KP_4)==GLFW_PRESS)
+		{
+			X -= 0.1;
+			mod = true;
+		}
+		if(glfwGetKey(rwin, GLFW_KEY_KP_6)==GLFW_PRESS)
+		{
+			X += 0.1;
+			mod = true;
+		}
+		if(glfwGetKey(rwin, GLFW_KEY_KP_8)==GLFW_PRESS)
+		{
+			Y -= 0.1;
+			mod = true;
+		}
+		if(glfwGetKey(rwin, GLFW_KEY_KP_2)==GLFW_PRESS)
+		{
+			Y += 0.1;
+			mod = true;
+		}
+		if((imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f)&&Cont)||mod)
 		{
 			float cx = (X/cfgResolutionX)*2.0 - 1.0;
 			float cy = (Y/cfgResolutionY)*2.0 - 1.0;
@@ -750,7 +771,7 @@ class VisualHelper
 			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 			traceSingleRay(ray.origin, ray.direction);
 		}
-		if(imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f)&&Cont)
+		if((imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f)&&Cont)||mod)
 		{
 			float cx = (X/cfgResolutionX)*2.0 - 1.0;
 			float cy = (Y/cfgResolutionY)*2.0 - 1.0;
