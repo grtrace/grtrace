@@ -97,6 +97,11 @@ public:
 		return Color(cast(fpnum)R,cast(fpnum)G,cast(fpnum)B);
 	}
 	
+	bool isBlack()
+	{
+		return (r+g+b)<0.0001;
+	}
+	
 }
 
 enum Colors : Color

@@ -365,7 +365,23 @@ class VisualHelper
         foreach (shared Renderable obj; DebugDispatcher.space.objects)
         {
             auto OBJ = cast(Renderable) obj;
-			oColor = OBJ.material.emission_color;
+			if(OBJ is null)
+			{
+				writeln("[dbg] renderable is null");
+				continue;
+			}
+			if(OBJ.material is null)
+			{
+				writeln("[dbg] material is null");
+			}
+			else if(OBJ.material.emission_color.isBlack)
+			{
+				oColor = OBJ.material.diffuse_color;
+			}
+			else
+			{
+				oColor = OBJ.material.emission_color;
+			}
             TSObject* tso = new TSObject();
             tso.id = OBJ.getName();
             tso.obj = OBJ;
@@ -489,7 +505,8 @@ class VisualHelper
 	enum DWindow
 	{
 		None,
-		Raytrace
+		Raytrace,
+		InMiniature
 	}
 	private DWindow window;
 
@@ -810,6 +827,37 @@ class VisualHelper
 					return;
 				}
 			}
+			return;
+		}
+		if ((x>=10) && (y>=winy-110) && (x<=110) && (y<=winy-10))
+		{
+			if(button == GLFW_MOUSE_BUTTON_LEFT && state==GLFW_PRESS)
+			{
+				if(window == DWindow.None)
+				{
+					window = DWindow.InMiniature;
+				}
+			}
+		}
+		else
+		{
+			if(window == DWindow.InMiniature)
+			{
+				window = DWindow.None;
+			}
+		}
+		if(window==DWindow.InMiniature)
+		{
+			double xd, yd;
+			glfwGetCursorPos(rwin, &xd, &yd);
+			xd -= 10.0;
+			yd -= winy-110.0;
+			xd = (xd/50.0) - 1.0;
+			yd = (yd/50.0) - 1.0;
+			Line ray;
+			DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+			traceSingleRay(ray.origin, ray.direction);
+			return;
 		}
         if (mouseLocked)
         {

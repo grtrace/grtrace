@@ -1,6 +1,6 @@
-configSet "ResolutionX" 600
-configSet "ResolutionY" 600
-configSet "Samples" 3
+configSet "ResolutionX" 200
+configSet "ResolutionY" 200
+configSet "Samples" 1
 configSet "WorldSpace" "test"
 configSet "SpaceConfig" ""
 configSet "CameraType" "linear"
