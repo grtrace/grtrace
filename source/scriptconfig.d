@@ -456,9 +456,7 @@ extern(C) int tclAddMaterial(ClientData clientData, Tcl_Interp* interp, int objc
 			(
 				'n', &FilteringTypes.NearestNeightbour,
 				'b', &FilteringTypes.BilinearFiltering,
-				{
-					throw new Exception("Filtering mode "~cast(char)filtering~" not supported");
-				}()
+				&FilteringTypes.NearestNeightbour
 			));
 
 		cfgMaterials[mname] = newMat;
