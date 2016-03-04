@@ -102,7 +102,42 @@ private class VisualPrimitives
 
     static int appendPlane(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
     {
-        return 0;
+        double inner_radius = 0.001;
+        double outer_radius = 1000;
+
+		Vectorf qvec;
+		qvec = (vectorf(1.0f, 0.75f, -0.8f) % dd.plane.normal).normalized;
+		Vectorf pvec = (qvec%dd.plane.normal).normalized;
+        Vectorf vec, nvec;
+        //GFXmatrix3 rot = gMat3RotateVectorOntoVector(gVec3(0, 1, 0),
+        //    gVec3(rvec.x, rvec.y, rvec.z));
+
+        int vrt = 0;
+        const int deg_step = 1;
+        const int mod = 2 * 361 / deg_step;
+        for (int i = 0; i <= 360; i += deg_step)
+        {
+            double cosi = cos(cast(double) PI * i / 180);
+            double sini = sin(cast(double) PI * i / 180);
+            vec = (qvec*cosi + pvec*sini)*inner_radius;
+			nvec = vectorf(dd.plane.normal.x - vec.x,dd.plane.normal.y - vec.y,dd.plane.normal.z - vec.z).normalized;
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
+                nvec.x, nvec.y, nvec.z);
+            vec = vec*(outer_radius/inner_radius);
+			nvec = vectorf(dd.plane.normal.x + vec.x,dd.plane.normal.y + vec.y,dd.plane.normal.z + vec.z).normalized;
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
+                nvec.x, nvec.y, nvec.z);
+
+            Erng ~= [cast(uint)(iv0 + ((vrt + 0) % mod)),
+                cast(uint)(iv0 + ((vrt + 1) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            Erng ~= [cast(uint)(iv0 + ((vrt + 1) % mod)),
+                cast(uint)(iv0 + ((vrt + 3) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            vrt += 6;
+        }
+
+        return vrt;
     }
 
     static int appendTriangle(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)

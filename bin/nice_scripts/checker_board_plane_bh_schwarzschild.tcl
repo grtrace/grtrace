@@ -19,8 +19,8 @@ addMaterial .mat_plane -D -d black -e white -t .tex1 -f n
 
 addObject .plane1 -m .mat_plane -t texplane -c a -o 0,0,20 -a0 -b0 -F 1,0,20 -S 0,1,20 -G1 -H1 -I0 -J0 
 
-#addMaterial .mat_eh -D -e black -f b
-#addObject .sph1 -m .mat_eh -t sphere -c 0,0,0 -r 1
+addMaterial .mat_eh -D -e black -f b
+addObject .sph1 -m .mat_eh -t sphere -c 0,0,0 -r 1
 
 makeScene
 puts "Tcl config finished"
