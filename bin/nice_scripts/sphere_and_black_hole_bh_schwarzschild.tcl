@@ -18,7 +18,7 @@ addMaterial .mat1 -e white -d 1.0,1.0,1.0 -f b
 addMaterial .EH -e black -f b
 
 addObject .sph1 -m .mat1 -t sphere -c 0,0,10 -r 5
-addObject .eh -m .EH -t sphere -c 0,0,0 -r 2
+addObject .eh -m .EH -t sphere -c 0,0,0 -r 3
 
 makeScene
 puts "Tcl config finished"
