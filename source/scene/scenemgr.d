@@ -26,6 +26,7 @@ import std.algorithm;
 import std.random;
 import dbg.debugger;
 import dbg.dispatcher;
+import scene.raymgr;
 import metric;
 
 import scene.noneuclidean;
@@ -54,6 +55,11 @@ abstract class WorldSpace
 	
 	public void freeRayData()
 	{
+	}
+	
+	public size_t getRayDataSize()
+	{
+		return 0;
 	}
 	
 	public int getStageCount()
@@ -251,7 +257,7 @@ class EuclideanSpace : WorldSpace
 		Material material;
 		Material.LightHit[32] lights;
 	}
-	__gshared RayData[] rdata;
+	static shared(uint) rdata = 0;
 	ComputeStep[RayState.Finished] steps;
 	
 	this()
@@ -260,16 +266,22 @@ class EuclideanSpace : WorldSpace
 		steps[RayState.InComputation1] = ComputeStep(RayState.Initialised, RayState.Finished, &computeRayLight, false, "");
 	}
 	
+	override public size_t getRayDataSize()
+	{
+		return RayData.sizeof;
+	}
+	
 	override public int allocNewRayData()
 	{
-		int idx = cast(int)rdata.length;
-		rdata ~= RayData();
+		import core.atomic : atomicOp;
+		uint idx = atomicOp!"+="(rdata,RayData.sizeof);
+		idx -= RayData.sizeof;
 		return idx;
 	}
 	
 	override public void freeRayData()
 	{
-		rdata = [];
+		rdata = 0;
 	}
 	
 	override public int getStageCount()
@@ -302,16 +314,17 @@ class EuclideanSpace : WorldSpace
 		rc.curRay.origin = rayhit + normal*0.01;
 		fpnum u,v;
 		closest.getUVMapping(rayhit, u, v);
-		rdata[rc.dataIdx].u = u;
-		rdata[rc.dataIdx].v = v;
-		rdata[rc.dataIdx].normal = normal;
-		rdata[rc.dataIdx].material = closest.material;
+		RayData* rd = cast(RayData*)(Raytracer.computebuffer + rc.dataIdx);
+		rd.u = u;
+		rd.v = v;
+		rd.normal = normal;
+		rd.material = closest.material;
 		return RayState.InComputation1;
 	}
 	
 	private static RayState computeRayLight(RayComputation* rc)
 	{
-		RayData* rd = &rdata[rc.dataIdx];
+		RayData* rd = cast(RayData*)(Raytracer.computebuffer + rc.dataIdx);
 		if(rd.slights<WorldSpace.lights.length)
 		{
 			Light L = cast(Light)WorldSpace.lights[rd.slights];

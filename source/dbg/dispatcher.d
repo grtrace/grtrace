@@ -80,7 +80,7 @@ struct DebugDispatcher
 		RaySaver saver;
     }
     static:
-    void progress(int done, int total)
+    void progress(size_t done, size_t total)
 	{
 		stderr.writef("\r%30c\rProgress: %d/%d",' ',done,total);
 	}

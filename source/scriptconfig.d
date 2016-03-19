@@ -124,7 +124,6 @@ extern(C) int tclDbgTrace(ClientData clientData, Tcl_Interp* interp, int objc, c
 	try
 	{
 		import scene.raymgr : Raytracer;
-		Raytracer.prepareSubimageTrace(0,0,cast(int)cfgResolutionX,cast(int)cfgResolutionY);
 		Raytracer.computeMultiThread();
 		Raytracer.saveImage();
 		Raytracer.cleanup();

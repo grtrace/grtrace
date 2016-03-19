@@ -13,5 +13,12 @@
 	},
 	"mainSourceFile": "source/app.d",
 	"lflags-ldc": ["-L=--allow-multiple-definition","-O5"],
-	"dflags-ldc": ["-L=--allow-multiple-definition","-O5"]
+	"dflags-ldc": ["-L=--allow-multiple-definition","-O5"],
+	"buildTypes": {
+		"relinfo": {
+			"buildOptions": [
+				"releaseMode", "optimize", "inline", "debugInfo", "debugInfoC"
+			]
+		}
+	}
 }

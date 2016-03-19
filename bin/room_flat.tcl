@@ -1,7 +1,7 @@
 configSet "ResolutionX" 300
 configSet "ResolutionY" 300
 
-configSet "Samples" 1
+configSet "Samples" 8
 #configSet "WorldSpace" "kex"
 #configSet "WorldSpace" ""
 configSet "SpaceConfig" ""
@@ -209,7 +209,7 @@ addObject .blt2 -m .tableb -t triangle -a 0.9,0.2,-9.9  -b 0.9,0.2,-12 -c -0.2,0
 
 makeScene
 puts "Tcl config finished"
-#dbgTrace
-doTrace
-waitForTrace
+dbgTrace
+#doTrace
+#waitForTrace
 puts "Tcl script finished"
