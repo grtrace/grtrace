@@ -66,6 +66,8 @@ class WorldSpaceWrapper : WorldSpace
 					closest.getUVMapping(rayhit, U, V);
 					textureColor = closest.material.peekUV(U,V);
 				}
+				
+				tmpc *= textureColor;
 
 				//TODO:lighting not supported yet
 				/*if(closest.material.is_diffuse)
@@ -120,7 +122,7 @@ class WorldSpaceWrapper : WorldSpace
 				}
 				else
 				{
-					tmpc = Colors.Yellow;
+					return tmpc;
 				}
 			}
 			else

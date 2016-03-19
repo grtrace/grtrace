@@ -1,1 +1,1 @@
-dub build --build=release --compiler=dmd --combined
+dub build --build=release --compiler=ldc2 --combined

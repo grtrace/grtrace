@@ -102,7 +102,42 @@ private class VisualPrimitives
 
     static int appendPlane(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
     {
-        return 0;
+        double inner_radius = 0.001;
+        double outer_radius = 1000;
+
+		Vectorf qvec;
+		qvec = (vectorf(1.0f, 0.75f, -0.8f) % dd.plane.normal).normalized;
+		Vectorf pvec = (qvec%dd.plane.normal).normalized;
+        Vectorf vec, nvec;
+        //GFXmatrix3 rot = gMat3RotateVectorOntoVector(gVec3(0, 1, 0),
+        //    gVec3(rvec.x, rvec.y, rvec.z));
+
+        int vrt = 0;
+        const int deg_step = 1;
+        const int mod = 2 * 361 / deg_step;
+        for (int i = 0; i <= 360; i += deg_step)
+        {
+            double cosi = cos(cast(double) PI * i / 180);
+            double sini = sin(cast(double) PI * i / 180);
+            vec = (qvec*cosi + pvec*sini)*inner_radius;
+			nvec = vectorf(dd.plane.normal.x - vec.x,dd.plane.normal.y - vec.y,dd.plane.normal.z - vec.z).normalized;
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
+                nvec.x, nvec.y, nvec.z);
+            vec = vec*(outer_radius/inner_radius);
+			nvec = vectorf(dd.plane.normal.x + vec.x,dd.plane.normal.y + vec.y,dd.plane.normal.z + vec.z).normalized;
+            Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
+                vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g, oColor.b, 1.0,
+                nvec.x, nvec.y, nvec.z);
+
+            Erng ~= [cast(uint)(iv0 + ((vrt + 0) % mod)),
+                cast(uint)(iv0 + ((vrt + 1) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            Erng ~= [cast(uint)(iv0 + ((vrt + 1) % mod)),
+                cast(uint)(iv0 + ((vrt + 3) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+            vrt += 6;
+        }
+
+        return vrt;
     }
 
     static int appendTriangle(T, U)(ref T Vrng, ref U Erng, int iv0, DebugDraw dd)
@@ -365,7 +400,23 @@ class VisualHelper
         foreach (shared Renderable obj; DebugDispatcher.space.objects)
         {
             auto OBJ = cast(Renderable) obj;
-			oColor = OBJ.material.emission_color;
+			if(OBJ is null)
+			{
+				writeln("[dbg] renderable is null");
+				continue;
+			}
+			if(OBJ.material is null)
+			{
+				writeln("[dbg] material is null");
+			}
+			else if(OBJ.material.emission_color.isBlack)
+			{
+				oColor = OBJ.material.diffuse_color;
+			}
+			else
+			{
+				oColor = OBJ.material.emission_color;
+			}
             TSObject* tso = new TSObject();
             tso.id = OBJ.getName();
             tso.obj = OBJ;
@@ -489,7 +540,8 @@ class VisualHelper
 	enum DWindow
 	{
 		None,
-		Raytrace
+		Raytrace,
+		InMiniature
 	}
 	private DWindow window;
 
@@ -725,7 +777,28 @@ class VisualHelper
                 	&scroll);
 		static float X=0.0,Y=0.0;
 		static bool Cont = false;
-		if(imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f)&&Cont)
+		bool mod = false;
+		if(glfwGetKey(rwin, GLFW_KEY_KP_4)==GLFW_PRESS)
+		{
+			X -= 0.1;
+			mod = true;
+		}
+		if(glfwGetKey(rwin, GLFW_KEY_KP_6)==GLFW_PRESS)
+		{
+			X += 0.1;
+			mod = true;
+		}
+		if(glfwGetKey(rwin, GLFW_KEY_KP_8)==GLFW_PRESS)
+		{
+			Y -= 0.1;
+			mod = true;
+		}
+		if(glfwGetKey(rwin, GLFW_KEY_KP_2)==GLFW_PRESS)
+		{
+			Y += 0.1;
+			mod = true;
+		}
+		if((imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f)&&Cont)||mod)
 		{
 			float cx = (X/cfgResolutionX)*2.0 - 1.0;
 			float cy = (Y/cfgResolutionY)*2.0 - 1.0;
@@ -733,7 +806,7 @@ class VisualHelper
 			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 			traceSingleRay(ray.origin, ray.direction);
 		}
-		if(imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f)&&Cont)
+		if((imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f)&&Cont)||mod)
 		{
 			float cx = (X/cfgResolutionX)*2.0 - 1.0;
 			float cy = (Y/cfgResolutionY)*2.0 - 1.0;
@@ -810,6 +883,37 @@ class VisualHelper
 					return;
 				}
 			}
+			return;
+		}
+		if ((x>=10) && (y>=winy-110) && (x<=110) && (y<=winy-10))
+		{
+			if(button == GLFW_MOUSE_BUTTON_LEFT && state==GLFW_PRESS)
+			{
+				if(window == DWindow.None)
+				{
+					window = DWindow.InMiniature;
+				}
+			}
+		}
+		else
+		{
+			if(window == DWindow.InMiniature)
+			{
+				window = DWindow.None;
+			}
+		}
+		if(window==DWindow.InMiniature)
+		{
+			double xd, yd;
+			glfwGetCursorPos(rwin, &xd, &yd);
+			xd -= 10.0;
+			yd -= winy-110.0;
+			xd = (xd/50.0) - 1.0;
+			yd = (yd/50.0) - 1.0;
+			Line ray;
+			DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+			traceSingleRay(ray.origin, ray.direction);
+			return;
 		}
         if (mouseLocked)
         {
