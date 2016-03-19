@@ -32,29 +32,35 @@ struct SavedRay
 /// -
 struct RaySaver
 {
-	static __gshared Color[7] rayColors = [Colors.Red, Colors.Green, Colors.Blue,
-							Colors.Magenta, Colors.Yellow, Colors.Cyan, Colors.White];
-    bool enabled = false;
+	static __gshared Color[7] rayColors = [
+		Colors.Red, Colors.Green, Colors.Blue, Colors.Magenta, Colors.Yellow,
+		Colors.Cyan, Colors.White
+	];
+	bool enabled = false;
 	SavedRay[] rays;
 	bool dirty = false;
-	
+
 	void enable()
 	{
 		enabled = true;
 	}
+
 	void disable()
 	{
 		enabled = false;
 	}
+
 	void clear()
 	{
 		rays = [];
 		dirty = true;
 	}
+
 	void append(SavedRay sr)
 	{
-		if(!enabled)return;
-		if(sr.type==RayDebugType.Default)
+		if (!enabled)
+			return;
+		if (sr.type == RayDebugType.Default)
 		{
 			sr.color = rayColors[sr.index % rayColors.length];
 		}
@@ -66,34 +72,38 @@ struct RaySaver
 /// Debug routines dispatcher and state storage
 struct DebugDispatcher
 {
-    @disable this();
-    @disable this(this);
+	@disable this();
+	@disable this(this);
 	static WorldSpace space() nothrow @nogc
 	{
 		return Raytracer.space;
 	}
-    __gshared
-    {
-        /// Rendering result
-        Image renderResult;
+
+	__gshared
+	{
+		/// Rendering result
+		Image renderResult;
 		/// Ray saver
 		RaySaver saver;
-    }
-    static:
-    void progress(size_t done, size_t total)
-	{
-		stderr.writef("\r%30c\rProgress: %d/%d",' ',done,total);
 	}
-	
-	void saveRay(Line ray, fpnum dist, RayDebugType rdt, Color customColor=Colors.White)
+static:
+	void progress(size_t done, size_t total)
 	{
-		if(!saver.enabled)return;
+		stderr.writef("\r%30c\rProgress: %d/%d", ' ', done, total);
+	}
+
+	void saveRay(Line ray, fpnum dist, RayDebugType rdt, Color customColor = Colors.White)
+	{
+		if (!saver.enabled)
+			return;
 		saveRay(ray, ray.origin + ray.direction * dist, rdt, customColor);
 	}
-	
-	void saveRay(Line ray, Vectorf end, RayDebugType rdt, Color customColor=Colors.White)
+
+	void saveRay(Line ray, Vectorf end, RayDebugType rdt, Color customColor = Colors.White)
 	{
-		if(!saver.enabled)return;
-		saver.append(SavedRay(ray.origin, end, ray.direction, rdt, cast(int)saver.rays.length, customColor));
+		if (!saver.enabled)
+			return;
+		saver.append(SavedRay(ray.origin, end, ray.direction, rdt,
+			cast(int) saver.rays.length, customColor));
 	}
 }

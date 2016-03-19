@@ -1,4 +1,4 @@
-﻿module scene.objects.interfaces;
+module scene.objects.interfaces;
 
 import math.geometric;
 import math.matrix;
@@ -13,11 +13,12 @@ public import dbg.draws;
 template RenderableNameHandler()
 {
 	shared(string) name_;
-	
+
 	string getName() nothrow const
 	{
-		return cast(string)name_;
+		return cast(string) name_;
 	}
+
 	void setName(string nm) nothrow
 	{
 		name_ = cast(shared(string))(nm.idup);
@@ -27,7 +28,7 @@ template RenderableNameHandler()
 interface Renderable
 {
 	void setupFromOptions(string[] a);
-	
+
 	string getName() nothrow const;
 	void setName(string nm) nothrow;
 
@@ -63,12 +64,12 @@ class Transformed : Renderable
 		transform = tr;
 		invTransform = tr.inverse;
 	}
-	
+
 	string getName() nothrow const
 	{
 		return object.getName;
 	}
-	
+
 	void setName(string nm) nothrow
 	{
 		object.setName(nm);
@@ -93,25 +94,26 @@ class Transformed : Renderable
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
 	{
 		//transform ray to localSpace
-		Line local_ray = invTransform*ray;
+		Line local_ray = invTransform * ray;
 
 		bool res = object.getClosestIntersection(local_ray, dist, normal);
 
-		if(!res) return false;
+		if (!res)
+			return false;
 
 		//transform results to globalSpace
-		normal = transform*normal;
+		normal = transform * normal;
 
-		Vectorf hitPoint = local_ray.direction*dist + local_ray.origin;
+		Vectorf hitPoint = local_ray.direction * dist + local_ray.origin;
 
-		hitPoint = transform*hitPoint;
+		hitPoint = transform * hitPoint;
 		hitPoint = hitPoint - ray.origin;
 
 		dist = ~hitPoint;
 
 		return true;
 	}
-	
+
 	@property ref Material material()
 	{
 		return object.material;
@@ -120,7 +122,7 @@ class Transformed : Renderable
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
 		//calculate U,V values in localSpace
-		object.getUVMapping(invTransform*point, U, V);
+		object.getUVMapping(invTransform * point, U, V);
 	}
 
 	DebugDraw getDebugDraw()

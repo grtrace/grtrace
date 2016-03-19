@@ -1,4 +1,4 @@
-﻿module math.vector;
+module math.vector;
 
 import config;
 import std.math;
@@ -16,173 +16,169 @@ struct Vector(T)
 
 	auto ref T opIndex()(int idx)
 	{
-		switch(idx)
+		switch (idx)
 		{
-			case 0:
-				return x;
-			case 1:
-				return y;
-			case 2:
-				return z;
-			case 3:
-				return w;
-			default:
-				assert(0);
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		case 3:
+			return w;
+		default:
+			assert(0);
 		}
 	}
 
-	Vector!T opUnary(string op)() const if (op=="-")
+	Vector!T opUnary(string op)() const if (op == "-")
 	{
-		return Vector!T(-x,-y,-z,w);
+		return Vector!T(-x, -y, -z, w);
 	}
 
 	/// Length squared operator
-	T opUnary(string op)() const if (op=="*")
+	T opUnary(string op)() const if (op == "*")
 	{
-		return x*x+y*y+z*z;
+		return x * x + y * y + z * z;
 	}
 
 	/// Length operator
-	T opUnary(string op)() const if (op=="~")
+	T opUnary(string op)() const if (op == "~")
 	{
-		return cast(T)sqrt(cast(real)this.opUnary!"*"());
+		return cast(T) sqrt(cast(real) this.opUnary!"*"());
 	}
 
 	@property Vector!T normalized()
 	{
-		return this/(~this);
+		return this / ( ~this);
 	}
 
-	Vector!T opOpAssign(string op)(T rhs) if(op=="*")
+	Vector!T opOpAssign(string op)(T rhs) if (op == "*")
 	{
-		x*=rhs;
-		y*=rhs;
-		z*=rhs;
+		x *= rhs;
+		y *= rhs;
+		z *= rhs;
 		return this;
 	}
 
-	Vector!T opOpAssign(string op)(Vector!T rhs) if(op=="+")
+	Vector!T opOpAssign(string op)(Vector!T rhs) if (op == "+")
 	{
-		x+=rhs.x;
-		y+=rhs.y;
-		z+=rhs.z;
+		x += rhs.x;
+		y += rhs.y;
+		z += rhs.z;
 		return this;
 	}
 
-	Vector!T opOpAssign(string op)(Vector!T rhs) if(op=="-")
+	Vector!T opOpAssign(string op)(Vector!T rhs) if (op == "-")
 	{
-		x-=rhs.x;
-		y-=rhs.y;
-		z-=rhs.z;
+		x -= rhs.x;
+		y -= rhs.y;
+		z -= rhs.z;
 		return this;
 	}
 
-	U opCast(U)() const if (is(U==T[3])||is(U==T[]))
+	U opCast(U)() const if (is(U == T[3]) || is(U == T[]))
 	{
-		return [x,y,z];
+		return [x, y, z];
 	}
 
 	U opCast(U)() const if (is(U X : Vector!X))
 	{
-		return Vector!X(cast(X)x,cast(X)y,cast(X)z,cast(X)w);
+		return Vector!X(cast(X) x, cast(X) y, cast(X) z, cast(X) w);
 	}
 
-	Vector!T opBinary(string op)(Vector!T rhs) const if ( (op=="+") || (op=="-") )
+	Vector!T opBinary(string op)(Vector!T rhs) const if ((op == "+") || (op == "-"))
 	{
-		return mixin("Vector!T(x"~op~"rhs.x,y"~op~"rhs.y,z"~op~"rhs.z,max(w,rhs.w))");
+		return mixin("Vector!T(x" ~ op ~ "rhs.x,y" ~ op ~ "rhs.y,z" ~ op ~ "rhs.z,max(w,rhs.w))");
 	}
 
-	Vector!T opBinary(string op)(T rhs) const if(op=="*")
+	Vector!T opBinary(string op)(T rhs) const if (op == "*")
 	{
-		return Vector!T(x*rhs,y*rhs,z*rhs,w);
+		return Vector!T(x * rhs, y * rhs, z * rhs, w);
 	}
 
-	Vector!T opBinary(string op)(T rhs) const if(op=="/")
+	Vector!T opBinary(string op)(T rhs) const if (op == "/")
 	{
-		return Vector!T(x/rhs,y/rhs,z/rhs,w);
+		return Vector!T(x / rhs, y / rhs, z / rhs, w);
 	}
 
-	Vector!T opBinaryRight(string op)(T rhs) const if(op=="/")
+	Vector!T opBinaryRight(string op)(T rhs) const if (op == "/")
 	{
-		return Vector!T(rhs/x,rhs/y,rhs/z,w);
+		return Vector!T(rhs / x, rhs / y, rhs / z, w);
 	}
 
 	/// Dot product (*)
-	T opBinary(string op)(Vector!T rhs) const if(op=="*")
+	T opBinary(string op)(Vector!T rhs) const if (op == "*")
 	{
-		return x*rhs.x+y*rhs.y+z*rhs.z;
+		return x * rhs.x + y * rhs.y + z * rhs.z;
 	}
 
 	/// Cross product (%)
-	Vector!T opBinary(string op)(Vector!T rhs) const if(op=="%")
+	Vector!T opBinary(string op)(Vector!T rhs) const if (op == "%")
 	{
-		return Vector!T(y*rhs.z-z*rhs.y, z*rhs.x-x*rhs.z, x*rhs.y-y*rhs.x, max(w,rhs.w));
+		return Vector!T(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z,
+			x * rhs.y - y * rhs.x, max(w, rhs.w));
 	}
 
-	Vector!T opOpAssign(string op)(Vector!T rhs) if(op=="+=")
+	Vector!T opOpAssign(string op)(Vector!T rhs) if (op == "+=")
 	{
-		x+=rhs.x;
-		y+=rhs.y;
-		z+=rhs.z;
-		w=max(w,rhs.w);
+		x += rhs.x;
+		y += rhs.y;
+		z += rhs.z;
+		w = max(w, rhs.w);
 		return this;
 	}
 
-	Vector!T opOpAssign(string op)(Vector!T rhs) if(op=="-=")
+	Vector!T opOpAssign(string op)(Vector!T rhs) if (op == "-=")
 	{
-		x-=rhs.x;
-		y-=rhs.y;
-		z-=rhs.z;
-		w=max(w,rhs.w);
+		x -= rhs.x;
+		y -= rhs.y;
+		z -= rhs.z;
+		w = max(w, rhs.w);
 		return this;
 	}
 
-	Vector!T opOpAssign(string op)(T rhs) if(op=="*=")
+	Vector!T opOpAssign(string op)(T rhs) if (op == "*=")
 	{
-		x*=rhs;
-		y*=rhs;
-		z*=rhs;
-		w=max(w,rhs.w);
+		x *= rhs;
+		y *= rhs;
+		z *= rhs;
+		w = max(w, rhs.w);
 		return this;
 	}
 
-	Vector!T opOpAssign(string op)(T rhs) if(op=="/=")
+	Vector!T opOpAssign(string op)(T rhs) if (op == "/=")
 	{
-		x/=rhs;
-		y/=rhs;
-		z/=rhs;
-		w=max(w,rhs.w);
+		x /= rhs;
+		y /= rhs;
+		z /= rhs;
+		w = max(w, rhs.w);
 		return this;
 	}
 
 	bool opEquals()(auto ref const Vector!T s) const
 	{
-		return (x==s.x)&&(y==s.y)&&(z==s.z)&&(w==s.w);
+		return (x == s.x) && (y == s.y) && (z == s.z) && (w == s.w);
 	}
 
 	string toString()
 	{
-		return format("( %.4f ; %.4f ; %.4f ; %.0f )",x,y,z,w);
+		return format("( %.4f ; %.4f ; %.4f ; %.0f )", x, y, z, w);
 	}
-	static if(is(T==fpnum))
+
+	static if (is(T == fpnum))
 	{
 		fpnum mDot(Metric4 m, Vectorf o)
 		{
-			return
-				this.x*o.x*m[1,1] + 
-				this.x*o.y*m[1,2] + 
-				this.x*o.z*m[1,3] + 
-				this.y*o.x*m[2,1] + 
-				this.y*o.y*m[2,2] + 
-				this.y*o.z*m[2,3] + 
-				this.z*o.x*m[3,1] + 
-				this.z*o.y*m[3,2] + 
-				this.z*o.z*m[3,3];
+			return this.x * o.x * m[1, 1] + this.x * o.y * m[1, 2] + this.x * o.z * m[1,
+				3] + this.y * o.x * m[2, 1] + this.y * o.y * m[2, 2] + this.y * o.z * m[2,
+				3] + this.z * o.x * m[3, 1] + this.z * o.y * m[3, 2] + this.z * o.z * m[3,
+				3];
 		}
 
 		fpnum mLenSq(Metric4 m)
 		{
-			return mDot(m,this).fabs();
+			return mDot(m, this).fabs();
 		}
 
 		fpnum mLen(Metric4 m)
@@ -192,19 +188,19 @@ struct Vector(T)
 
 		fpnum mCrossLenSq(Metric4 m, Vectorf o)
 		{
-			return this.mLenSq(m)*o.mLenSq(m) - this.mDot(m,o)^^2;
+			return this.mLenSq(m) * o.mLenSq(m) - this.mDot(m, o) ^^ 2;
 		}
 
 		fpnum mCosV(Metric4 m, Vectorf v)
 		{
-			return this.mDot(m,v)/( mLen(m)*v.mLen(m) );
+			return this.mDot(m, v) / (mLen(m) * v.mLen(m));
 		}
 	}
 }
 
 Vector!T vector(T)(T x, T y, T z, T w = 1)
 {
-	return Vector!T(x,y,z,w);
+	return Vector!T(x, y, z, w);
 }
 
 alias vectorf = vector!fpnum;

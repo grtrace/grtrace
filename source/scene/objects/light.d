@@ -1,4 +1,4 @@
-﻿module scene.objects.light;
+module scene.objects.light;
 
 import scene.objects.interfaces;
 import std.getopt, std.string;
@@ -21,8 +21,7 @@ class PointLight : Light
 	{
 		string positionStr;
 		string colorStr;
-		getopt(a,std.getopt.config.caseSensitive,
-			"position|p", &positionStr,
+		getopt(a, std.getopt.config.caseSensitive, "position|p", &positionStr,
 			"color|c", &colorStr);
 
 		position = vectorString(positionStr);
@@ -43,7 +42,7 @@ class PointLight : Light
 	{
 		return position;
 	}
-	
+
 	Color getColor() shared
 	{
 		return color;

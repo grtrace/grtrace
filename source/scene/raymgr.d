@@ -212,7 +212,7 @@ class Raytracer
 					{
 						doneRays += threadDoneRays[j];
 					}
-					if(doneRays>lastRays+512)
+					if (doneRays > lastRays + 512)
 					{
 						lastRays = doneRays;
 						DebugDispatcher.progress(totalDoneRays + doneRays, totalRays);

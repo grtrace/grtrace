@@ -1,4 +1,4 @@
-﻿module metric;
+module metric;
 
 public import metric.interfaces;
 public import metric.grid;

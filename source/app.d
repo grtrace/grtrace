@@ -32,9 +32,9 @@ Options:
 
 void RenderSpawner(Tid owner)
 {
-	while(true)
+	while (true)
 	{
-		if(receiveOnly!bool())
+		if (receiveOnly!bool())
 		{
 			WorldSpace sp = cast(WorldSpace)(cfgSpace);
 			sp.StartTracing(cfgOutputFile);
@@ -72,39 +72,33 @@ void main(string[] args)
 	writeln("POS-RADIAL:",B,"DIR-RADIAL",C,"DIR-CARTESIAN",D);*/
 
 	//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
-	string arg0 = args[0].idup;//asds
+	string arg0 = args[0].idup; //asds
 	InitGPU();
 	InitScripting(arg0);
 	bool doHelp;
-	getopt(args,
-		"verbose|v", &cfgVerbose,
-		"script|s", &cfgScript,
-		"help|h", &doHelp,
-		"threads|t", &cfgThreads,
-		"debug|d", &cfgDebug,
-		"noimage|n", &cfgNoImage,
-		"nogpu|g", &cfgGpuAcc,
-		"addcalc|c", &cfgAdditionalCalc,
-		"fastapprox|f", &cfgFastApproximation
-		);
+	getopt(args, "verbose|v", &cfgVerbose, "script|s", &cfgScript, "help|h",
+		&doHelp, "threads|t", &cfgThreads, "debug|d", &cfgDebug, "noimage|n",
+		&cfgNoImage, "nogpu|g", &cfgGpuAcc, "addcalc|c", &cfgAdditionalCalc,
+		"fastapprox|f", &cfgFastApproximation);
 	cfgGpuAcc = !cfgGpuAcc;
-	if(doHelp)
+	if (doHelp)
 	{
 		writefln(HelpStr, arg0);
 		return;
 	}
-    VisualHelper.instance.initialize();
+	VisualHelper.instance.initialize();
 	MonoTime startTime = MonoTime.currTime;
 	renderTid = spawn(&RenderSpawner, thisTid);
 	DoScript(cfgScript);
 	renderTid.send(false);
 	Thread.sleep(dur!"msecs"(50));
 	Duration duration = (MonoTime.currTime - startTime);
-	writefln("Total rendering time: %s",duration);
-    if(cfgDebug)VisualHelper.instance.runGraphics();
-    if(cfgAdditionalCalc && (!cfgDebug))
-    {
-        //StartTest();
-    }
+	writefln("Total rendering time: %s", duration);
+	if (cfgDebug)
+		VisualHelper.instance.runGraphics();
+	if (cfgAdditionalCalc && (!cfgDebug))
+	{
+		//StartTest();
+	}
 	FinalizeGPU();
 }

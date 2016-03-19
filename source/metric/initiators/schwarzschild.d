@@ -1,4 +1,4 @@
-﻿module metric.initiators.schwarzschild;
+module metric.initiators.schwarzschild;
 
 import metric.interfaces;
 import metric.coordinates.radial;
@@ -27,10 +27,10 @@ class Schwarzschild : Initiator
 	{
 		origin = orig;
 		cord = new Radial(orig);
-		schwarzschild_radius = 2*m;
+		schwarzschild_radius = 2 * m;
 		mass = m;
 	}
-	
+
 	this(const Schwarzschild o)
 	{
 		origin = o.origin;
@@ -45,7 +45,7 @@ class Schwarzschild : Initiator
 		tmp = o.tmp;
 		inv_tmp = o.inv_tmp;
 	}
-	
+
 	@property Initiator clone() const
 	{
 		return new Schwarzschild(this);
@@ -53,38 +53,28 @@ class Schwarzschild : Initiator
 
 	void prepareForRequest(Vectorf point)
 	{
-		Vectorf v = point-origin;
+		Vectorf v = point - origin;
 
 		r2 = (*v);
 		r = sqrt(r2);
-		inv_r = 1./r;
-		inv_r2 = 1./r2;
+		inv_r = 1. / r;
+		inv_r2 = 1. / r2;
 
-		theta = acos(v.z/r);
+		theta = acos(v.z / r);
 		sin_theta = sin(theta);
-		
-		tmp = (1.-schwarzschild_radius*inv_r);
-		inv_tmp = 1./tmp;
+
+		tmp = (1. - schwarzschild_radius * inv_r);
+		inv_tmp = 1. / tmp;
 	}
 
 	@property Metric4 getMetricAtPoint() const
 	{
-		return Metric4(
-			-tmp,  0,    0,           0,
-			     inv_tmp, 0,           0,
-			             r2,          0,
-			                r2*sin_theta*sin_theta
-			);
+		return Metric4(-tmp, 0, 0, 0, inv_tmp, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
 	}
 
 	@property Metric4 getLocalMetricAtPoint() const
 	{
-		return Metric4(
-			-1,  0,    0,          0,
-			     1,    0,          0,
-			           r2,         0,
-			               r2*sin_theta*sin_theta
-			);
+		return Metric4(-1, 0, 0, 0, 1, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
 	}
 
 	@property Metric4[3] getDerivativesAtPoint() const
@@ -94,54 +84,29 @@ class Schwarzschild : Initiator
 
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
-		auto a = Metric4(
-			0, mass*inv_tmp*inv_r2, 0, 0,
-			           0,           0, 0,
-			                        0, 0,
-			                           0
-			);
+		auto a = Metric4(0, mass * inv_tmp * inv_r2, 0, 0, 0, 0, 0, 0, 0, 0);
 
-		auto b = Metric4(
-			mass*tmp*inv_r2,          0,           0,              0,
-			               -mass*inv_tmp*inv_r2,   0,              0,
-			                                    -r*tmp,            0,
-			                                           -r*sin_theta*sin_theta*tmp
-			);
+		auto b = Metric4(mass * tmp * inv_r2, 0, 0, 0, -mass * inv_tmp * inv_r2,
+			0, 0, -r * tmp, 0, -r * sin_theta * sin_theta * tmp);
 
-		auto c = Metric4(
-			0, 0,   0,         0,
-			   0, inv_r,       0,
-			        0,         0,
-			          -sin_theta*cos(theta)
-			);
+		auto c = Metric4(0, 0, 0, 0, 0, inv_r, 0, 0, 0, -sin_theta * cos(theta));
 
-		auto d = Metric4(
-			0, 0, 0,      0,
-			   0, 0,    inv_r,
-			      0, 1./tan(theta),
-			              0 
-			);
+		auto d = Metric4(0, 0, 0, 0, 0, 0, inv_r, 0, 1. / tan(theta), 0);
 
 		return [a, b, c, d];
 	}
 
 	@property Matrix4f getTetradsElementsAtPoint() const
 	{
-		auto res = Matrix4f(
-			sqrt(inv_tmp),    0,      0,   0,
-			      0,       sqrt(tmp), 0,   0,
-			      0,          0,      1,   0,
-			      0,          0,      0,   1);
+		auto res = Matrix4f(sqrt(inv_tmp), 0, 0, 0, 0, sqrt(tmp), 0, 0, 0, 0, 1, 0,
+			0, 0, 0, 1);
 		return res;
 	}
 
 	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		auto res = Matrix4f(
-			sqrt(tmp),      0,        0, 0,
-			   0,      sqrt(inv_tmp), 0, 0,
-			   0,           0,        1, 0,
-			   0,           0,        0, 1);
+		auto res = Matrix4f(sqrt(tmp), 0, 0, 0, 0, sqrt(inv_tmp), 0, 0, 0, 0, 1, 0,
+			0, 0, 0, 1);
 		return res;
 	}
 

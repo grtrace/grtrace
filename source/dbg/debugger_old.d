@@ -1,4 +1,4 @@
-﻿module dbg.debugger;
+module dbg.debugger;
 
 import derelict.glfw3.glfw3;
 import glad.gl.all;
@@ -14,20 +14,21 @@ import image.spectrum;
 import metric;
 
 // Source: http://www.cburch.com/cs/490/sched/feb8/
-private void drawSphereGen(int lats, int longs) {
+private void drawSphereGen(int lats, int longs)
+{
 	int i, j;
-	enum double PI2 = 2.0*PI;
-	for(i = 0; i <= lats; i++)
+	enum double PI2 = 2.0 * PI;
+	for (i = 0; i <= lats; i++)
 	{
-		double lat0 = PI * (-0.5 + cast(double) (i - 1) / lats);
-		double z0  = sin(lat0);
-		double zr0 =  cos(lat0);
+		double lat0 = PI * (-0.5 + cast(double)(i - 1) / lats);
+		double z0 = sin(lat0);
+		double zr0 = cos(lat0);
 
 		double lat1 = PI * (-0.5 + cast(double) i / lats);
 		double z1 = sin(lat1);
 		double zr1 = cos(lat1);
 
-	/*	glBegin(GL_QUAD_STRIP);
+		/*	glBegin(GL_QUAD_STRIP);
 		for(j = 0; j <= longs; j++)
 		{
 			double lng = PI2 * cast(double) (j - 1) / longs;
@@ -43,8 +44,10 @@ private void drawSphereGen(int lats, int longs) {
 	}
 }
 
-public Color[7] rayColors = [Colors.Red, Colors.Green, Colors.Blue,
-							Colors.Magenta, Colors.Yellow, Colors.Cyan, Colors.White];
+public Color[7] rayColors = [
+	Colors.Red, Colors.Green, Colors.Blue, Colors.Magenta, Colors.Yellow,
+	Colors.Cyan, Colors.White
+];
 
 private struct SavedRay
 {
@@ -55,32 +58,32 @@ private struct SavedRay
 	Color col;
 	string toString()
 	{
-		return "#%-2d %s -> %s".format(col,origin,destination);
+		return "#%-2d %s -> %s".format(col, origin, destination);
 	}
 }
 
-bool rayMode=false;
+bool rayMode = false;
 
 extern (C) private void corexMouseButton(GLFWwindow* w, int btn, int type, int modkeys) nothrow
 {
 	try
 	{
-		if(btn==GLFW_MOUSE_BUTTON_1)
+		if (btn == GLFW_MOUSE_BUTTON_1)
 		{
 			double xd, yd;
 			glfwGetCursorPos(w, &xd, &yd);
 			int x = cast(int) xd, y = cast(int) yd;
-			double xR = xd/cfgResolutionX;
-			double yR = yd/cfgResolutionY;
-			xR*=2.0;
-			yR*=2.0;
-			xR-=1.0;
-			yR-=1.0;
+			double xR = xd / cfgResolutionX;
+			double yR = yd / cfgResolutionY;
+			xR *= 2.0;
+			yR *= 2.0;
+			xR -= 1.0;
+			yR -= 1.0;
 			if (type == GLFW_PRESS)
 			{
 				rayMode = true;
 				Line ray;
-				if(VisualDebugger_Old.inst.camera.fetchRay(xR,yR,ray))
+				if (VisualDebugger_Old.inst.camera.fetchRay(xR, yR, ray))
 				{
 					//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
 					VisualDebugger_Old.inst.rays = [];
@@ -99,18 +102,21 @@ extern (C) private void corexMouseButton(GLFWwindow* w, int btn, int type, int m
 						//writeln(h);
 						VisualDebugger_Old.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
 					}*/
-					
+
 					//ray = Line(vectorf(cfgCameraX, cfgCameraY, cfgCameraZ), vectorf(3,h,1).normalized);
-					Color outcol = VisualDebugger_Old.inst.space.GetRayFunc()(renderTid,ray,x,y,0);
-					if( (x>=0) && (y>=0) && (x<cfgResolutionX) && (y<cfgResolutionY))
+					Color outcol = VisualDebugger_Old.inst.space.GetRayFunc()(renderTid,
+						ray, x, y, 0);
+					if ((x >= 0) && (y >= 0) && (x < cfgResolutionX) && (y < cfgResolutionY))
 					{
-						ubyte[] pixel = [outcol.ru,outcol.gu,outcol.bu];
+						ubyte[] pixel = [outcol.ru, outcol.gu, outcol.bu];
 						glfwMakeContextCurrent(VisualDebugger_Old.inst.rwin);
 						glBindTexture(GL_TEXTURE_2D, VisualDebugger_Old.inst.texId);
-						glTexSubImage2D(GL_TEXTURE_2D,0,x,y,1,1,GL_RGB,GL_UNSIGNED_BYTE,pixel.ptr);
+						glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, 1, 1, GL_RGB,
+							GL_UNSIGNED_BYTE, pixel.ptr);
 					}
-					
-					if(isFinite(VisualDebugger_Old.inst.cur_src_lambda)) VisualizeRedshift(VisualDebugger_Old.inst.cur_src_lambda);
+
+					if (isFinite(VisualDebugger_Old.inst.cur_src_lambda))
+						VisualizeRedshift(VisualDebugger_Old.inst.cur_src_lambda);
 
 					VisualDebugger_Old vd = VisualDebugger_Old.inst;
 					/*for(int i=1;i<vd.rays.length;i++)
@@ -134,7 +140,7 @@ extern (C) private void corexMouseButton(GLFWwindow* w, int btn, int type, int m
 					}*/
 				}
 			}
-			else if(type==GLFW_RELEASE)
+			else if (type == GLFW_RELEASE)
 			{
 				rayMode = false;
 			}
@@ -149,9 +155,9 @@ extern (C) void corexRayMove(GLFWwindow* w, double x, double y) nothrow
 {
 	try
 	{
-		if(rayMode)
+		if (rayMode)
 		{
-			corexMouseButton(w,GLFW_MOUSE_BUTTON_1,GLFW_PRESS,0);
+			corexMouseButton(w, GLFW_MOUSE_BUTTON_1, GLFW_PRESS, 0);
 		}
 	}
 	catch (Throwable o)
@@ -159,8 +165,8 @@ extern (C) void corexRayMove(GLFWwindow* w, double x, double y) nothrow
 	}
 }
 
-private static bool inCamera=false;
-private static double lastX=0.0,lastY=0.0;
+private static bool inCamera = false;
+private static double lastX = 0.0, lastY = 0.0;
 
 extern (C) private void corexMouseCamera(GLFWwindow* w, int btn, int type, int modkeys) nothrow
 {
@@ -169,9 +175,9 @@ extern (C) private void corexMouseCamera(GLFWwindow* w, int btn, int type, int m
 		double xd, yd;
 		glfwGetCursorPos(w, &xd, &yd);
 		int x = cast(int) xd, y = cast(int) yd;
-		if(btn==GLFW_MOUSE_BUTTON_1)
+		if (btn == GLFW_MOUSE_BUTTON_1)
 		{
-			if(type==GLFW_PRESS)
+			if (type == GLFW_PRESS)
 			{
 				glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				inCamera = true;
@@ -194,18 +200,18 @@ extern (C) void corexCameraMove(GLFWwindow* w, double x, double y) nothrow
 {
 	try
 	{
-		if(inCamera)
+		if (inCamera)
 		{
-			if(!isNaN(lastX))
+			if (!isNaN(lastX))
 			{
-				double dx,dy;
+				double dx, dy;
 				enum double sens = 0.01;
-				dx = (x-lastX)*sens;
-				dy = (y-lastY)*sens;
-				Vectorf right = vectorf(-1,0,0);
+				dx = (x - lastX) * sens;
+				dy = (y - lastY) * sens;
+				Vectorf right = vectorf(-1, 0, 0);
 				right = (VisualDebugger_Old.inst.rot * right);
-				VisualDebugger_Old.inst.rot = new Quaternion(right,dy)*VisualDebugger_Old.inst.rot;
-				VisualDebugger_Old.inst.rot = new Quaternion(vectorf(0,-1,0),dx)*VisualDebugger_Old.inst.rot;
+				VisualDebugger_Old.inst.rot = new Quaternion(right, dy) * VisualDebugger_Old.inst.rot;
+				VisualDebugger_Old.inst.rot = new Quaternion(vectorf(0, -1, 0), dx) * VisualDebugger_Old.inst.rot;
 				VisualDebugger_Old.inst.rot.normalize;
 			}
 			lastX = x;
@@ -217,7 +223,7 @@ extern (C) void corexCameraMove(GLFWwindow* w, double x, double y) nothrow
 	}
 }
 
-Vectorf vel = Vectorf(0,0,0,1);
+Vectorf vel = Vectorf(0, 0, 0, 1);
 
 extern (C) void corexKey(GLFWwindow* w, int id, int scan, int state, int mods) nothrow
 {
@@ -225,64 +231,65 @@ extern (C) void corexKey(GLFWwindow* w, int id, int scan, int state, int mods) n
 	{
 		double spd = 0.2;
 		VisualDebugger_Old vd = VisualDebugger_Old.inst;
-		Vectorf fwd = vectorf(0,0,-1),right = vectorf(1,0,0),up = vectorf(0,-1,0);
-		if(mods & GLFW_MOD_SHIFT)
+		Vectorf fwd = vectorf(0, 0, -1), right = vectorf(1, 0, 0), up = vectorf(0,
+			-1, 0);
+		if (mods & GLFW_MOD_SHIFT)
 		{
 			spd /= 3.0;
 		}
-		if(mods & GLFW_MOD_CONTROL)
+		if (mods & GLFW_MOD_CONTROL)
 		{
 			spd /= 9.0;
 		}
-		if(mods & GLFW_MOD_ALT)
+		if (mods & GLFW_MOD_ALT)
 		{
 			spd /= 6.0;
 		}
 		fwd *= spd;
 		right *= spd;
 		up *= spd;
-		vel = vectorf(0,0,0,1);
-		if(glfwGetKey(w,GLFW_KEY_W))
+		vel = vectorf(0, 0, 0, 1);
+		if (glfwGetKey(w, GLFW_KEY_W))
 		{
-			vel += fwd*spd;
+			vel += fwd * spd;
 		}
-		if(glfwGetKey(w,GLFW_KEY_S))
+		if (glfwGetKey(w, GLFW_KEY_S))
 		{
-			vel -= fwd*spd;
+			vel -= fwd * spd;
 		}
-		if(glfwGetKey(w,GLFW_KEY_A))
+		if (glfwGetKey(w, GLFW_KEY_A))
 		{
-			vel -= right*spd;
+			vel -= right * spd;
 		}
-		if(glfwGetKey(w,GLFW_KEY_D))
+		if (glfwGetKey(w, GLFW_KEY_D))
 		{
-			vel += right*spd;
+			vel += right * spd;
 		}
-		if(glfwGetKey(w,GLFW_KEY_Q))
+		if (glfwGetKey(w, GLFW_KEY_Q))
 		{
-			vel += up*spd;
+			vel += up * spd;
 		}
-		if(glfwGetKey(w,GLFW_KEY_E))
+		if (glfwGetKey(w, GLFW_KEY_E))
 		{
-			vel -= up*spd;
+			vel -= up * spd;
 		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F1))
+		if ((state == GLFW_PRESS) && (id == GLFW_KEY_F1))
 		{
 			vd.SaveCurRayToFile();
 		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F2))
+		if ((state == GLFW_PRESS) && (id == GLFW_KEY_F2))
 		{
 			StartTest();
 		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F3))
+		if ((state == GLFW_PRESS) && (id == GLFW_KEY_F3))
 		{
 			VisualizeRedshift();
 		}
-		if((state==GLFW_PRESS)&&(id==GLFW_KEY_F4))
+		if ((state == GLFW_PRESS) && (id == GLFW_KEY_F4))
 		{
 			changeDefaultLambda();
 		}
-		if(id==GLFW_KEY_ESCAPE)
+		if (id == GLFW_KEY_ESCAPE)
 		{
 			glfwSetWindowShouldClose(w, GL_TRUE);
 		}
@@ -297,37 +304,40 @@ void StartTest()
 	writef("Are you sure to start a calculation? (y/n): ");
 	char ans;
 	readf(" %c", &ans);
-	if(ans=='y')
+	if (ans == 'y')
 	{
 		writef("Chose Calculation to Perform: \n");
 		writef("1) Schwarzschild photon sphere stability\n");
-		
+
 		int inp;
 		readf(" %d", &inp);
-		
-		if(inp == 1)
+
+		if (inp == 1)
 		{
 			//BH_mass Timestep numOfCircles
-			double mass=0.0, min_timestep=0.0, max_timestep=0.0, step_timestep=0.0;
+			double mass = 0.0, min_timestep = 0.0, max_timestep = 0.0, step_timestep = 0.0;
 			int numOfCircles;
 			string path;
 			do
 			{
 				writefln("Enter: mass min_timestep max_timestep step_timestep maxNumOfCircles:");
-				scanf(" %lf %lf %lf %lf %d", &mass, &min_timestep, &max_timestep, &step_timestep, &numOfCircles);
-			}while(((
-						mass<=0. || min_timestep<=0. || 
-						max_timestep<=0. || min_timestep>=max_timestep || 
-						step_timestep<=0. || numOfCircles<0)?(writefln("Try Again"),1):0)); //RIP syntax
+				scanf(" %lf %lf %lf %lf %d", &mass, &min_timestep,
+					&max_timestep, &step_timestep, &numOfCircles);
+			}
+			while (((mass <= 0. || min_timestep <= 0. || max_timestep <= 0.
+					|| min_timestep >= max_timestep || step_timestep <= 0. || numOfCircles < 0) ? (
+					writefln("Try Again"), 1) : 0)); //RIP syntax
 			//writef(" %f %f %f %f %d", mass, min_timestep, max_timestep, step_timestep, numOfCircles);
 			writefln("Enter file path to save results at:");
 
 			do
 			{
 				path = stdin.readln().strip();
-			}while(path.length < 1);
+			}
+			while (path.length < 1);
 			writeln(path);
-			PhotonSphereStability(mass, min_timestep, max_timestep, step_timestep, numOfCircles, path);
+			PhotonSphereStability(mass, min_timestep, max_timestep,
+				step_timestep, numOfCircles, path);
 		}
 	}
 }
@@ -337,45 +347,48 @@ void VisualizeRedshift()
 	writef("Are you sure to visualize redshift? (y/n): ");
 	char ans;
 	readf(" %c", &ans);
-	if(ans=='y')
+	if (ans == 'y')
 	{
 		double lambda;
 		do
 		{
 			writefln("Enter desired source wavelenght in nanometers: ");
 			scanf("%lf", &lambda);
-		}while((lambda<=0?(writefln("Try Again"),1):0));
-		VisualizeRedshift(cast(fpnum)lambda);
+		}
+		while ((lambda <= 0 ? (writefln("Try Again"), 1) : 0));
+		VisualizeRedshift(cast(fpnum) lambda);
 	}
 }
 
 void VisualizeRedshift(fpnum lambda)
 {
-	if(VisualDebugger_Old.inst.rays.length == 0) writefln("Trace rays first");
-	
+	if (VisualDebugger_Old.inst.rays.length == 0)
+		writefln("Trace rays first");
+
 	VisualDebugger_Old.inst.start_col = GetSpectrumColor(lambda);
-	
+
 	auto s = cast(WorldSpaceWrapper) VisualDebugger_Old.inst.space;
-	if(s is null)
+	if (s is null)
 	{
-		foreach(ref SavedRay ray; VisualDebugger_Old.inst.rays)
+		foreach (ref SavedRay ray; VisualDebugger_Old.inst.rays)
 		{
 			ray.col = VisualDebugger_Old.inst.start_col;
 		}
 	}
 	auto k = cast(AnalyticMetricContainer)(s.smetric);
-	if(k is null) return;
+	if (k is null)
+		return;
 	auto met = k.initiator;
-	
+
 	auto first = VisualDebugger_Old.inst.rays[0];
 	met.prepareForRequest(first.origin);
-	auto met_src = met.getMetricAtPoint()[0,0];
-	
-	foreach(ref SavedRay ray; VisualDebugger_Old.inst.rays)
+	auto met_src = met.getMetricAtPoint()[0, 0];
+
+	foreach (ref SavedRay ray; VisualDebugger_Old.inst.rays)
 	{
 		met.prepareForRequest(ray.destination);
-		auto met_rec = met.getMetricAtPoint()[0,0];
-		ray.col = GetSpectrumColor(lambda*sqrt(met_rec/met_src));
+		auto met_rec = met.getMetricAtPoint()[0, 0];
+		ray.col = GetSpectrumColor(lambda * sqrt(met_rec / met_src));
 	}
 }
 
@@ -385,73 +398,76 @@ void changeDefaultLambda()
 	writeln("Current wavelenght of light source is: ", *lambda);
 	writeln("Enter new wavelenght: ");
 	scanf("%lf", lambda);
-	if(!isFinite(*lambda) || (*lambda) <= 0) *lambda = fpnum.nan;
+	if (!isFinite(*lambda) || (*lambda) <= 0)
+		*lambda = fpnum.nan;
 }
 
-void PhotonSphereStability(fpnum mass, fpnum min_timestep, fpnum max_timestep, fpnum step_timestep, int numOfCircles, string fpath)
+void PhotonSphereStability(fpnum mass, fpnum min_timestep, fpnum max_timestep,
+	fpnum step_timestep, int numOfCircles, string fpath)
 {
 	WorldSpaceWrapper s = cast(WorldSpaceWrapper) VisualDebugger_Old.inst.space;
-	if(s is null)
+	if (s is null)
 	{
 		printf("Change Space to Schwarzschild!\n");
 		return;
 	}
-	
+
 	Analytic k = cast(Analytic) cast(AnalyticMetricContainer) s.smetric;
-	if(k is null)
+	if (k is null)
 	{
 		printf("Change Space to Schwarzschild\n");
 		return;
 	}
-	
+
 	Schwarzschild v = cast(Schwarzschild) k.initiator();
-	if(v is null)
+	if (v is null)
 	{
 		printf("Change Space to Schwarzschild\n");
 		return;
 	}
-	
+
 	//prepare simulation
-	v.origin = Vectorf(0,0,0);
-	v.cord = new Radial(Vectorf(0,0,0));
-	v.schwarzschild_radius = 2*mass;
+	v.origin = Vectorf(0, 0, 0);
+	v.cord = new Radial(Vectorf(0, 0, 0));
+	v.schwarzschild_radius = 2 * mass;
 	v.mass = mass;
-	
+
 	VisualDebugger_Old.inst.rays = [];
-	VisualDebugger_Old.inst.rayProcesorData_f = [9*mass*mass, 0.0, 0.0, 0.0];
+	VisualDebugger_Old.inst.rayProcesorData_f = [9 * mass * mass, 0.0, 0.0, 0.0];
 	VisualDebugger_Old.DebugRayA = &VisualDebugger_Old.PhotonSphereStabilityRayProcesor;
 	VisualDebugger_Old.DebugRayB = &VisualDebugger_Old.PhotonSphereStabilityRayProcesor;
-	
-	Line ray = Line(vectorf(0, 3*mass, 0), vectorf(1,0,1).normalized);
-	
-	File f = File(fpath,"a");
+
+	Line ray = Line(vectorf(0, 3 * mass, 0), vectorf(1, 0, 1).normalized);
+
+	File f = File(fpath, "a");
 	f.writef("Mass \t DT \t Circles \t Dist \n"); // header
 	f.flush();
 	int i = 0;
 	fpnum timestep = min_timestep;
-	long numsteps = cast(long)((max_timestep-min_timestep)/step_timestep);
+	long numsteps = cast(long)((max_timestep - min_timestep) / step_timestep);
 	long step = 0;
-	for(; timestep<max_timestep;step++)
+	for (; timestep < max_timestep; step++)
 	{
-		timestep = min_timestep + step*step_timestep;
-		writef("\r%60c\rProgress: %d/%d",' ',step,numsteps);
+		timestep = min_timestep + step * step_timestep;
+		writef("\r%60c\rProgress: %d/%d", ' ', step, numsteps);
 		stdout.flush();
-		VisualDebugger_Old.inst.rayProcesorData_i = [cast(size_t)0];
-		
+		VisualDebugger_Old.inst.rayProcesorData_i = [cast(size_t) 0];
+
 		//ray trace
 		k.paramStep = timestep;
-		k.maxNumberOfSteps = cast(int)(6*PI*mass*numOfCircles/timestep);
-		
+		k.maxNumberOfSteps = cast(int)(6 * PI * mass * numOfCircles / timestep);
+
 		try
 		{
-			VisualDebugger_Old.inst.space.GetRayFunc()(renderTid,ray,0,0,0);
+			VisualDebugger_Old.inst.space.GetRayFunc()(renderTid, ray, 0, 0, 0);
 		}
-		catch(Throwable a)
+		catch (Throwable a)
 		{
 		}
-		
+
 		//write result
-		f.writef("%#.16e \t %#.16e \t %d %#.16e \n", mass, timestep, numOfCircles, VisualDebugger_Old.inst.rayProcesorData_i[0]*timestep);
+		f.writef("%#.16e \t %#.16e \t %d %#.16e \n", mass, timestep,
+			numOfCircles, VisualDebugger_Old.inst.rayProcesorData_i[0] * timestep);
 		f.flush();
 	}
 	writeln();
@@ -474,10 +490,10 @@ class VisualDebugger_Old
 	SavedRay[] rays;
 	Color start_col = Colors.Red;
 	fpnum cur_src_lambda = fpnum.nan;
-	
+
 	fpnum[] rayProcesorData_f;
 	size_t[] rayProcesorData_i;
-	
+
 	Vectorf pos;
 	Quaternion rot;
 
@@ -485,92 +501,98 @@ class VisualDebugger_Old
 	static public void function(Line, Vectorf, Color*) DebugRayB = &ign;
 
 	static public void ign(Line, fpnum, Color*)
-	{ 
+	{
 		return;
 	}
+
 	static public void ign(Line, Vectorf, Color*)
-	{ 
+	{
 		return;
 	}
 
 	static void FoundLight(Vectorf pos)
 	{
-		if(inst)
+		if (inst)
 		{
-			inst.rays[$-1].destination = pos;
-			inst.rays[$-1].col = rayColors[6];
+			inst.rays[$ - 1].destination = pos;
+			inst.rays[$ - 1].col = rayColors[6];
 		}
 	}
 
 	static public void SaveRay(Line ray, Vectorf newp, Color* col = null)
 	{
-		if(inst)
+		if (inst)
 		{
 			Vectorf dif = newp - ray.origin;
-			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
-			inst.rays ~= SavedRay(ray.origin,newp,ray.direction,~dif,*col);
+			if (col == null)
+				col = &rayColors[cast(int) inst.rays.length % 6];
+			inst.rays ~= SavedRay(ray.origin, newp, ray.direction, ~dif, *col);
 		}
 	}
-	
+
 	static public void SaveRay(Line ray, fpnum dist, Color* col = null)
 	{
-		if(inst)
+		if (inst)
 		{
-			if(!isFinite(dist))
+			if (!isFinite(dist))
 			{
 				dist = 100.0;
 			}
-			if(col == null) col = &rayColors[cast(int)inst.rays.length%6];
-			inst.rays ~= SavedRay(ray.origin,ray.origin+ray.direction*dist,ray.direction,dist,*col);
+			if (col == null)
+				col = &rayColors[cast(int) inst.rays.length % 6];
+			inst.rays ~= SavedRay(ray.origin, ray.origin + ray.direction * dist,
+				ray.direction, dist, *col);
 		}
 	}
-	
+
 	static public void PhotonSphereStabilityRayProcesor(Line ray, Vectorf newp, Color* col = null)
 	{
-		Vectorf half = (ray.origin+newp)/2;
-		fpnum a = half.x-inst.rayProcesorData_f[1];
-		fpnum b = half.y-inst.rayProcesorData_f[2];
-		fpnum c = half.z-inst.rayProcesorData_f[3];
-		fpnum rad = a*a+b*b+c*c;
-		fpnum eps = sqrt(rad/inst.rayProcesorData_f[0]);
-		
+		Vectorf half = (ray.origin + newp) / 2;
+		fpnum a = half.x - inst.rayProcesorData_f[1];
+		fpnum b = half.y - inst.rayProcesorData_f[2];
+		fpnum c = half.z - inst.rayProcesorData_f[3];
+		fpnum rad = a * a + b * b + c * c;
+		fpnum eps = sqrt(rad / inst.rayProcesorData_f[0]);
+
 		//the ray has escaped
-		if(fabs(eps-1) > 0.01) throw new Exception("");
-		
+		if (fabs(eps - 1) > 0.01)
+			throw new Exception("");
+
 		inst.rayProcesorData_i[0]++;
-		
-		if(inst.rayProcesorData_i[0]%(cast(size_t)1e7)==0) writeln(inst.rayProcesorData_i[0]);
+
+		if (inst.rayProcesorData_i[0] % (cast(size_t) 1e7) == 0)
+			writeln(inst.rayProcesorData_i[0]);
 	}
-	
+
 	static public void PhotonSphereStabilityRayProcesor(Line ray, fpnum dist, Color* col = null)
 	{
-		if(isFinite(dist))
-		PhotonSphereStabilityRayProcesor(ray, ray.origin+ray.direction*dist, col);
+		if (isFinite(dist))
+			PhotonSphereStabilityRayProcesor(ray, ray.origin + ray.direction * dist,
+				col);
 	}
-	
-	void SaveCurRayToFile(string path="aray.txt")
+
+	void SaveCurRayToFile(string path = "aray.txt")
 	{
-		File fp = File(path,"w");
+		File fp = File(path, "w");
 		fp.write("x y z dx dy dz len\n");
 		auto app = appender!string();
-		foreach(const ref SavedRay s; rays)
+		foreach (const ref SavedRay s; rays)
 		{
-			formattedWrite(app, "%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\n",
-				s.origin.x, s.origin.y, s.origin.z,
-				s.direction.x, s.direction.y, s.direction.z,
-				s.distance
-				);
+			formattedWrite(app,
+				"%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\t%#.16e\n",
+				s.origin.x, s.origin.y, s.origin.z, s.direction.x,
+				s.direction.y, s.direction.z, s.distance);
 		}
 		fp.write(app.data);
 		fp.flush();
 		fp.close();
 	}
-	
+
 	this()
 	{
 		inst = this;
-		if(cfgDebug)
-			{
+		if (cfgDebug)
+		{
 			DebugRayA = &SaveRay;
 			DebugRayB = &SaveRay;
 			VisualDebugger_Old.DebugRayA = &SaveRay;
@@ -578,7 +600,7 @@ class VisualDebugger_Old
 			DerelictGLFW3.load();
 			glfwInit();
 			rwin = makeWin("grtrace raytrace");
-			dwin = makeWin("grtrace showrays",rwin);
+			dwin = makeWin("grtrace showrays", rwin);
 			glfwSetMouseButtonCallback(rwin, &corexMouseButton);
 			glfwSetMouseButtonCallback(dwin, &corexMouseCamera);
 			glfwSetCursorPosCallback(rwin, &corexRayMove);
@@ -594,7 +616,7 @@ class VisualDebugger_Old
 		}
 	}
 
-	GLFWwindow* makeWin(string title, GLFWwindow* share=null)
+	GLFWwindow* makeWin(string title, GLFWwindow* share = null)
 	{
 		GLFWwindow* w;
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -604,44 +626,45 @@ class VisualDebugger_Old
 		glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
 		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 		glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
-		w = glfwCreateWindow(cast(int)cfgResolutionX, cast(int)cfgResolutionY, title.toStringz(), null, share);
-		aspect = cast(float)(cfgResolutionX)/cast(float)(cfgResolutionY);
-		if(w is null)
+		w = glfwCreateWindow(cast(int) cfgResolutionX, cast(int) cfgResolutionY,
+			title.toStringz(), null, share);
+		aspect = cast(float)(cfgResolutionX) / cast(float)(cfgResolutionY);
+		if (w is null)
 		{
 			throw new Exception("Couldn't create glfw3 window");
 		}
 		glfwMakeContextCurrent(w);
 		glfwSwapInterval(1);
-		if(!glLoaded)
+		if (!glLoaded)
 		{
-			glLoaded=true;
-			if(!gladLoadGL())
+			glLoaded = true;
+			if (!gladLoadGL())
 			{
 				throw new Exception("Couldn't load OpenGL functions");
 			}
-			writeln("Loaded OpenGL ",GLVersion.major,".",GLVersion.minor);
+			writeln("Loaded OpenGL ", GLVersion.major, ".", GLVersion.minor);
 		}
 		glfwSwapBuffers(w);
 		glfwPollEvents();
 		glClearColor(0, 0, 0, 1);
-		glViewport(0, 0, cast(int)cfgResolutionX, cast(int)cfgResolutionY);
+		glViewport(0, 0, cast(int) cfgResolutionX, cast(int) cfgResolutionY);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glLineWidth(2.0f);
 		glPointSize(3.5f);
 		glEnable(GL_LINE_SMOOTH);
-	//	glEnable(GL_POINT_SMOOTH);
-		glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+		//	glEnable(GL_POINT_SMOOTH);
+		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 		glfwSwapBuffers(w);
 		return w;
 	}
 
 	~this()
 	{
-		if(rwin)
+		if (rwin)
 		{
-			glDeleteTextures(1,&texId);
+			glDeleteTextures(1, &texId);
 			glfwDestroyWindow(rwin);
 			rwin = null;
 		}
@@ -650,24 +673,24 @@ class VisualDebugger_Old
 	void ResetCamera()
 	{
 		pos = camera.origin;
-		rot = new Quaternion();//Quaternion.lookAt(pos, vectorf(0,0,0));
+		rot = new Quaternion(); //Quaternion.lookAt(pos, vectorf(0,0,0));
 	}
 
 	void LoadTex()
 	{
 		glEnable(GL_TEXTURE_2D);
-		glGenTextures(1,&texId);
+		glGenTextures(1, &texId);
 		glBindTexture(GL_TEXTURE_2D, texId);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 
-			cast(int)cfgResolutionX, cast(int)cfgResolutionY, 0, 
-			GL_RGB, GL_UNSIGNED_BYTE, cast(ubyte*)(space.fullray.data.ptr));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, cast(int) cfgResolutionX,
+			cast(int) cfgResolutionY, 0, GL_RGB, GL_UNSIGNED_BYTE,
+			cast(ubyte*)(space.fullray.data.ptr));
 		glDisable(GL_TEXTURE_2D);
 
-	/*	drawBg = glGenLists(1);
+		/*	drawBg = glGenLists(1);
 		glNewList(drawBg, GL_COMPILE);
 		glColor3f(1.0f,1.0f,1.0f);
 		glEnable(GL_TEXTURE_2D);
@@ -699,11 +722,11 @@ class VisualDebugger_Old
 
 	void makeFrustum(double fovY, double aspectRatio, double front, double back)
 	{
-		
-		double tangent = tan(fovY/2 * DEG2RAD);   // tangent of half fovY
-		double height = front * tangent;          // half height of near plane
-		double width = height * aspectRatio;      // half width of near plane
-		
+
+		double tangent = tan(fovY / 2 * DEG2RAD); // tangent of half fovY
+		double height = front * tangent; // half height of near plane
+		double width = height * aspectRatio; // half width of near plane
+
 		// params: left, right, bottom, top, near, far
 		//glFrustum(-width, width, -height, height, front, back);
 	}
@@ -712,14 +735,15 @@ class VisualDebugger_Old
 	{
 		space = cast(WorldSpace)(cfgSpace);
 		camera = cast(ICamera)(cfgSpace.camera);
-		if(!cfgDebug)return;
+		if (!cfgDebug)
+			return;
 		glfwMakeContextCurrent(rwin);
 		ResetCamera();
 		Vectorf camo = camera.origin;
 		LoadTex();
 		double dt = glfwGetTime();
 		glfwSetTime(0.0);
-		while(!(glfwWindowShouldClose(rwin)||glfwWindowShouldClose(dwin)))
+		while (!(glfwWindowShouldClose(rwin) || glfwWindowShouldClose(dwin)))
 		{
 			// rwin
 			/*glfwMakeContextCurrent(rwin);
@@ -855,4 +879,3 @@ class VisualDebugger_Old
 		}
 	}
 }
-

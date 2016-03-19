@@ -1,4 +1,4 @@
-﻿module config;
+module config;
 
 import scene.objects.interfaces;
 import scene.materials.material;
@@ -58,8 +58,8 @@ public shared
 {
 	WorldSpace cfgSpace;
 	ICamera cfgCamera;
-	long cfgTraceStart=0;
-	long cfgTraceEnd=0;
+	long cfgTraceStart = 0;
+	long cfgTraceEnd = 0;
 }
 
 // physical constants
@@ -72,4 +72,3 @@ enum P : fpnum
 	MZ = 0.004435, // m
 	LS = 1.08e-26
 }
-

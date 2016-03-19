@@ -1,6 +1,5 @@
 module glad.gl.types;
 
-
 alias GLvoid = void;
 alias GLintptr = ptrdiff_t;
 alias GLsizei = int;
@@ -34,13 +33,19 @@ alias GLfixed = int;
 alias GLhalf = ushort;
 alias GLclampx = int;
 alias GLhalfNV = ushort;
-struct ___GLsync; alias __GLsync = ___GLsync*;
+struct ___GLsync;
+alias __GLsync = ___GLsync*;
 alias GLsync = __GLsync*;
-struct __cl_context; alias _cl_context = __cl_context*;
-struct __cl_event; alias _cl_event = __cl_event*;
-extern(System) {
-alias GLDEBUGPROC = void function(GLenum, GLenum, GLuint, GLenum, GLsizei, in GLchar*, GLvoid*);
-alias GLDEBUGPROCARB = GLDEBUGPROC;
-alias GLDEBUGPROCKHR = GLDEBUGPROC;
-alias GLDEBUGPROCAMD = void function(GLuint, GLenum, GLenum, GLsizei, in GLchar*, GLvoid*);
+struct __cl_context;
+alias _cl_context = __cl_context*;
+struct __cl_event;
+alias _cl_event = __cl_event*;
+extern (System)
+{
+	alias GLDEBUGPROC = void function(GLenum, GLenum, GLuint, GLenum,
+		GLsizei, in GLchar*, GLvoid*);
+	alias GLDEBUGPROCARB = GLDEBUGPROC;
+	alias GLDEBUGPROCKHR = GLDEBUGPROC;
+	alias GLDEBUGPROCAMD = void function(GLuint, GLenum, GLenum, GLsizei, in GLchar*,
+		GLvoid*);
 }

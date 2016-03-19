@@ -1,4 +1,4 @@
-﻿module metric.wrapper;
+module metric.wrapper;
 
 import std.math, std.traits;
 import metric.interfaces;
@@ -18,7 +18,7 @@ class WorldSpaceWrapper : WorldSpace
 
 	this(MetricContainer met)
 	{
-		smetric = cast(shared(MetricContainer))met;
+		smetric = cast(shared(MetricContainer)) met;
 	}
 
 	override protected RayFunc GetRayFunc()
@@ -30,7 +30,7 @@ class WorldSpaceWrapper : WorldSpace
 	{
 		Color outc = Rayer(ray, 0, Colors.Black);
 		float mx = max(outc.r, outc.g, outc.b);
-		if(mx>1.0f)
+		if (mx > 1.0f)
 		{
 			outc = outc / mx;
 		}
@@ -39,7 +39,7 @@ class WorldSpaceWrapper : WorldSpace
 
 	protected static Color Rayer(Line ray, int recnum, Color lastcol)
 	{
-		if(recnum>cfgMaxDepth)
+		if (recnum > cfgMaxDepth)
 		{
 			return lastcol;
 		}
@@ -48,25 +48,25 @@ class WorldSpaceWrapper : WorldSpace
 		Vectorf rayhit;
 		Vectorf normal;
 		Renderable closest;
-		bool hit=false;
+		bool hit = false;
 
 		metric.TraceRay(ray, &hit, &rayhit, &normal, &closest, 0);
 
-		if(hit)
+		if (hit)
 		{
-			if(closest.material)
+			if (closest.material)
 			{
 				tmpc = closest.material.emission_color;
-				
+
 				Color textureColor = Colors.White;
-				
-				if(closest.material.hasTexture())
+
+				if (closest.material.hasTexture())
 				{
-					fpnum U,V;
+					fpnum U, V;
 					closest.getUVMapping(rayhit, U, V);
-					textureColor = closest.material.peekUV(U,V);
+					textureColor = closest.material.peekUV(U, V);
 				}
-				
+
 				tmpc *= textureColor;
 
 				//TODO:lighting not supported yet
@@ -97,27 +97,28 @@ class WorldSpaceWrapper : WorldSpace
 						}
 					}
 				}*/
-				auto init = cast(AnalyticMetricContainer)metric;
-				if(init is null) return tmpc;
-				
-				if(isFinite(closest.material.emission_wave_length))
+				auto init = cast(AnalyticMetricContainer) metric;
+				if (init is null)
+					return tmpc;
+
+				if (isFinite(closest.material.emission_wave_length))
 				{
-					if(tlsInitiator is null)
+					if (tlsInitiator is null)
 					{
 						tlsInitiator = init.initiator.clone;
 					}
 					fpnum est_lamda_src = closest.material.emission_wave_length;
-					
+
 					tlsInitiator.prepareForRequest(rayhit);
-					fpnum src_met = tlsInitiator.getMetricAtPoint()[0,0];
-					
+					fpnum src_met = tlsInitiator.getMetricAtPoint()[0, 0];
+
 					tlsInitiator.prepareForRequest(ray.origin);
-					fpnum rec_met = tlsInitiator.getMetricAtPoint()[0,0];
-					
-					fpnum red_shift_plus_one = sqrt(rec_met/src_met);
-					
-					fpnum l_obs = est_lamda_src*red_shift_plus_one;
-					
+					fpnum rec_met = tlsInitiator.getMetricAtPoint()[0, 0];
+
+					fpnum red_shift_plus_one = sqrt(rec_met / src_met);
+
+					fpnum l_obs = est_lamda_src * red_shift_plus_one;
+
 					tmpc = GetSpectrumColor(l_obs);
 				}
 				else

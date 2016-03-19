@@ -1,3 +1,3 @@
-﻿module scene.materials;
+module scene.materials;
 
 public import scene.materials.material;

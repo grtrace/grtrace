@@ -1,4 +1,4 @@
-﻿module math;
+module math;
 
 public import math.util;
 public import math.vector;

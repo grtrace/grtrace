@@ -1,4 +1,4 @@
-﻿module metric.analytic;
+module metric.analytic;
 
 import metric.interfaces;
 import metric.util;
@@ -277,11 +277,11 @@ class Analytic : AnalyticMetricContainer
 		rd.step = 0;
 		return RayState.InComputation1;
 	}
-	
+
 	private static RayState computeRay1(RayComputation* rc)
 	{
 		RayData* rd = cast(RayData*)(Raytracer.computebuffer + rc.dataIdx);
-		
+
 		return RayState.InComputation1;
 	}
 

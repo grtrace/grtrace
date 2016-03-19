@@ -1,7 +1,7 @@
 module glad.gl.enums;
 
-
 private import glad.gl.types;
+
 enum ubyte GL_FALSE = 0;
 enum ubyte GL_TRUE = 1;
 enum uint GL_NO_ERROR = 0;

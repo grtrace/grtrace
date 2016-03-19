@@ -1,4 +1,4 @@
-﻿module math.polynomial;
+module math.polynomial;
 
 import config;
 import math.util;
@@ -11,8 +11,8 @@ struct Polynomial
 
 	this(size_t deg)
 	{
-		coeffs.length = deg+1;
-		coeffs[0..$] = 0;
+		coeffs.length = deg + 1;
+		coeffs[0 .. $] = 0;
 	}
 
 	this(fpnum[] coef)
@@ -27,7 +27,7 @@ struct Polynomial
 
 	@property size_t degree() const
 	{
-		return coeffs.length-1;
+		return coeffs.length - 1;
 	}
 
 	@property size_t size() const
@@ -37,14 +37,14 @@ struct Polynomial
 
 	@property Polynomial compress()
 	{
-		while(fabs(coeffs[$-1])<eps)
+		while (fabs(coeffs[$ - 1]) < eps)
 		{
-			coeffs.length = coeffs.length-1;
+			coeffs.length = coeffs.length - 1;
 		}
 		return this;
 	}
 
-	Polynomial opBinary(string op)(fpnum d) const if (op=="*")
+	Polynomial opBinary(string op)(fpnum d) const if (op == "*")
 	{
 		Polynomial res = Polynomial();
 		res.coeffs = this.coeffs.dup;
@@ -52,7 +52,7 @@ struct Polynomial
 		return res;
 	}
 
-	Polynomial opBinary(string op)(fpnum d) const if (op=="/")
+	Polynomial opBinary(string op)(fpnum d) const if (op == "/")
 	{
 		Polynomial res = Polynomial();
 		res.coeffs = this.coeffs.dup;
@@ -60,39 +60,39 @@ struct Polynomial
 		return res;
 	}
 
-	Polynomial opBinary(string op)(Polynomial o) const if (op=="+")
+	Polynomial opBinary(string op)(Polynomial o) const if (op == "+")
 	{
-		if(degree>o.degree)
+		if (degree > o.degree)
 		{
 			Polynomial R = Polynomial(degree);
-			R.coeffs[0..o.size] = coeffs[0..o.size] + o.coeffs[0..o.size];
-			R.coeffs[o.size..$] = coeffs[o.size..$];
+			R.coeffs[0 .. o.size] = coeffs[0 .. o.size] + o.coeffs[0 .. o.size];
+			R.coeffs[o.size .. $] = coeffs[o.size .. $];
 			return R;
 		}
 		else
 		{
 			Polynomial R = Polynomial(o.degree);
-			R.coeffs[0..size] = coeffs[0..size] + o.coeffs[0..size];
-			R.coeffs[size..$] = o.coeffs[size..$];
+			R.coeffs[0 .. size] = coeffs[0 .. size] + o.coeffs[0 .. size];
+			R.coeffs[size .. $] = o.coeffs[size .. $];
 			return R;
 		}
 	}
 
-	Polynomial opBinary(string op)(Polynomial o) const if (op=="-")
+	Polynomial opBinary(string op)(Polynomial o) const if (op == "-")
 	{
 		auto size = this.size();
-		if(degree>o.degree)
+		if (degree > o.degree)
 		{
 			Polynomial R = Polynomial(degree);
-			R.coeffs[0..o.size] = coeffs[0..o.size] - o.coeffs[0..o.size];
-			R.coeffs[o.size..$] = coeffs[o.size..$];
+			R.coeffs[0 .. o.size] = coeffs[0 .. o.size] - o.coeffs[0 .. o.size];
+			R.coeffs[o.size .. $] = coeffs[o.size .. $];
 			return R;
 		}
 		else
 		{
 			Polynomial R = Polynomial(o.degree);
-			R.coeffs[0..size] = coeffs[0..size] - o.coeffs[0..size];
-			R.coeffs[size..$] = -o.coeffs[size..$];
+			R.coeffs[0 .. size] = coeffs[0 .. size] - o.coeffs[0 .. size];
+			R.coeffs[size .. $] = -o.coeffs[size .. $];
 			return R;
 		}
 	}
@@ -100,14 +100,15 @@ struct Polynomial
 	string toString()
 	{
 		import std.format;
-		if(coeffs.length==0)
+
+		if (coeffs.length == 0)
 		{
 			return "0";
 		}
 		auto ap = appender("");
-		for(ptrdiff_t i=coeffs.length-1;i>=0;i--)
+		for (ptrdiff_t i = coeffs.length - 1; i >= 0; i--)
 		{
-			ap.put("%+.2f * x^%d  ".format(coeffs[i],i));
+			ap.put("%+.2f * x^%d  ".format(coeffs[i], i));
 		}
 		return ap.data;
 	}
@@ -116,17 +117,17 @@ struct Polynomial
 	{
 		real[] cfs;
 		cfs.length = coeffs.length;
-		cfs[] = cast(real[])coeffs[];
-		return cast(fpnum)(poly(cast(real)x, cfs));
+		cfs[] = cast(real[]) coeffs[];
+		return cast(fpnum)(poly(cast(real) x, cfs));
 	}
 
 	@property Polynomial deriv() const
 	{
 		fpnum[] cfs;
 		cfs.length = coeffs.length - 1;
-		for(int i=1;i<size;i++)
+		for (int i = 1; i < size; i++)
 		{
-			cfs[i-1] = coeffs[i]*i;
+			cfs[i - 1] = coeffs[i] * i;
 		}
 		return Polynomial(cfs);
 	}
@@ -135,9 +136,9 @@ struct Polynomial
 	{
 		fpnum[] cfs;
 		cfs.length = coeffs.length + 1;
-		for(int i=0;i<size;i++)
+		for (int i = 0; i < size; i++)
 		{
-			cfs[i+1] = coeffs[i]/(i+1);
+			cfs[i + 1] = coeffs[i] / (i + 1);
 		}
 		cfs[0] = C;
 		return Polynomial(cfs);
@@ -147,7 +148,7 @@ struct Polynomial
 	Polynomial integr(fpnum x, fpnum val) const
 	{
 		Polynomial P = integr(0);
-		P.coeffs[0] = val-P.value(x);
+		P.coeffs[0] = val - P.value(x);
 		return P;
 	}
 }

@@ -1,17 +1,12 @@
-﻿module math.metric;
+module math.metric;
 
 import config;
 import math.matrix;
-import std.range,std.traits;
+import std.range, std.traits;
 
 struct Metric4
 {
-	enum int[4][4] rcmap = [
-		[ 0, 1, 2, 3 ],
-		[ 1, 4, 5, 6 ],
-		[ 2, 5, 7, 8 ],
-		[ 3, 6, 8, 9 ]
-	];
+	enum int[4][4] rcmap = [[0, 1, 2, 3], [1, 4, 5, 6], [2, 5, 7, 8], [3, 6, 8, 9]];
 	/**
 	 * [ 0, 1, 2, 3 ]
 	 * [ 1, 4, 5, 6 ]
@@ -23,7 +18,7 @@ struct Metric4
 	this(Matrix4f mat)
 	in
 	{
-		assert(mat==mat.transposed);
+		assert(mat == mat.transposed);
 	}
 	body
 	{
@@ -39,7 +34,8 @@ struct Metric4
 		vals[9] = mat[15];
 	}
 
-	this(fpnum e0,fpnum e1,fpnum e2,fpnum e3,fpnum e4,fpnum e5,fpnum e6,fpnum e7,fpnum e8,fpnum e9)
+	this(fpnum e0, fpnum e1, fpnum e2, fpnum e3, fpnum e4, fpnum e5, fpnum e6,
+		fpnum e7, fpnum e8, fpnum e9)
 	{
 		vals[0] = e0;
 		vals[1] = e1;
@@ -53,19 +49,16 @@ struct Metric4
 		vals[9] = e9;
 	}
 
-	Matrix4f opCast(U)() const if (is(U==Matrix4f))
+	Matrix4f opCast(U)() const if (is(U == Matrix4f))
 	{
-		return Matrix4f(
-			vals[0], vals[1], vals[2], vals[3],
-			vals[1], vals[4], vals[5], vals[6],
-			vals[2], vals[5], vals[7], vals[8],
-			vals[3], vals[6], vals[8], vals[9]
-			);
+		return Matrix4f(vals[0], vals[1], vals[2], vals[3], vals[1], vals[4],
+			vals[5], vals[6], vals[2], vals[5], vals[7], vals[8], vals[3],
+			vals[6], vals[8], vals[9]);
 	}
 
 	Matrix4f opCall() const
 	{
-		return cast(Matrix4f)this;
+		return cast(Matrix4f) this;
 	}
 
 	ref fpnum opIndex(int row, int col)

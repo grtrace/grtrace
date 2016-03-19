@@ -1,4 +1,4 @@
-﻿module scene;
+module scene;
 
 public import scene.scenemgr;
 

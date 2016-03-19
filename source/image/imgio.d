@@ -1,4 +1,4 @@
-﻿module image.imgio;
+module image.imgio;
 
 import image.memory;
 import image.imageformats;
@@ -13,7 +13,7 @@ Image ReadImage(string path)
 {
 	IFImage im = read_image(path, 3);
 	Image r = new Image(im.w, im.h);
-	if(im.c == ColFmt.RGB)
+	if (im.c == ColFmt.RGB)
 	{
 		r.data[] = im.pixels[];
 	}

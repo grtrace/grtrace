@@ -1,4 +1,4 @@
-﻿module metric.interfaces;
+module metric.interfaces;
 
 import math;
 import scene;
@@ -16,7 +16,7 @@ interface Initiator
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const;
 	@property Matrix4f getTetradsElementsAtPoint() const;
 	@property Matrix4f getInverseTetradsElementsAtPoint() const;
-	
+
 	@property CoordinateChanger coordinate_system() const;
 }
 
@@ -30,7 +30,8 @@ interface CoordinateChanger
 
 interface MetricContainer
 {
-	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint=null, Vectorf* hitnormal=null, Renderable* hit=null, int cnt=0);
+	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint = null,
+		Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0);
 }
 
 interface DiscreteMetricContainer : MetricContainer
