@@ -16,6 +16,7 @@ interface Initiator
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const;
 	@property Matrix4f getTetradsElementsAtPoint() const;
 	@property Matrix4f getInverseTetradsElementsAtPoint() const;
+	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const;
 
 	@property CoordinateChanger coordinate_system() const;
 }

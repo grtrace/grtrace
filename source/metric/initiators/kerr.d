@@ -150,29 +150,34 @@ class Kerr : Initiator
 	//locally nonrotating frame
 	@property Matrix4f getTetradsElementsAtPoint() const  //localy nonrotating frame
 	{
-		/*auto res = Matrix4f(
-			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
-			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
-			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
-			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
-
-		return res;*/
-		auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-		return tmp;
-	}
-
-	@property Matrix4f getInverseTetradsElementsAtPoint() const
-	{
-		/*//TODO:Optimize
 		auto res = Matrix4f(
 			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
 			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
 			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
 			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
 
-		return (res.inverse);*/
-		auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-		return tmp;
+		return res;
+		//auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+		//return tmp;
+	}
+
+	@property Matrix4f getInverseTetradsElementsAtPoint() const
+	{
+		//TODO:Optimize
+		auto res = Matrix4f(
+			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
+			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
+			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
+			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
+
+		return (res.inverse);
+		//auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+		//return tmp;
+	}
+	
+	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
+	{
+		assert(0, "NIY");
 	}
 
 	@property CoordinateChanger coordinate_system() const

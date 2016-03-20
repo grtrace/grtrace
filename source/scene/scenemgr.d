@@ -535,16 +535,21 @@ WorldSpace CreateSpace(string name)
 	else if (name == "test" || name == "analytic")
 	{
 		auto A = new Analytic;
-		string initType = "schwarzschild";
 		fpnum mass = 1.5;
 		fpnum x = 0.0, y = 0.0, z = 0.0;
 		fpnum L = 0.0;
 		fpnum pStep = 0.08;
 		int nSteps = 250;
 		string[] args = split(cfgMetricOptions);
-		getopt(args, "type|t", &initType, "mass|m", &mass, "x", &x, "y",
+		
+		getopt(args, "mass|m", &mass, "x", &x, "y",
 			&y, "z", &z, "angularmomentum|L", &L, "paramstep|d", &pStep, "nsteps|n",
 			&nSteps);
+		
+		//not safe workarround
+		string initType;
+		if(args[0] == "-t") initType=args[1];	
+		
 		switch (initType)
 		{
 		case "schwarzschild":

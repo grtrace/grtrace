@@ -226,7 +226,7 @@ class Analytic : AnalyticMetricContainer
 		return fpnum.infinity;
 	}
 
-	this()
+	/*this()
 	{
 		steps[RayState.Initialised] = ComputeStep(RayState.Initialised,
 			RayState.InComputation1, &computeRayInit, false, "");
@@ -283,6 +283,6 @@ class Analytic : AnalyticMetricContainer
 		RayData* rd = cast(RayData*)(Raytracer.computebuffer + rc.dataIdx);
 
 		return RayState.InComputation1;
-	}
+	}*/
 
 }

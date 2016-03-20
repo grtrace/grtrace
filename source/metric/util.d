@@ -36,6 +36,7 @@ Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Init
 
 	Matrix4f tetrad = init.getTetradsElementsAtPoint;
 	Matrix4f inv_tetrad = init.getInverseTetradsElementsAtPoint;
+	Matrix4f[4] d_inv_tetrad = init.getDerivativesOfInverseTetradsElementsAtPoint;
 
 	fpnum[4] dr = coords.transformForwardSpacialFirstDerivatives(point, direction);
 
@@ -48,7 +49,7 @@ Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Init
 		dr[i] = 0;
 		for (byte j = 0; j < 4; j++)
 		{
-			dr[i] += tetrad[j * 4 + i] * local_dr[j];
+			dr[i] += tetrad[i * 4 + j] * local_dr[j];
 		}
 	}
 
@@ -75,7 +76,12 @@ Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Init
 	{
 		for (byte j = 0; j < 4; j++)
 		{
-			local_d2r[i] += inv_tetrad[j * 4 + i] * d2r[j];
+			local_d2r[i] += inv_tetrad[i * 4 + j] * d2r[j];
+			
+			for(byte k = 0; k < 4; k++)
+			{
+				local_d2r[i] += d_inv_tetrad[k][i * 4 + j] * dr[k] * dr[j];
+			}
 		}
 	}
 
