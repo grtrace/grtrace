@@ -40,7 +40,7 @@ class Kerr : Initiator
 		origin = orig;
 		j = angular_momentum;
 		if (mass == 0)
-			a = 1;
+			a = 0;
 		else
 			a = angular_momentum / m;
 		a2 = a * a;
@@ -150,29 +150,91 @@ class Kerr : Initiator
 	//locally nonrotating frame
 	@property Matrix4f getTetradsElementsAtPoint() const  //localy nonrotating frame
 	{
-		/*auto res = Matrix4f(
-			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
-			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
-			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
-			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
+		auto res = Matrix4f(
+			sqrt(sigma/(p2*delta)), 0,                                                0, ((Rs*a*r)/sigma)*sqrt(sigma/(p2*delta)),
+			0,                      sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta)/p), 0, 0,
+			0,                      0,                                                1, 0,
+			0,                      0,                                                0, (sqrt(r2+a2))*(p/(sqrt(sigma))));
 
-		return res;*/
-		auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-		return tmp;
+		return res;
+		//auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+		//return tmp;
 	}
 
 	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		/*//TODO:Optimize
+		//TODO:Optimize
 		auto res = Matrix4f(
-			sigma/(p*sqrt(delta)), 0,                                              0,                          Rs*a*r/(p*sigma*sqrt(delta)),
-			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*sqrt(delta)/p, 0,                          0,
-			0,                     0,                                              (sqrt(r2+a2*cos2_theta))/p, 0,
-			0,                     0,                                              0,                          (sqrt(r2+a2))*sin_theta*p/(sigma*sin_theta));
+			sqrt(sigma/(p2*delta)), 0,                                              0,                          ((Rs*a*r)/sigma)*sqrt(sigma/(p2*delta)),
+			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta)/p), 0,                          0,
+			0,                     0,                                              1, 0,
+			0,                     0,                                              0,                          (sqrt(r2+a2))*(p/(sqrt(sigma))));
 
-		return (res.inverse);*/
-		auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-		return tmp;
+		return (res.inverse);
+		//auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+		//return tmp;
+	}
+	
+	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
+	{
+		auto deriv_normal_t = Matrix4f(
+			0, 0, 0, 0,
+			0, 0, 0, 0,
+			0, 0, 0, 0,
+			0, 0, 0, 0);
+		
+		auto d_r_delta = 2*r-Rs;
+		auto d_r_p2 = 2*r;
+		auto d_r_sigma = 2*(r2+a2)*2*r - a2*(d_r_delta)*sin2_theta;
+		
+		auto dr_00 = (1/(2*sqrt(sigma/(p2*delta))))*( (d_r_sigma*p2*delta - sigma*(d_r_p2*delta + p2*d_r_delta))/((p2*delta)*(p2*delta)) );
+		auto dr_03 = Rs*a*( (r*dr_00)/sigma + (sqrt(sigma/(p2*delta)))*((sigma-r*d_r_sigma)/(sigma*sigma)) );
+		auto dr_11 = 2*Rs*((r2-a2)/((r2+a2)*(r2+a2)))*sqrt(1-((Rs*r)/(r2+a2)));
+		auto dr_33 = (1/(2*sqrt( (r2+a2)*p2/sigma )))*((sigma*((r2+a2)*d_r_p2 + 2*r*p2)-(r2+a2)*p2*d_r_sigma)/(sigma*sigma));
+		
+		auto deriv_normal_r = Matrix4f(
+			dr_00, 0,     0, dr_03,
+			0,     dr_11, 0, 0,
+			0,     0,     0, 0,
+			0,     0,     0, dr_33);
+
+		
+		auto d_theta_sigma = -2*a2*delta*sin_theta*cos_theta;
+		auto d_theta_p2 = -2*a2*sin_theta*cos_theta;
+		
+		auto theta_common = (1/(2*sqrt(sigma/(p2*delta))))*((d_theta_sigma*p2*delta - sigma*d_theta_p2*delta)/((delta*p2)*(delta*p2)));
+		
+		auto deriv_normal_theta = Matrix4f(
+			theta_common, 0, 0, (Rs*a*r)*(theta_common*sigma - sqrt(sigma/(p2*delta))*d_theta_sigma)/(sigma*sigma),
+			0,            0, 0, 0,
+			0,            0, 0, 0,
+			0,            0, 0, (sqrt(r2+a2))*( (1/(2*sqrt(p2/sigma)))*((d_theta_p2*sigma - p2*d_theta_sigma)/(sigma*sigma)) ) );
+
+		
+		auto deriv_normal_phi = Matrix4f(
+			0, 0, 0, 0,
+			0, 0, 0, 0,
+			0, 0, 0, 0,
+			0, 0, 0, 0);
+		
+		Matrix4f inverse_tetrad = getInverseTetradsElementsAtPoint;
+
+		Matrix4f t_mat = (inverse_tetrad*deriv_normal_t*inverse_tetrad);
+		Matrix4f r_mat = (inverse_tetrad*deriv_normal_r*inverse_tetrad);
+		Matrix4f theta_mat = (inverse_tetrad*deriv_normal_theta*inverse_tetrad);
+		Matrix4f phi_mat = (inverse_tetrad*deriv_normal_phi*inverse_tetrad);
+		
+		Matrix4f[4] res = [t_mat, r_mat, theta_mat, phi_mat];
+		
+		for(byte mat = 0; mat<4; mat++)
+		{
+			for(byte i = 0; i<16; i++)
+			{
+				res[mat][i] = -res[mat][i];
+			}
+		}
+		
+		return res;
 	}
 
 	@property CoordinateChanger coordinate_system() const

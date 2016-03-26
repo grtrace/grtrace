@@ -109,6 +109,17 @@ class Schwarzschild : Initiator
 			0, 0, 0, 1);
 		return res;
 	}
+	
+	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
+	{
+		auto null_mat = Matrix4f(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0);
+		auto s_tmp = sqrt(tmp);
+		auto r_00 = schwarzschild_radius/(2*r2*s_tmp);
+		auto r_11 = -(schwarzschild_radius/(2*r2*s_tmp*s_tmp*s_tmp));
+		auto r_mat = Matrix4f(r_00,0,0,0, 0,r_11,0,0, 0,0,0,0, 0,0,0,0);
+		
+		return [null_mat, r_mat, null_mat, null_mat];
+	}
 
 	@property CoordinateChanger coordinate_system() const
 	{

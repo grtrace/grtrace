@@ -61,6 +61,12 @@ class FlatCartesian : Initiator
 		static auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 		return tmp;
 	}
+	
+	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
+	{
+		auto null_mat = Matrix4f(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0);
+		return [null_mat, null_mat, null_mat, null_mat];
+	}
 
 	@property CoordinateChanger coordinate_system() const
 	{
@@ -147,6 +153,12 @@ class FlatRadial : Initiator
 	{
 		auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 		return tmp;
+	}
+	
+	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
+	{
+		auto null_mat = Matrix4f(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0);
+		return [null_mat, null_mat, null_mat, null_mat];
 	}
 
 	@property CoordinateChanger coordinate_system() const
