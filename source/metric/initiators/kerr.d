@@ -110,7 +110,13 @@ class Kerr : Initiator
 
 	@property Metric4 getMetricAtPoint() const
 	{
-		assert(0, "NIY");
+		auto met = Metric4(0,0,0,0, 0,0,0, 0,0, 0);
+		met[0,0] = -(1-(Rs*r)/sigma);
+		met[0,3] = -(2*Rs*a*r*sin2_theta)/sigma;
+		met[1,1] = sigma/delta;
+		met[2,2] = sigma;
+		met[3,3] = (r2 + a2 + (Rs*a2*r*sin2_theta)/sigma)*sin2_theta;
+		return met;
 	}
 
 	@property Metric4 getLocalMetricAtPoint() const
