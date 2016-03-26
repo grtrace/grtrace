@@ -10,6 +10,22 @@ import image.color;
 import scriptconfig;
 public import dbg.draws;
 
+/// Script primitives
+public
+{
+	alias SFloat = Typedef!(fpnum, 0.0, "float");
+	alias SWave = Typedef!(fpnum, 0.0, "wave");
+	struct SVec2
+	{
+		fpnum x = 0.0, y = 0.0;
+	}
+
+	alias SVec3 = Vectorf;
+	alias SColor = Color;
+	alias SString = string;
+	alias SValue = Algebraic!(SFloat, SWave, SVec2, SVec3, SColor, SString);
+}
+
 template RenderableNameHandler()
 {
 	shared(string) name_;

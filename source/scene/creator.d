@@ -3,14 +3,48 @@ module scene.creator;
 
 import config;
 import scene.scenemgr;
+import std.typecons;
 import std.variant;
+import math.vector;
+import image.color;
+import scene.objects.interfaces;
+import scene.materials;
+
+class SceneException : Exception
+{
+	@nogc @safe pure nothrow this(string msg, string file = __FILE__,
+		size_t line = __LINE__, Throwable next = null)
+	{
+		super(msg, file, line, next);
+	}
+
+	@nogc @safe pure nothrow this(string msg, Throwable next,
+		string file = __FILE__, size_t line = __LINE__)
+	{
+		super(msg, file, line, next);
+	}
+}
 
 struct SceneDescription
 {
-	alias SValue = Algebraic!();
+	enum scriptHeader = "GRTRACE SCENE DESCRIPTION VERSION 1";
+	alias ObjectConstructor = Renderable function(SValue[string]);
+	__gshared static ObjectConstructor[string] objTypes;
+
+	Renderable makeObject(string type, SValue[string] args)
+	{
+		ObjectConstructor* oc = type in objTypes;
+		if (oc is null)
+		{
+			throw new SceneException("Invalid object type: " ~ type);
+		}
+		ObjectConstructor occ = *oc;
+		return occ(args);
+	}
+
 	/**
 	Populate the space with objects loaded from a script.
-	Format:
+	Format: [types: FLOAT, VEC2, VEC3, COLOR, WAVE, implicit strings]
 	---
 	GRTRACE SCENE DESCRIPTION VERSION 1
 	# comment
@@ -24,9 +58,8 @@ struct SceneDescription
 	DEFINE cblack COLOR 000000 ;
 	DEFINE cmagenta COLOR FF00FF ;
 	DEFINE wgreen WAVE 500.0 ;
-	DEFLOAD check TEXTURE textures/checkerBoard.png ;
-	# DEFLOAD = DEFINE&LOAD
-	#
+	# TEXTURE loads&defines a texture
+	TEXTURE check textures/checkerBoard.png ;
 	MATERIAL m1 DIFFUSE cmagenta ;
 	MATERIAL m2 EMIT wgreen ;
 	MATERIAL m3 EMIT COLOR EEAA11 ;
@@ -37,17 +70,21 @@ struct SceneDescription
 	=SPHERE MATERIAL m4 CENTER VEC3 2 2 2 RADIUS FLOAT 1 ;
 	=TEX.PLANE MATERIAL m4 ORIGIN v1 PITCH 0 ROLL 0 
 	UDIR VEC3 1 0 0 VDIR VEC3 0 1 0 UVMIN VEC2 0 0 UVMAX VEC2 1 1 ;
+	# Lights defined with "!"
+	!POINT CENTER v3 EMIT cmagenta
 	---
 	**/
 	void loadFromScript(string script)
 	{
-
+		if (script.length <= scriptHeader.length)
+		{
+			throw new SceneException("Script too short");
+		}
+		if (script[0 .. scriptHeader.length] != scriptHeader)
+		{
+			throw new SceneException("Script has invalid header");
+		}
 	}
-}
-
-void PopulateSpace(WorldSpace space, string script)
-{
-
 }
 
 WorldSpace CreateSpace(string name)
