@@ -528,10 +528,6 @@ WorldSpace CreateSpace(string name)
 	{
 		R = new PlaneDeflectSpace();
 	}
-	else if (name == "kex")
-	{
-		R = new KexMetric();
-	}
 	else if (name == "test" || name == "analytic")
 	{
 		auto A = new Analytic;

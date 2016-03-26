@@ -14,8 +14,10 @@ bool GL_VERSION_3_0;
 bool GL_VERSION_3_1;
 bool GL_VERSION_3_2;
 bool GL_VERSION_3_3;
-nothrow @nogcextern (System)
+extern (System)
 {
+@nogc:
+nothrow:
 	alias fp_glCullFace = void function(GLenum);
 	alias fp_glFrontFace = void function(GLenum);
 	alias fp_glHint = void function(GLenum, GLenum);
