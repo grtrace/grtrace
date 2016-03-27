@@ -7,6 +7,7 @@ import math.matrix;
 import math.util;
 import std.string, std.getopt, std.array, std.range, std.math, std.algorithm;
 import glad.gl.all;
+import scene.objects.interfaces;
 
 interface ICamera
 {
@@ -21,7 +22,7 @@ interface ICamera
 	/// set camera Y/X ratio
 	@property ref fpnum yxratio();
 	/// parse options string (from script)
-	@property void options(string opts);
+	@property void options(SValue[string] opts);
 	/// X,Y in <-1;1>
 	bool fetchRay(fpnum X, fpnum Y, out Line ray);
 }
@@ -57,10 +58,9 @@ class OrthogonalCamera : ICamera
 		return yx;
 	}
 	/// parse options string (from script)
-	@property void options(string opts)
+	@property void options(SValue[string] opts)
 	{
-		string[] oa = ["0"] ~ opts.split();
-		getopt(oa, std.getopt.config.passThrough, "xsize|x", &xdim);
+		xdim = optFloat(opts, "XSIZE", xdim);
 		up = dir % righ;
 	}
 	/// X,Y in <-1;1>
@@ -103,10 +103,9 @@ class LinearPerspectiveCamera : ICamera
 		return yx;
 	}
 	/// parse options string (from script)
-	@property void options(string opts)
+	@property void options(SValue[string] opts)
 	{
-		string[] oa = ["0"] ~ opts.split();
-		getopt(oa, std.getopt.config.passThrough, "fov|f", &FOV);
+		FOV = optFloat(opts, "FOV", FOV);
 		up = -dir % righ;
 		FOVM = 1.0 / tan(FOV * PI / 180.0);
 		dirm = dir * FOVM;
@@ -127,7 +126,6 @@ void SetCameraAngles(ICamera cam, fpnum pitch, fpnum yaw, fpnum roll)
 	R = -R;
 	cam.lookdir = F;
 	cam.rightdir = R;
-	cam.options = "";
 }
 
 public void anglesToAxes(Vectorf angles, ref Vectorf left, ref Vectorf forward)

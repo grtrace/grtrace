@@ -30,39 +30,40 @@ public
 	alias SValue = Algebraic!(SFloat, SWave, SVec2, SVec3, SMat4, SColor, SString,
 		STexture);
 
-	Vectorf optVec3(SValue[string] map, string key)
+	Vectorf optVec3(SValue[string] map, string key, lazy Vectorf def = Vectorf(0, 0,
+		0))
 	{
 		if (key in map)
 		{
-			return cast(Vectorf)(*(key in map).get!(SVec3));
+			return cast(Vectorf)((key in map).get!(SVec3));
 		}
 		else
 		{
-			return vectorf(0, 0, 0);
+			return def;
 		}
 	}
 
-	Matrix4f optMat4(SValue[string] map, string key)
+	Matrix4f optMat4(SValue[string] map, string key, lazy Matrix4f def = Matrix4f.Zero())
 	{
 		if (key in map)
 		{
-			return cast(Matrix4f)(*(key in map).get!(SMat4));
+			return cast(Matrix4f)((key in map).get!(SMat4));
 		}
 		else
 		{
-			return Matrix4f.Zero();
+			return def;
 		}
 	}
 
-	fpnum optFloat(SValue[string] map, string key)
+	fpnum optFloat(SValue[string] map, string key, lazy fpnum def = 0.0)
 	{
 		if (key in map)
 		{
-			return cast(fpnum)(*(key in map).get!(SFloat));
+			return cast(fpnum)((key in map).get!(SFloat));
 		}
 		else
 		{
-			return 0;
+			return def;
 		}
 	}
 }

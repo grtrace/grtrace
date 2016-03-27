@@ -2,6 +2,7 @@
 module scene.creator;
 
 import config;
+import scene.raymgr;
 import scene.scenemgr;
 import std.typecons;
 import std.variant;
@@ -15,6 +16,11 @@ import scene;
 import scene.objects.interfaces;
 import scene.objects;
 import scene.materials;
+import metric.initiators;
+import scene.noneuclidean : PlaneDeflectSpace;
+import metric.analytic : Analytic;
+import metric.wrapper : WorldSpaceWrapper;
+import scene.camera;
 
 class SceneException : Exception
 {
@@ -34,20 +40,7 @@ class SceneException : Exception
 struct SceneDescription
 {
 	enum scriptHeader = "GRTRACE SCENE DESCRIPTION VERSION 1";
-	alias ObjectConstructor = Renderable function(SValue[string]);
-	__gshared static ObjectConstructor[string] objTypes;
 	SValue[string] defines;
-
-	Renderable makeObject(string type, SValue[string] args)
-	{
-		ObjectConstructor* oc = type in objTypes;
-		if (oc is null)
-		{
-			throw new SceneException("Invalid object type: " ~ type);
-		}
-		ObjectConstructor occ = *oc;
-		return occ(args);
-	}
 
 	/**
 	Populate the space with objects loaded from a script.
@@ -85,29 +78,42 @@ struct SceneDescription
 	UDIR VEC3 1 0 0 VDIR VEC3 0 1 0 UVMIN VEC2 0 0 UVMAX VEC2 1 1 ;
 	# Lights defined with "!"
 	!POINT light1 CENTER v3 EMIT cmagenta ;
+	
+	SETCAMERA LINEAR ORIGIN VEC3 0 0 -10 FOV FLOAT 30 
+	SETSPACE SCHWARZSCHILD ORIGIN VEC3 0 0 0 MASS FLOAT 3.5 ;
 	---
 	**/
-	void loadFromScript(string script)
+	void loadFromScript(string script, bool hasHeader = true)
 	{
-		if (script.length <= scriptHeader.length)
+		size_t offset = 0;
+		if (hasHeader)
 		{
-			throw new SceneException("Script too short");
+			if (script.length <= scriptHeader.length)
+			{
+				throw new SceneException("Script too short");
+			}
+			if (script[0 .. scriptHeader.length] != scriptHeader)
+			{
+				throw new SceneException("Script has invalid header");
+			}
+			offset = scriptHeader.length;
 		}
-		if (script[0 .. scriptHeader.length] != scriptHeader)
-		{
-			throw new SceneException("Script has invalid header");
-		}
-		string sNoComs = split(script[scriptHeader.length .. $], '\n').filter!(
-			a => !startsWith(a, "#")).join(" ");
+		string sNoComs = split(script[offset .. $], '\n').filter!(a => !startsWith(a,
+			"#")).join(" ");
 		auto tokStream = splitter(sNoComs);
 		string fetchToken()
 		{
-			if (tokStream.empty)
+			string tok;
+			do
 			{
-				throw new SceneException("Unexpected EOF");
+				if (tokStream.empty)
+				{
+					throw new SceneException("Unexpected EOF");
+				}
+				tok = tokStream.front;
+				tokStream.popFront;
 			}
-			string tok = tokStream.front;
-			tokStream.popFront;
+			while (tok.length < 1);
 			return tok;
 		}
 
@@ -238,12 +244,27 @@ struct SceneDescription
 			}
 		}
 
-		Renderable parseObject(string type)
+		SValue[string] fetchOptmap()
 		{
-			string id = fetchToken();
-			if (id in cfgObjects)
+			SValue[string] optMap;
+			string key;
+			while ((key = fetchToken()) != ";")
 			{
-				throw new SceneException("Object " ~ id ~ " already defined!");
+				optMap[key] = fetchValue();
+			}
+			return optMap;
+		}
+
+		Renderable parseObject(string type, bool skipId = false)
+		{
+			string id;
+			if (!skipId)
+			{
+				id = fetchToken();
+				if (id in cfgObjects)
+				{
+					throw new SceneException("Object " ~ id ~ " already defined!");
+				}
 			}
 			Renderable obj;
 			switch (type)
@@ -260,7 +281,7 @@ struct SceneDescription
 					throw new SceneException(
 						"Transformed objects must have the first argument of type MAT4.");
 				}
-				Renderable internal = parseObject(fetchToken());
+				Renderable internal = parseObject(fetchToken(), true);
 				obj = new Transformed(internal, tform);
 				obj.setName(id);
 				cfgObjects[id] = obj;
@@ -289,15 +310,13 @@ struct SceneDescription
 			default:
 				throw new SceneException("Unsupported object type " ~ type);
 			}
-			SValue[string] optMap;
-			string key;
-			while ((key = fetchToken()) != ";")
-			{
-				optMap[key] = fetchValue();
-			}
+			SValue[string] optMap = fetchOptmap();
 			obj.setupFromOptions(optMap);
 			obj.setName(id);
-			cfgObjects[id] = obj;
+			if (!skipId)
+			{
+				cfgObjects[id] = obj;
+			}
 			return obj;
 		}
 
@@ -317,12 +336,7 @@ struct SceneDescription
 			default:
 				throw new SceneException("Unsupported light type " ~ type);
 			}
-			SValue[string] optMap;
-			string key;
-			while ((key = fetchToken()) != ";")
-			{
-				optMap[key] = fetchValue();
-			}
+			SValue[string] optMap = fetchOptmap();
 			obj.setName(id);
 			obj.setupFromOptions(optMap);
 		}
@@ -368,6 +382,93 @@ struct SceneDescription
 				parseMaterial(mat);
 				cfgMaterials[id] = mat;
 				break;
+			case "SETSPACE":
+				string type = fetchToken();
+				WorldSpace space;
+				if (cfgSpace !is null)
+				{
+					throw new SceneException("Space was already created!");
+				}
+				switch (type)
+				{
+				case "FLAT", "EUCLIDEAN":
+					space = new EuclideanSpace();
+					break;
+				case "DEFLECT":
+					space = new PlaneDeflectSpace();
+					break;
+				case "ANALYTIC":
+					string subtype = fetchToken();
+					SValue[string] optMap = fetchOptmap();
+					Analytic A = new Analytic();
+					A.maxNumberOfSteps = cast(ulong) optFloat(optMap, "STEPS");
+					A.paramStep = optFloat(optMap, "STEPPARAM");
+					if (A.maxNumberOfSteps == 0)
+					{
+						throw new SceneException("Analytic number of steps cannot be 0");
+					}
+					if (A.paramStep == 0)
+					{
+						throw new SceneException("Analytic step parameter cannot be 0");
+					}
+					switch (subtype)
+					{
+					case "SCHWARZSCHILD":
+						A.initiator = new Schwarzschild(optFloat(optMap,
+							"MASS"), optVec3(optMap, "ORIGIN"));
+						break;
+					case "FLAT.CARTESIAN":
+						A.initiator = new FlatCartesian();
+						break;
+					case "FLAT.RADIAL":
+						A.initiator = new FlatRadial();
+						break;
+					case "KERR":
+						A.initiator = new Kerr(optFloat(optMap, "MASS"),
+							optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
+						break;
+					default:
+						throw new SceneException("Unknown analytic subtype: " ~ subtype);
+					}
+					space = new WorldSpaceWrapper(A);
+					break;
+				default:
+					throw new SceneException("Unknown space type: " ~ type);
+				}
+				foreach (obj; cfgObjects)
+					space.AddObject(obj);
+				foreach (lit; cfgLights)
+					space.AddLight(lit);
+				space.camera = cast(shared) cfgCamera;
+				cfgSpace = cast(shared) space;
+				Raytracer.setSpace(space);
+				break;
+			case "SETCAMERA":
+				string type = fetchToken();
+				SValue[string] opts = fetchOptmap();
+				ICamera camera;
+				switch (type)
+				{
+				case "ORTHOGONAL":
+					camera = new OrthogonalCamera();
+					break;
+				case "LINEAR":
+					camera = new LinearPerspectiveCamera();
+					break;
+				default:
+					throw new SceneException("Unsupported camera type: " ~ type);
+				}
+				camera.origin = optVec3(opts, "ORIGIN");
+				camera.yxratio = cast(fpnum)(cfgResolutionY) / cast(fpnum)(cfgResolutionX);
+				Vectorf angs = optVec3(opts, "ANGLES");
+				SetCameraAngles(camera, angs.x, angs.y, angs.z);
+				camera.options = opts;
+				cfgCamera = cast(shared) camera;
+				if (cfgSpace !is null)
+				{
+					cfgSpace.camera = cast(shared) camera;
+				}
+				break;
 			default:
 				if (tok[0] == '=')
 				{
@@ -384,86 +485,22 @@ struct SceneDescription
 				break;
 			}
 		}
-	}
-}
 
-WorldSpace CreateSpace(string name)
-{
-	WorldSpace R;
-	if (name == "euclidean")
-	{
-		R = new EuclideanSpace();
-	}
-	else if (name == "deflect")
-	{
-		R = new PlaneDeflectSpace();
-	}
-	else if (name == "test" || name == "analytic")
-	{
-		auto A = new Analytic;
-		fpnum mass = 1.5;
-		fpnum x = 0.0, y = 0.0, z = 0.0;
-		fpnum L = 0.0;
-		fpnum pStep = 0.08;
-		int nSteps = 250;
-		string[] args = split(cfgMetricOptions);
-
-		getopt(args, "mass|m", &mass, "x", &x, "y", &y, "z", &z,
-			"angularmomentum|L", &L, "paramstep|d", &pStep, "nsteps|n", &nSteps);
-
-		//not safe workarround
-		string initType;
-		if (args[0] == "-t")
-			initType = args[1];
-
-		switch (initType)
+		while (!tokStream.empty)
 		{
-		case "schwarzschild":
-			A.initiator = new Schwarzschild(mass, vectorf(x, y, z));
-			break;
-		case "flatcartesian":
-			A.initiator = new FlatCartesian();
-			break;
-		case "flatradial":
-			A.initiator = new FlatRadial();
-			break;
-		case "kerr":
-			A.initiator = new Kerr(mass, L, vectorf(x, y, z));
-			break;
-		default:
-			stderr.writeln("Error: wrong type of analytic metric: " ~ initType);
-			assert(0);
+			parseToken();
 		}
-		A.paramStep = pStep;
-		A.maxNumberOfSteps = nSteps;
-		R = new WorldSpaceWrapper(A);
 	}
-	else
-	{
-		assert(0, "Space " ~ name ~ " doesn't exist");
-	}
-	return R;
-}
 
-void SetupCamera(string name, Vectorf origin, fpnum pitch, fpnum yaw, fpnum roll, string options = "")
-{
-	ICamera cam;
-	if (name == "orthogonal")
+	/// Load the scene description from file
+	void loadFromFile(string path)
 	{
-		cam = new OrthogonalCamera();
+		import std.file : exists, readText;
+
+		if (!exists(path))
+		{
+			throw new SceneException("Scene description file doesn't exist: " ~ path);
+		}
+		loadFromScript(readText!string(path));
 	}
-	else if (name == "linear")
-	{
-		cam = new LinearPerspectiveCamera();
-	}
-	else
-	{
-		assert(0, "Camera " ~ name ~ " doesn't exist");
-	}
-	cam.origin = origin;
-	SetCameraAngles(cam, pitch, yaw, roll);
-	cam.yxratio = cast(fpnum)(cfgResolutionY) / cast(fpnum)(cfgResolutionX);
-	cam.options = options;
-	WorldSpace.camera = cast(shared(ICamera))(cam);
-	cfgCamera = cast(shared(ICamera)) cam;
 }
