@@ -30,9 +30,9 @@ class Triangle : Renderable
 	void setupFromOptions(SValue[string] a)
 	{
 		Vectorf A, B, C;
-		A = optVec3(a, "V1");
-		B = optVec3(a, "V2");
-		C = optVec3(a, "V3");
+		A = optVec3(a, "POINT1");
+		B = optVec3(a, "POINT2");
+		C = optVec3(a, "POINT3");
 
 		triangle = TrianglePoints(A, B, C);
 	}

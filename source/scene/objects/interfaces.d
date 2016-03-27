@@ -59,6 +59,13 @@ public
 	{
 		if (key in map)
 		{
+			if (map[key].peek!(SWave))
+			{
+				import image.spectrum : GetSpectrumColor;
+
+				SWave wv = *(map[key].peek!SWave);
+				return GetSpectrumColor(cast(fpnum) wv);
+			}
 			return cast(Color)((key in map).get!(SColor));
 		}
 		else
