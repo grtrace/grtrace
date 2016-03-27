@@ -29,17 +29,6 @@ __gshared
 	inum cfgMaxDepth = 5;
 
 	unum cfgSamples = 1;
-	string cfgWorldSpace = "euclidean";
-	string cfgMetricOptions = "";
-	string cfgSpaceConfig = "";
-	string cfgCameraType = "orthogonal";
-	fpnum cfgCameraX = 0.0;
-	fpnum cfgCameraY = 0.0;
-	fpnum cfgCameraZ = 0.0;
-	fpnum cfgCameraPitch = 0.0;
-	fpnum cfgCameraYaw = 0.0;
-	fpnum cfgCameraRoll = 0.0;
-	string cfgCameraOptions = "";
 	string cfgOutputFile = "raytrace.png";
 
 	Renderable[string] cfgObjects;

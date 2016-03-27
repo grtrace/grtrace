@@ -30,8 +30,6 @@ class PlaneDeflectSpace : WorldSpace
 
 	this()
 	{
-		string[] args = ["0"] ~ cfgSpaceConfig.split();
-		getopt(args, std.getopt.config.passThrough);
 		pln = cast(shared(RPlane))(new RPlane(null, math.Plane(vectorf(0, 0, 0),
 			vectorf(0, 0, -1))));
 	}

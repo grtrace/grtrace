@@ -9,6 +9,95 @@ import std.math;
 import image.color;
 import scriptconfig;
 public import dbg.draws;
+import std.typecons;
+import std.variant;
+
+/// Script primitives
+public
+{
+	alias SFloat = Typedef!(fpnum, 0.0, "float");
+	alias SWave = Typedef!(fpnum, 0.0, "wave");
+	struct SVec2
+	{
+		fpnum x = 0.0, y = 0.0;
+	}
+
+	alias SVec3 = Vectorf;
+	alias SMat4 = Matrix4f;
+	alias SColor = Color;
+	alias SString = string;
+	alias STexture = Typedef!(string, "", "texture");
+	alias SValue = Algebraic!(SFloat, SWave, SVec2, SVec3, SMat4, SColor, SString,
+		STexture);
+
+	Vectorf optVec3(SValue[string] map, string key, lazy Vectorf def = Vectorf(0, 0,
+		0))
+	{
+		if (key in map)
+		{
+			return cast(Vectorf)((key in map).get!(SVec3));
+		}
+		else
+		{
+			return def;
+		}
+	}
+
+	SVec2 optVec2(SValue[string] map, string key, lazy SVec2 def = SVec2(0, 0))
+	{
+		if (key in map)
+		{
+			return ((key in map).get!(SVec2));
+		}
+		else
+		{
+			return def;
+		}
+	}
+
+	Color optColor(SValue[string] map, string key, lazy Color def = Colors.Black)
+	{
+		if (key in map)
+		{
+			if (map[key].peek!(SWave))
+			{
+				import image.spectrum : GetSpectrumColor;
+
+				SWave wv = *(map[key].peek!SWave);
+				return GetSpectrumColor(cast(fpnum) wv);
+			}
+			return cast(Color)((key in map).get!(SColor));
+		}
+		else
+		{
+			return def;
+		}
+	}
+
+	Matrix4f optMat4(SValue[string] map, string key, lazy Matrix4f def = Matrix4f.Zero())
+	{
+		if (key in map)
+		{
+			return cast(Matrix4f)((key in map).get!(SMat4));
+		}
+		else
+		{
+			return def;
+		}
+	}
+
+	fpnum optFloat(SValue[string] map, string key, lazy fpnum def = 0.0)
+	{
+		if (key in map)
+		{
+			return cast(fpnum)((key in map).get!(SFloat));
+		}
+		else
+		{
+			return def;
+		}
+	}
+}
 
 template RenderableNameHandler()
 {
@@ -27,7 +116,7 @@ template RenderableNameHandler()
 
 interface Renderable
 {
-	void setupFromOptions(string[] a);
+	void setupFromOptions(SValue[string] a);
 
 	string getName() nothrow const;
 	void setName(string nm) nothrow;
@@ -43,7 +132,7 @@ interface Renderable
 
 interface Light
 {
-	void setupFromOptions(string[] a);
+	void setupFromOptions(SValue[string] a);
 	Vectorf getPosition();
 	Color getColor();
 	Vectorf getPosition() shared;
@@ -75,7 +164,7 @@ class Transformed : Renderable
 		object.setName(nm);
 	}
 
-	void setupFromOptions(string[] a)
+	void setupFromOptions(SValue[string] a)
 	{
 		object.setupFromOptions(a);
 	}

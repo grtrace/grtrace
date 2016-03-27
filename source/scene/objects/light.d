@@ -1,7 +1,7 @@
 module scene.objects.light;
 
 import scene.objects.interfaces;
-import std.getopt, std.string;
+import std.string;
 import image.color;
 import math.vector;
 import scriptconfig;
@@ -17,15 +17,10 @@ class PointLight : Light
 	{
 	}
 
-	void setupFromOptions(string[] a)
+	void setupFromOptions(SValue[string] a)
 	{
-		string positionStr;
-		string colorStr;
-		getopt(a, std.getopt.config.caseSensitive, "position|p", &positionStr,
-			"color|c", &colorStr);
-
-		position = vectorString(positionStr);
-		color = colorString(colorStr);
+		position = optVec3(a, "POSITION");
+		color = optColor(a, "EMIT");
 	}
 
 	Vectorf getPosition()

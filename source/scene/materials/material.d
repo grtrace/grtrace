@@ -45,6 +45,7 @@ class Material
 
 	this()
 	{
+		f = &FilteringTypes.NearestNeightbour;
 	}
 
 	@property ref bool is_diffuse()

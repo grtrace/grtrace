@@ -1,0 +1,131 @@
+List of all supported commands in the scene description language
+
+Usage in Tcl scripts:
+loadScene "path" - execute a file
+sceneCmd "commands" - execute a script
+
+Documentation format:
+(required) [optional]
+* - object of any type
+Types:
+S - string
+V2, V3 - vectors
+M4 - 4x4 matrix
+N - number (float)
+W - wavelength (float)
+C - color
+T - texture
+
+Type constructors:
+VEC2 X Y
+VEC3 X Y Z
+MAT4 A B C D  E F G H  I J K L  M N O P
+FLOAT N
+N - where N consists of just digits and 0 or 1 "." makes a FLOAT
+WAVE N
+COLOR RRGGBB - in HTML/hexadecimal format
+
+Commands:
+# comment
+MODULE (S:identifier) ; - declared identifier as a parsed module
+REQUIRE (S:identifier) ; - throws an error if "identifier" is not a loaded module
+DEFINE (S:identifier) (*:definition) ;
+TEXTURE (S:identifier) (S:path) ;
+MATERIAL (S:identifier)
+	[DIFFUSE (C/W/T)]
+	[EMIT (C/W)]
+	[FILTER (NEAREST/LINEAR=BILINEAR)]
+	;
+SETCAMERA ORTHOGONAL
+	[ORIGIN (V3)]
+	[ANGLES (V3)] - Pitch/Yaw/Roll of the camera
+	[XSIZE (N)]
+	;
+SETCAMERA LINEAR
+	[ORIGIN (V3)]
+	[ANGLES (V3)] - Pitch/Yaw/Roll of the camera
+	[FOV (N)] - Field of view in degrees
+	;
+SETSPACE (FLAT/EUCLIDEAN/DEFLECT) ;
+SETSPACE ANALYTIC (FLAT.CARTESIAN/FLAT.RADIAL)
+	[STEPS (N)]
+	[STEPPARAM (N)]
+	;
+SETSPACE ANALYTIC SCHWARZSCHILD
+	[STEPS (N)]
+	[STEPPARAM (N)]
+	[MASS (N)]
+	[ORIGIN (V3)]
+	;
+SETSPACE ANALYTIC KERR
+	[STEPS (N)]
+	[STEPPARAM (N)]
+	[MASS (N)]
+	[ANGMOMENTUM (N)]
+	[ORIGIN (V3)]
+	;
+!POINT (S:identifier)
+	[POSITION (V3)]
+	[EMIT (C/W)]
+	;
+=SPHERE (S:identifier)
+	(MATERIAL (S:identifier))
+	[CENTER (V3)]
+	[RADIUS (N)]
+	;
+=PLANE (S:identifier)
+	(MATERIAL (S:identifier))
+	[ORIGIN (V3)]
+	[OXZDEGREES (N)]
+	[OXYDEGREES (N)]
+	;
+=PLANE (S:identifier)
+	(MATERIAL (S:identifier))
+	[POINT1 (V3)]
+	[POINT2 (V3)]
+	[POINT3 (V3)]
+	;
+=PLANE (S:identifier)
+	(MATERIAL (S:identifier))
+	[ORIGIN (V3)]
+	[DIR1 (V3)]
+	[DIR2 (V3)]
+	;
+=TEX.PLANE (S:identifier)
+	(MATERIAL (S:identifier))
+	[=PLANE arguments]
+	[UDIR (V3)]
+	[VDIR (V3)]
+	[UV1 (V2)]
+	[UV2 (V2)]
+	[UVREPEAT (0/1)]
+	;
+=TRIANGLE (S:identifier)
+	(MATERIAL (S:identifier))
+	[POINT1 (V3)]
+	[POINT2 (V3)]
+	[POINT3 (V3)]
+	;
+=TEX.TRIANGLE (S:identifier)
+	(MATERIAL (S:identifier))
+	[=TRIANGLE arguments]
+	[UV1 (V2)]
+	[UV2 (V2)]
+	[UV3 (V2)]
+	;
+=ACCRETION (S:identifier)
+	(MATERIAL (S:identifier))
+	[=PLANE arguments]
+	[INNER (N)]
+	[OUTER (N)]
+	;
+=TEX.ACCRETION (S:identifier)
+	(MATERIAL (S:identifier))
+	[=ACCRETION arguments]
+	[=TEX.PLANE arguments]
+	;
+=TRANSFORMED (S:identifier)
+	(MATERIAL (S:identifier))
+	(M4:transformation matrix)
+	(object definition without "=" and identifier)
+	;

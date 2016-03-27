@@ -1,23 +1,13 @@
 configSet "ResolutionX" 800
 configSet "ResolutionY" 800
 configSet "Samples" 1
-configSet "WorldSpace" "test"
-configSet "SpaceConfig" ""
-configSet "CameraType" "linear"
-configSet "CameraX" 4.5
-configSet "CameraY" 0
-configSet "CameraZ" 0
-configSet "CameraPitch" -6
-configSet "CameraYaw" 0
-configSet "CameraRoll" 0
-configSet "CameraOptions" "-x 10 -f 42"
-configSet "MetricOptions" "-t schwarzschild -m 1.5 -x 0 -y 0 -z 0 -d 0.01 -n 5000"
+configSet "OutputFile" "_dummy.png"
 
-addMaterial .mat -D -e black -f b
+loadScene "scenes/_common.grt"
+loadScene "scenes/justhole.grt"
+sceneCmd "SETCAMERA LINEAR ORIGIN VEC3 4.5 0 0 ANGLES VEC3 -6 0 0 FOV 42 ;"
+sceneCmd "SETSPACE ANALYTIC SCHWARZSCHILD STEPS 5000 STEPPARAM 0.01 MASS mass ORIGIN vec3.0 ;"
 
-addObject .sph1 -m .mat -t sphere -c 0,0,0 -r 3
-
-makeScene
 puts "Tcl config finished"
 doTrace
 waitForTrace

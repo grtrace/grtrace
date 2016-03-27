@@ -547,8 +547,10 @@ bool GL_SUN_triangle_list;
 bool GL_SUN_vertex;
 bool GL_WIN_phong_shading;
 bool GL_WIN_specular_fog;
-nothrow @nogc extern (System)
+extern (System)
 {
+nothrow:
+@nogc:
 	alias fp_glTbufferMask3DFX = void function(GLuint);
 	alias fp_glDebugMessageEnableAMD = void function(GLenum, GLenum, GLsizei,
 		const(GLuint)*, GLboolean);
