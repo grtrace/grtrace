@@ -12,7 +12,7 @@ W - wavelength (float)
 C - color
 T - texture
 
-Type cnstructors:
+Type constructors:
 VEC2 X Y
 VEC3 X Y Z
 MAT4 A B C D  E F G H  I J K L  M N O P
