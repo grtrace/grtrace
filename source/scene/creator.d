@@ -140,6 +140,8 @@ struct SceneDescription
 					int numDots = 0;
 					foreach (dchar ch; tok)
 					{
+						if (ch == '-')
+							continue;
 						if (ch == '.')
 						{
 							numDots++;
@@ -321,6 +323,7 @@ struct SceneDescription
 			SValue[string] optMap = fetchOptmap();
 			obj.setName(id);
 			obj.setupFromOptions(optMap);
+			cfgLights[id] = obj;
 		}
 
 		void parseToken()
