@@ -69,30 +69,30 @@ SETSPACE ANALYTIC KERR
 	[EMIT (C/W)]
 	;
 =SPHERE (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[CENTER (V3)]
 	[RADIUS (N)]
 	;
 =PLANE (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[ORIGIN (V3)]
 	[OXZDEGREES (N)]
 	[OXYDEGREES (N)]
 	;
 =PLANE (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[POINT1 (V3)]
 	[POINT2 (V3)]
 	[POINT3 (V3)]
 	;
 =PLANE (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[ORIGIN (V3)]
 	[DIR1 (V3)]
 	[DIR2 (V3)]
 	;
 =TEX.PLANE (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[=PLANE arguments]
 	[UDIR (V3)]
 	[VDIR (V3)]
@@ -101,31 +101,31 @@ SETSPACE ANALYTIC KERR
 	[UVREPEAT (0/1)]
 	;
 =TRIANGLE (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[POINT1 (V3)]
 	[POINT2 (V3)]
 	[POINT3 (V3)]
 	;
 =TEX.TRIANGLE (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[=TRIANGLE arguments]
 	[UV1 (V2)]
 	[UV2 (V2)]
 	[UV3 (V2)]
 	;
 =ACCRETION (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[=PLANE arguments]
 	[INNER (N)]
 	[OUTER (N)]
 	;
 =TEX.ACCRETION (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	[=ACCRETION arguments]
 	[=TEX.PLANE arguments]
 	;
 =TRANSFORMED (S:identifier)
-	[MATERIAL (S:identifier)]
+	(MATERIAL (S:identifier))
 	(M4:transformation matrix)
 	(object definition without "=" and identifier)
 	;
