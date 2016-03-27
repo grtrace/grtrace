@@ -26,12 +26,13 @@ class Kerr : Initiator
 	private fpnum sin3_theta;
 	private fpnum cos_theta;
 	private fpnum cos2_theta;
+	private fpnum cot_theta;
 	private fpnum delta;
+	private fpnum A;
+	
 	private fpnum sigma;
-	private fpnum p;
-	private fpnum p2;
-	private fpnum p4;
-	private fpnum p6;
+	private fpnum sigma2;
+	private fpnum sigma3;
 
 	this(fpnum mass, fpnum angular_momentum, Vectorf orig)
 	{
@@ -64,12 +65,13 @@ class Kerr : Initiator
 		sin3_theta = o.sin3_theta;
 		cos_theta = o.cos_theta;
 		cos2_theta = o.cos2_theta;
+		cot_theta = o.cot_theta;
 		delta = o.delta;
+		A = o.A;
+		
 		sigma = o.sigma;
-		p = o.p;
-		p2 = o.p2;
-		p4 = o.p4;
-		p6 = o.p6;
+		sigma2 = o.sigma2;
+		sigma3 = o.sigma3;
 	}
 
 	@property Initiator clone() const
@@ -80,10 +82,10 @@ class Kerr : Initiator
 	void prepareForRequest(Vectorf point)
 	{
 		Vectorf tmp = point - origin;
-		fpnum A = (*tmp) - a2;
+		fpnum B = (*tmp) - a2;
 		fpnum C = a2 * tmp.z * tmp.z;
 
-		r = sqrt((A + sqrt(A * A + 4 * C)) / 2);
+		r = sqrt((B + sqrt(B * B + 4 * C)) / 2);
 		theta = acos(tmp.z / r);
 
 		r2 = r * r;
@@ -94,20 +96,27 @@ class Kerr : Initiator
 
 		cos_theta = cos(theta);
 		cos2_theta = cos_theta * cos_theta;
+		
+		cot_theta = cos_theta/sin_theta;
 
 		delta = r2 - Rs * r + a2;
 
-		sigma = (r2 + a2) * (r2 + a2) - a2 * delta * sin2_theta;
+		A = (r2 + a2) * (r2 + a2) - a2 * delta * sin2_theta;
 
-		p2 = r2 + a2 * cos2_theta;
-		p = sqrt(p2);
-		p4 = p2 * p2;
-		p6 = p4 * p2;
+		sigma = r2 + a2 * cos2_theta;
+		sigma2 = sigma * sigma;
+		sigma3 = sigma2 * sigma;
 	}
 
 	@property Metric4 getMetricAtPoint() const
 	{
-		assert(0, "NIY");
+		auto met = Metric4(0,0,0,0, 0,0,0, 0,0, 0);
+		met[0,0] = -(1-(Rs*r)/sigma);
+		met[0,3] = -(2*Rs*a*r*sin2_theta)/sigma;
+		met[1,1] = sigma/delta;
+		met[2,2] = sigma;
+		met[3,3] = (r2 + a2 + (Rs*a2*r*sin2_theta)/sigma)*sin2_theta;
+		return met;
 	}
 
 	@property Metric4 getLocalMetricAtPoint() const
@@ -123,27 +132,31 @@ class Kerr : Initiator
 
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
-		auto time = Metric4(0, Rs / (2 * p4 * delta) * (r2 + a2) * (2 * r2 - p2),
-			-2 * a * j * r / p4 * sin_theta * cos_theta, 0, 0, 0,
-			-j * sin2_theta / (p4 * delta) * (p2 * (r2 - a2) + 2 * r2 * (r2 + a2)),
-			0, 2 * a2 * j * r / p4 * cos_theta * sin3_theta, 0);
-
-		auto radius = Metric4(Rs * delta / (2 * p6) * (2 * r2 - p2), 0, 0,
-			-j * delta / p6 * (2 * r2 - p2) * sin_theta,
-			1. / (p2 * delta) * (p2 * (Rs / 2 - r) + r * delta),
-			-a2 / p2 * sin_theta * cos_theta, 0, -r * delta / p2, 0,
-			-delta * sin2_theta / p6 * (r * p4 - a * j * (2 * r2 - p2) * sin2_theta));
-
-		auto theta = Metric4(-2 * a * j * r / p6 * sin_theta * cos_theta, 0, 0,
-			2 * j * r / p6 * (r2 + a2) * sin_theta * cos_theta,
-			a2 / (p2 * delta) * sin_theta * cos_theta, r / p2, 0, radius[1, 2],
-			0, -sin_theta * cos_theta / p6 * (p4 * delta + Rs * r * (r2 + a2) * (r2 + a2)));
-
-		auto phi = Metric4(0, j / (p4 * delta) * (2 * r2 - p2),
-			-2 * j * r * cos_theta / (p4 * sin_theta), 0, 0, 0,
-			1. / (p4 * delta) * (r * p2 * (p2 - Rs * r) - a * j * sin2_theta * (2 * r2 - p2)),
-			0, cos_theta / (p4 * sin_theta) * (p4 + 2 * a * j * r * sin2_theta), 0);
-
+		Metric4 time, radius, theta, phi;
+		
+		time = radius = theta = phi = Metric4(0,0,0,0, 0,0,0, 0,0, 0);
+		
+		radius[0,0] = (Rs*delta*(r2-a2*cos2_theta))/(2*sigma3);
+		theta[0,0] = -(Rs*a2*r*sin_theta*cos_theta)/sigma3;
+		time[0,1] = (Rs*(r2+a2)*(r2-a2*cos2_theta))/(2*sigma2*delta);
+		phi[0,1] = (Rs*a*(r2-a2*cos2_theta))/(2*sigma2*delta);
+		time[0,2] = -(Rs*a2*r*sin_theta*cos_theta)/sigma2;
+		phi[0,2] = -(Rs*a*r*cot_theta)/sigma2;
+		radius[0,3] = -(delta*Rs*a*sin2_theta*(r2-a2*cos2_theta))/(2*sigma3);
+		theta[0,3] = (Rs*a*r*(r2+a2)*sin_theta*cos_theta)/sigma3;
+		radius[1,1] = (2*r*a2*sin2_theta - Rs*(r2-a2*cos2_theta))/(2*sigma*delta);
+		theta[1,1] = (a2*sin_theta*cos_theta)/(sigma*delta);
+		radius[1,2] = -(a2*sin_theta*cos_theta)/sigma;
+		theta[1,2] = r/sigma;
+		radius[2,2] = -(r*delta)/sigma;
+		theta[2,2] = -(a2*sin_theta*cos_theta)/sigma;
+		phi[2,3] = (cot_theta/sigma2)*(sigma2+Rs*a2*r*sin2_theta);
+		time[2,3] = (Rs*a2*a*r*sin3_theta*cos_theta)/sigma2;
+		time[1,3] = (Rs*a*sin2_theta*(a2*cos2_theta*(a2-r2) - r2*(a2+3*r2)))/(2*sigma2*delta);
+		phi[1,3] = (2*r*sigma2 + Rs*(a2*a2*sin2_theta*cos2_theta - r2*(sigma+r2+a2)))/(2*sigma2*delta);
+		radius[3,3] = ((delta*sin2_theta)/(2*sigma3))*(-2*r*sigma2 + Rs*a2*sin2_theta*(r2-a2*cos2_theta));
+		theta[3,3] = -((sin_theta*cos_theta)/sigma3)*(A*sigma + (r2+a2)*Rs*a2*r*sin2_theta);
+		
 		return [time, radius, theta, phi];
 	}
 
@@ -151,28 +164,24 @@ class Kerr : Initiator
 	@property Matrix4f getTetradsElementsAtPoint() const  //localy nonrotating frame
 	{
 		auto res = Matrix4f(
-			sqrt(sigma/(p2*delta)), 0,                                                0, ((Rs*a*r)/sigma)*sqrt(sigma/(p2*delta)),
-			0,                      sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta)/p), 0, 0,
+			sqrt(A/(sigma*delta)), 0,                                                0, ((Rs*a*r)/A)*sqrt(A/(sigma*delta)),
+			0,                      sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta/sigma)), 0, 0,
 			0,                      0,                                                1, 0,
-			0,                      0,                                                0, (sqrt(r2+a2))*(p/(sqrt(sigma))));
+			0,                      0,                                                0, (sqrt(r2+a2))*(sqrt(sigma/A)));
 
 		return res;
-		//auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-		//return tmp;
 	}
 
 	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
 		//TODO:Optimize
 		auto res = Matrix4f(
-			sqrt(sigma/(p2*delta)), 0,                                              0,                          ((Rs*a*r)/sigma)*sqrt(sigma/(p2*delta)),
-			0,                     sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta)/p), 0,                          0,
-			0,                     0,                                              1, 0,
-			0,                     0,                                              0,                          (sqrt(r2+a2))*(p/(sqrt(sigma))));
+			sqrt(A/(sigma*delta)), 0,                                                0, ((Rs*a*r)/A)*sqrt(A/(sigma*delta)),
+			0,                      sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta/sigma)), 0, 0,
+			0,                      0,                                                1, 0,
+			0,                      0,                                                0, (sqrt(r2+a2))*(sqrt(sigma/A)));
 
 		return (res.inverse);
-		//auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-		//return tmp;
 	}
 	
 	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
@@ -184,13 +193,13 @@ class Kerr : Initiator
 			0, 0, 0, 0);
 		
 		auto d_r_delta = 2*r-Rs;
-		auto d_r_p2 = 2*r;
-		auto d_r_sigma = 2*(r2+a2)*2*r - a2*(d_r_delta)*sin2_theta;
+		auto d_r_sigma = 2*r;
+		auto d_r_A = 2*(r2+a2)*2*r - a2*(d_r_delta)*sin2_theta;
 		
-		auto dr_00 = (1/(2*sqrt(sigma/(p2*delta))))*( (d_r_sigma*p2*delta - sigma*(d_r_p2*delta + p2*d_r_delta))/((p2*delta)*(p2*delta)) );
-		auto dr_03 = Rs*a*( (r*dr_00)/sigma + (sqrt(sigma/(p2*delta)))*((sigma-r*d_r_sigma)/(sigma*sigma)) );
+		auto dr_00 = (1/(2*sqrt(A/(sigma*delta))))*( (d_r_A*sigma*delta - A*(d_r_sigma*delta + sigma*d_r_delta))/((sigma*delta)*(sigma*delta)) );
+		auto dr_03 = Rs*a*( (r*dr_00)/A + (sqrt(A/(sigma*delta)))*((A-r*d_r_A)/(A*A)) );
 		auto dr_11 = 2*Rs*((r2-a2)/((r2+a2)*(r2+a2)))*sqrt(1-((Rs*r)/(r2+a2)));
-		auto dr_33 = (1/(2*sqrt( (r2+a2)*p2/sigma )))*((sigma*((r2+a2)*d_r_p2 + 2*r*p2)-(r2+a2)*p2*d_r_sigma)/(sigma*sigma));
+		auto dr_33 = (1/(2*sqrt( (r2+a2)*sigma/A )))*((A*((r2+a2)*d_r_sigma + 2*r*sigma)-(r2+a2)*sigma*d_r_A)/(A*A));
 		
 		auto deriv_normal_r = Matrix4f(
 			dr_00, 0,     0, dr_03,
@@ -199,16 +208,16 @@ class Kerr : Initiator
 			0,     0,     0, dr_33);
 
 		
-		auto d_theta_sigma = -2*a2*delta*sin_theta*cos_theta;
-		auto d_theta_p2 = -2*a2*sin_theta*cos_theta;
+		auto d_theta_A = -2*a2*delta*sin_theta*cos_theta;
+		auto d_theta_sigma = -2*a2*sin_theta*cos_theta;
 		
-		auto theta_common = (1/(2*sqrt(sigma/(p2*delta))))*((d_theta_sigma*p2*delta - sigma*d_theta_p2*delta)/((delta*p2)*(delta*p2)));
+		auto theta_common = (1/(2*sqrt(A/(sigma*delta))))*((d_theta_A*sigma*delta - A*d_theta_sigma*delta)/((delta*sigma)*(delta*sigma)));
 		
 		auto deriv_normal_theta = Matrix4f(
-			theta_common, 0, 0, (Rs*a*r)*(theta_common*sigma - sqrt(sigma/(p2*delta))*d_theta_sigma)/(sigma*sigma),
+			theta_common, 0, 0, (Rs*a*r)*(theta_common*A - sqrt(A/(sigma*delta))*d_theta_A)/(A*A),
 			0,            0, 0, 0,
 			0,            0, 0, 0,
-			0,            0, 0, (sqrt(r2+a2))*( (1/(2*sqrt(p2/sigma)))*((d_theta_p2*sigma - p2*d_theta_sigma)/(sigma*sigma)) ) );
+			0,            0, 0, (sqrt(r2+a2))*( (1/(2*sqrt(sigma/A)))*((d_theta_sigma*A - sigma*d_theta_A)/(A*A)) ) );
 
 		
 		auto deriv_normal_phi = Matrix4f(

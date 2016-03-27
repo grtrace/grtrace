@@ -49,7 +49,7 @@ Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Init
 		dr[i] = 0;
 		for (byte j = 0; j < 4; j++)
 		{
-			dr[i] += tetrad[i * 4 + j] * local_dr[j];
+			dr[i] += tetrad[j * 4 + i] * local_dr[j];
 		}
 	}
 
