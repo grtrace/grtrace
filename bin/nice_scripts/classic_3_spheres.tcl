@@ -1,7 +1,7 @@
 configSet "ResolutionX" 800
 configSet "ResolutionY" 600
 configSet "Samples" 1
-configSet "OutputFile" "test_clasic_3_spheres.png"
+configSet "OutputFile" "clasic_3_spheres.png"
 
 loadScene "scenes/_common.grt"
 loadScene "scenes/classicspheres.grt"

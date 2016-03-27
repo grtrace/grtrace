@@ -3,7 +3,7 @@ configSet "ResolutionY" 200
 configSet "Samples" 1
 configSet "WorldSpace" "test"
 configSet "SpaceConfig" ""
-configSet "OutputFile" "test_raytrace_accretion_redshift.png"
+configSet "OutputFile" "raytrace_accretion_redshift.png"
 
 loadScene "scenes/_common.grt"
 loadScene "scenes/bhaccretion.grt"
