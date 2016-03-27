@@ -19,6 +19,9 @@ interface Initiator
 	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const;
 
 	@property CoordinateChanger coordinate_system() const;
+	
+	import dbg.draws;
+	DebugDraw[string] returnDebugRenderObjects() const;
 }
 
 interface CoordinateChanger
@@ -33,6 +36,8 @@ interface MetricContainer
 {
 	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint = null,
 		Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0);
+	
+	DebugDraw[string] returnDebugRenderObjects();
 }
 
 interface DiscreteMetricContainer : MetricContainer

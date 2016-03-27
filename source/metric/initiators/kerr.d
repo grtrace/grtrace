@@ -250,4 +250,17 @@ class Kerr : Initiator
 	{
 		return cast(CoordinateChanger) coord;
 	}
+	
+	DebugDraw[string] returnDebugRenderObjects() const
+	{
+		DebugDraw[string] res;
+		
+		//TODO:Implement
+		res["@event_horizon"] = DebugDraw(DrawType.Sphere, Rs, 0, new Plane(origin, vectorf(0, 0,
+			0)), null);
+		res["@ergosphere"] = DebugDraw(DrawType.Sphere, Rs, 0, new Plane(origin, vectorf(0, 0,
+			0)), null);
+		
+		assert(0, "NIY");
+	}
 }
