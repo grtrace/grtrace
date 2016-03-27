@@ -45,44 +45,7 @@ struct SceneDescription
 
 	/**
 	Populate the space with objects loaded from a script.
-	Format: [types: FLOAT, VEC2, VEC3, MAT4, COLOR, WAVE, TEXTURE, implicit strings]
-	---
-	GRTRACE SCENE DESCRIPTION VERSION 1
-	# comment
-	DEFINE r1 FLOAT 2.5 ;
-	DEFINE r2 FLOAT 5 ;
-	# VEC3 X Y Z
-	DEFINE v1 VEC3 1 2 3 ;
-	DEFINE v2 VEC3 2 3 4 ;
-	DEFINE v3 VEC3 3 4 5 ;
-	DEFINE idt MAT4
-	 1 0 0 0
-	 0 1 0 0
-	 0 0 1 0
-	 0 0 0 1 ;
-	#
-	DEFINE cblack COLOR 000000 ;
-	DEFINE cmagenta COLOR FF00FF ;
-	DEFINE wgreen WAVE 500.0 ;
-	# TEXTURE loads&defines a texture
-	TEXTURE check textures/checkerBoard.png ;
-	MATERIAL m1 DIFFUSE cmagenta ;
-	MATERIAL m2 EMIT wgreen ;
-	MATERIAL m3 EMIT COLOR EEAA11 ;
-	MATERIAL m4 DIFFUSE check FILTER NEAREST ;
-	# FILTER NEAREST/LINEAR
-	# Objects start with "="
-	=SPHERE obj1 MATERIAL m2 CENTER v1 RADIUS r1 ;
-	=SPHERE obj2 MATERIAL m4 CENTER VEC3 2 2 2 RADIUS FLOAT 1 ;
-	=TRANSFORMED obj3 idt SPHERE MATERIAL m1 ;
-	=TEX.PLANE obj4 MATERIAL m4 ORIGIN v1 PITCH 0 ROLL 0 
-	UDIR VEC3 1 0 0 VDIR VEC3 0 1 0 UVMIN VEC2 0 0 UVMAX VEC2 1 1 ;
-	# Lights defined with "!"
-	!POINT light1 CENTER v3 EMIT cmagenta ;
-	
-	SETCAMERA LINEAR ORIGIN VEC3 0 0 -10 FOV FLOAT 30 
-	SETSPACE SCHWARZSCHILD ORIGIN VEC3 0 0 0 MASS FLOAT 3.5 ;
-	---
+	Format: See docs/scenecommands.txt for specs
 	**/
 	void loadFromScript(string script, bool hasHeader = true)
 	{
@@ -121,14 +84,6 @@ struct SceneDescription
 		fpnum fetchNumber()
 		{
 			string tok = fetchToken();
-			if (tok == "PI")
-			{
-				return PI;
-			}
-			if (tok == "PI*")
-			{
-				return PI * fetchNumber();
-			}
 			return to!fpnum(tok);
 		}
 
@@ -181,6 +136,27 @@ struct SceneDescription
 				}
 				else
 				{
+					bool validNumber = true;
+					int numDots = 0;
+					foreach (dchar ch; tok)
+					{
+						if (ch == '.')
+						{
+							numDots++;
+							continue;
+						}
+						if ((ch < '0') || (ch > '9'))
+						{
+							validNumber = false;
+							break;
+						}
+					}
+					if (numDots > 1)
+						validNumber = false;
+					if (validNumber)
+					{
+						return SValue(SFloat(to!fpnum(tok)));
+					}
 					throw new SceneException("Undefined value " ~ tok);
 				}
 			}
@@ -316,7 +292,7 @@ struct SceneDescription
 			{
 				throw new SceneException("Object must have defined material: " ~ id);
 			}
-			obj.material = cfgMaterials[cast(string)optMap["MATERIAL"].get!SString];
+			obj.material = cfgMaterials[cast(string) optMap["MATERIAL"].get!SString];
 			obj.setupFromOptions(optMap);
 			obj.setName(id);
 			if (!skipId)

@@ -21,6 +21,7 @@ VEC2 X Y
 VEC3 X Y Z
 MAT4 A B C D  E F G H  I J K L  M N O P
 FLOAT N
+N - where N consists of just digits and 0 or 1 "." makes a FLOAT
 WAVE N
 COLOR RRGGBB - in HTML/hexadecimal format
 
