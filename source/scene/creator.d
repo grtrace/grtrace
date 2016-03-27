@@ -41,6 +41,7 @@ struct SceneDescription
 {
 	enum scriptHeader = "GRTRACE SCENE DESCRIPTION VERSION 1";
 	SValue[string] defines;
+	bool[string] modules;
 
 	/**
 	Populate the space with objects loaded from a script.
@@ -311,6 +312,11 @@ struct SceneDescription
 				throw new SceneException("Unsupported object type " ~ type);
 			}
 			SValue[string] optMap = fetchOptmap();
+			if ("MATERIAL" !in optMap)
+			{
+				throw new SceneException("Object must have defined material: " ~ id);
+			}
+			obj.material = cfgMaterials[cast(string)optMap["MATERIAL"].get!SString];
 			obj.setupFromOptions(optMap);
 			obj.setName(id);
 			if (!skipId)
@@ -348,6 +354,19 @@ struct SceneDescription
 				return;
 			switch (tok)
 			{
+			case "MODULE":
+				string id = fetchToken();
+				fetchEnd();
+				modules[id] = true;
+				break;
+			case "REQUIRE":
+				string id = fetchToken();
+				fetchEnd();
+				if (id !in modules)
+				{
+					throw new SceneException("Required module not loaded: " ~ id);
+				}
+				break;
 			case "DEFINE":
 				string key = fetchToken();
 				SValue val = fetchValue();
@@ -381,6 +400,7 @@ struct SceneDescription
 				Material mat = new Material();
 				parseMaterial(mat);
 				cfgMaterials[id] = mat;
+				defines[id] = SValue(cast(SString)(id));
 				break;
 			case "SETSPACE":
 				string type = fetchToken();
