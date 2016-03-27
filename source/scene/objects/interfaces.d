@@ -9,6 +9,8 @@ import std.math;
 import image.color;
 import scriptconfig;
 public import dbg.draws;
+import std.typecons;
+import std.variant;
 
 /// Script primitives
 public
@@ -21,9 +23,48 @@ public
 	}
 
 	alias SVec3 = Vectorf;
+	alias SMat4 = Matrix4f;
 	alias SColor = Color;
 	alias SString = string;
-	alias SValue = Algebraic!(SFloat, SWave, SVec2, SVec3, SColor, SString);
+	alias STexture = Typedef!(string, "", "texture");
+	alias SValue = Algebraic!(SFloat, SWave, SVec2, SVec3, SMat4, SColor, SString,
+		STexture);
+
+	Vectorf optVec3(SValue[string] map, string key)
+	{
+		if (key in map)
+		{
+			return cast(Vectorf)(*(key in map).get!(SVec3));
+		}
+		else
+		{
+			return vectorf(0, 0, 0);
+		}
+	}
+
+	Matrix4f optMat4(SValue[string] map, string key)
+	{
+		if (key in map)
+		{
+			return cast(Matrix4f)(*(key in map).get!(SMat4));
+		}
+		else
+		{
+			return Matrix4f.Zero();
+		}
+	}
+
+	fpnum optFloat(SValue[string] map, string key)
+	{
+		if (key in map)
+		{
+			return cast(fpnum)(*(key in map).get!(SFloat));
+		}
+		else
+		{
+			return 0;
+		}
+	}
 }
 
 template RenderableNameHandler()
