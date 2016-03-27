@@ -1,6 +1,5 @@
 configSet "ResolutionX" 900
 configSet "ResolutionY" 900
-
 configSet "Samples" 1
 configSet "OutputFile" "room_flat.png"
 

@@ -1,8 +1,6 @@
 configSet "ResolutionX" 200
 configSet "ResolutionY" 200
 configSet "Samples" 1
-configSet "WorldSpace" "test"
-configSet "SpaceConfig" ""
 configSet "OutputFile" "raytrace_accretion_redshift.png"
 
 loadScene "scenes/_common.grt"

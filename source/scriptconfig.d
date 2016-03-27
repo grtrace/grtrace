@@ -48,18 +48,7 @@ void InitScripting(string arg0)
 	mixin(ConfigMixin("ResolutionY"));
 
 	mixin(ConfigMixin("Samples"));
-	mixin(ConfigMixin("WorldSpace"));
-	mixin(ConfigMixin("SpaceConfig"));
-	mixin(ConfigMixin("CameraType"));
-	mixin(ConfigMixin("CameraX"));
-	mixin(ConfigMixin("CameraY"));
-	mixin(ConfigMixin("CameraZ"));
-	mixin(ConfigMixin("CameraPitch"));
-	mixin(ConfigMixin("CameraYaw"));
-	mixin(ConfigMixin("CameraRoll"));
-	mixin(ConfigMixin("CameraOptions"));
 	mixin(ConfigMixin("OutputFile"));
-	mixin(ConfigMixin("MetricOptions"));
 	mixin(ConfigMixin("MaxDepth"));
 }
 
