@@ -5,7 +5,7 @@ configSet "OutputFile" "room_flat.png"
 
 loadScene "scenes/_common.grt"
 loadScene "scenes/blueroom.grt"
-sceneCmd "SETCAMERA LINEAR ORIGIN cameraOrigin ANGLES cameraAngles FOV FLOAT 30 ;"
+sceneCmd "SETCAMERA LINEAR ORIGIN cameraOrigin ANGLES cameraAngles FOV 30 ;"
 sceneCmd "SETSPACE FLAT ;"
 
 puts "Tcl config finished"

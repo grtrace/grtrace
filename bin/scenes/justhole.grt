@@ -1,0 +1,9 @@
+GRTRACE SCENE DESCRIPTION VERSION 1
+REQUIRE _common ;
+
+DEFINE mass FLOAT 1.5 ;
+DEFINE radius FLOAT 3 ;
+
+MATERIAL .black EMIT black ;
+
+=SPHERE eh MATERIAL .black CENTER vec3.0 RADIUS radius ;
