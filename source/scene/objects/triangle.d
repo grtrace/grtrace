@@ -9,7 +9,7 @@ import scriptconfig;
 import std.math;
 
 static import scene.objects.plane;
-import std.string, std.getopt, std.array, std.range, std.math, std.algorithm;
+import std.string, std.array, std.range, std.math, std.algorithm;
 
 class Triangle : Renderable
 {
@@ -27,17 +27,14 @@ class Triangle : Renderable
 		triangle = tr;
 	}
 
-	void setupFromOptions(string[] a)
+	void setupFromOptions(SValue[string] a)
 	{
-		string A;
-		string B;
-		string C;
+		Vectorf A, B, C;
+		A = optVec3(a, "V1");
+		B = optVec3(a, "V2");
+		C = optVec3(a, "V3");
 
-		getopt(a, std.getopt.config.passThrough,
-			std.getopt.config.caseSensitive, "first|a", &A, "second|b", &B, "third|c",
-			&C);
-
-		triangle = TrianglePoints(vectorString(A), vectorString(B), vectorString(C));
+		triangle = TrianglePoints(A, B, C);
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -161,14 +158,19 @@ class TexturableTriangle : Triangle
 		cached = Cached(v0 * v0, v0 * v1, v1 * v1, 1 / ((v0 * v0) * (v1 * v1) - (v0 * v1) * (v0 * v1)));
 	}
 
-	override void setupFromOptions(string[] a)
+	override void setupFromOptions(SValue[string] a)
 	{
 		super.setupFromOptions(a);
-		getopt(a, std.getopt.config.caseSensitive, "texture_a_u|a", &tex_u_a,
-			"texture_a_v|A", &tex_v_a, "texture_b_u|b", &tex_u_b,
-			"texture_b_v|B", &tex_v_b, "texture_c_u|c", &tex_u_c, "texture_c_v|C",
-			&tex_v_c);
-
+		SVec2 Auv, Buv, Cuv;
+		Auv = optVec2(a, "UV1");
+		Buv = optVec2(a, "UV2");
+		Cuv = optVec2(a, "UV3");
+		tex_u_a = Auv.x;
+		tex_u_b = Buv.x;
+		tex_u_c = Cuv.x;
+		tex_v_a = Auv.y;
+		tex_v_b = Buv.y;
+		tex_v_c = Cuv.y;
 		setCache();
 	}
 

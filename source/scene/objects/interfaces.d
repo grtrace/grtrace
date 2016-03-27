@@ -43,6 +43,30 @@ public
 		}
 	}
 
+	SVec2 optVec2(SValue[string] map, string key, lazy SVec2 def = SVec2(0, 0))
+	{
+		if (key in map)
+		{
+			return ((key in map).get!(SVec2));
+		}
+		else
+		{
+			return def;
+		}
+	}
+
+	Color optColor(SValue[string] map, string key, lazy Color def = Colors.Black)
+	{
+		if (key in map)
+		{
+			return cast(Color)((key in map).get!(SColor));
+		}
+		else
+		{
+			return def;
+		}
+	}
+
 	Matrix4f optMat4(SValue[string] map, string key, lazy Matrix4f def = Matrix4f.Zero())
 	{
 		if (key in map)
@@ -85,7 +109,7 @@ template RenderableNameHandler()
 
 interface Renderable
 {
-	void setupFromOptions(string[] a);
+	void setupFromOptions(SValue[string] a);
 
 	string getName() nothrow const;
 	void setName(string nm) nothrow;
@@ -101,7 +125,7 @@ interface Renderable
 
 interface Light
 {
-	void setupFromOptions(string[] a);
+	void setupFromOptions(SValue[string] a);
 	Vectorf getPosition();
 	Color getColor();
 	Vectorf getPosition() shared;
@@ -133,7 +157,7 @@ class Transformed : Renderable
 		object.setName(nm);
 	}
 
-	void setupFromOptions(string[] a)
+	void setupFromOptions(SValue[string] a)
 	{
 		object.setupFromOptions(a);
 	}

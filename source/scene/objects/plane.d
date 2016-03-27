@@ -6,8 +6,7 @@ import math.vector;
 import scene.materials.material;
 import config;
 import scriptconfig;
-import std.string, std.getopt, std.array, std.range, std.math, std.algorithm,
-	std.uni;
+import std.string, std.array, std.range, std.math, std.algorithm, std.uni;
 
 class Plane : Renderable
 {
@@ -25,45 +24,43 @@ class Plane : Renderable
 		plane = p;
 	}
 
-	void setupFromOptions(string[] a)
+	void setupFromOptions(SValue[string] a)
 	{
-		dchar mode;
-
-		getopt(a, std.getopt.config.passThrough,
-			std.getopt.config.caseSensitive, "construction|c", &mode);
-
-		mode = toLower(mode);
-
-		if (mode == 'a')
+		bool done = false;
+		if ("OXZDEGREES" in a)
 		{
-			string origStr;
-			fpnum OXZ_deg_angle;
-			fpnum OXY_deg_angle;
+			done = true;
 
-			getopt(a, std.getopt.config.caseSensitive,
-				std.getopt.config.passThrough, "origin|o", &origStr,
-				"OXZ_deg_angle|a", &OXZ_deg_angle, "OXY_deg_angle|b", &OXY_deg_angle);
-			plane = PlaneAngles(OXZ_deg_angle, OXY_deg_angle, vectorString(origStr));
+			Vectorf origin = optVec3(a, "ORIGIN");
+			fpnum OXZ_deg_angle = optFloat(a, "OXZDEGREES");
+			fpnum OXY_deg_angle = optFloat(a, "OXYDEGREES");
+			plane = PlaneAngles(OXZ_deg_angle, OXY_deg_angle, origin);
 		}
-		else if (mode == 'v' || mode == 'p')
+		if ("POINT1" in a)
 		{
-			string origStr;
-			string vStr1;
-			string vStr2;
-
-			getopt(a, std.getopt.config.caseSensitive,
-				std.getopt.config.passThrough, "origin|o", &origStr,
-				"first|f", &vStr1, "second|s", &vStr2);
-
-			if (mode == 'v')
-				plane = PlaneVectors(vectorString(origStr),
-					vectorString(vStr1), vectorString(vStr2));
-			else //mode p
-				plane = PlanePoints(vectorString(origStr), vectorString(vStr1), vectorString(vStr2));
+			if (done)
+				throw new Exception("Multiple plane construction modes used!");
+			done = true;
+			Vectorf p1, p2, p3;
+			p1 = optVec3(a, "POINT1");
+			p2 = optVec3(a, "POINT2");
+			p3 = optVec3(a, "POINT3");
+			plane = PlanePoints(p1, p2, p3);
 		}
-		else
+		if ("DIR1" in a)
 		{
-			throw new Exception("Invalid plane construction mode: " ~ cast(char) mode);
+			if (done)
+				throw new Exception("Multiple plane construction modes used!");
+			done = true;
+			Vectorf origin, d1, d2;
+			origin = optVec3(a, "ORIGIN");
+			d1 = optVec3(a, "DIR1");
+			d2 = optVec3(a, "DIR2");
+			plane = PlaneVectors(origin, d1, d2);
+		}
+		if (!done)
+		{
+			throw new Exception("Plane not constructed!");
 		}
 	}
 
@@ -162,20 +159,24 @@ class TexturablePlane : Plane
 		B = ((A % plane.normal).normalized) * len2.sqrt();
 	}
 
-	override void setupFromOptions(string[] a)
+	override void setupFromOptions(SValue[string] a)
 	{
 		super.setupFromOptions(a);
+		Vectorf udir, vdir;
+		SVec2 uv1, uv2;
+		fpnum repeatMode;
 
-		string firstStr;
-		string secondStr;
-
-		getopt(a, std.getopt.config.caseSensitive,
-			std.getopt.config.passThrough, "tex_vector_first|F", &firstStr,
-			"tex_vector_second|S", &secondStr, "tex_crd_first_u|G", &tex_a_u,
-			"tex_crd_first_v|H", &tex_a_v, "tex_crd_second_u|I", &tex_d_u,
-			"tex_crd_second_v|J", &tex_d_v, "tex_single|Q", &texture_single);
-
-		setCache(vectorString(firstStr), vectorString(secondStr));
+		udir = optVec3(a, "UDIR");
+		vdir = optVec3(a, "VDIR");
+		uv1 = optVec2(a, "UV1");
+		uv2 = optVec2(a, "UV2");
+		repeatMode = optFloat(a, "UVREPEAT", 1);
+		texture_single = (repeatMode <= 0);
+		tex_a_u = uv1.x;
+		tex_d_u = uv2.x;
+		tex_a_v = uv1.y;
+		tex_d_v = uv2.y;
+		setCache(udir, vdir);
 	}
 
 	static fpnum fxmod(fpnum A, fpnum M)

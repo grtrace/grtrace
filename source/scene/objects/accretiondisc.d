@@ -8,7 +8,7 @@ import math.geometric;
 import scene.materials.material;
 import config;
 import scriptconfig;
-import std.string, std.getopt, std.array, std.range, std.math, std.algorithm,
+import std.string, std.array, std.range, std.math, std.algorithm,
 	std.uni;
 
 class AccretionDisc : Renderable
@@ -24,11 +24,10 @@ class AccretionDisc : Renderable
 		plane = new scene.Plane();
 	}
 
-	void setupFromOptions(string[] a)
+	void setupFromOptions(SValue[string] a)
 	{
-		getopt(a, std.getopt.config.passThrough,
-			std.getopt.config.caseSensitive, "inner_radius|ir", &iRadius2,
-			"outer_radius|or", &oRadius2);
+		iRadius2 = optFloat(a, "INNER", 0);
+		oRadius2 = optFloat(a, "OUTER", 1);
 
 		if (iRadius2 >= oRadius2)
 			throw new Exception(
@@ -100,20 +99,25 @@ class TexturedAccretionDisc : AccretionDisc
 		super();
 	}
 
-	override void setupFromOptions(string[] a)
+	override void setupFromOptions(SValue[string] a)
 	{
 		super.setupFromOptions(a);
 
-		string firstStr;
-		string secondStr;
+		Vectorf udir, vdir;
+		SVec2 uv1, uv2;
+		fpnum repeatMode;
 
-		getopt(a, std.getopt.config.caseSensitive,
-			std.getopt.config.passThrough, "tex_vector_first|F", &firstStr,
-			"tex_vector_second|S", &secondStr, "tex_crd_first_u|G", &tex_a_u,
-			"tex_crd_first_v|H", &tex_a_v, "tex_crd_second_u|I", &tex_d_u,
-			"tex_crd_second_v|J", &tex_d_v, "tex_single|Q", &texture_single);
-
-		setCache(vectorString(firstStr), vectorString(secondStr));
+		udir = optVec3(a, "UDIR");
+		vdir = optVec3(a, "VDIR");
+		uv1 = optVec2(a, "UV1");
+		uv2 = optVec2(a, "UV2");
+		repeatMode = optFloat(a, "UVREPEAT", 1);
+		texture_single = (repeatMode <= 0);
+		tex_a_u = uv1.x;
+		tex_d_u = uv2.x;
+		tex_a_v = uv1.y;
+		tex_d_v = uv2.y;
+		setCache(udir, vdir);
 	}
 
 	private void setCache(Vectorf a, Vectorf b)

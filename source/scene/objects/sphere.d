@@ -7,7 +7,7 @@ import scene.materials.material;
 import config;
 import scriptconfig;
 import std.math;
-import std.getopt, std.string;
+import std.string;
 
 class Sphere : Renderable
 {
@@ -26,12 +26,10 @@ class Sphere : Renderable
 		radius = rad;
 	}
 
-	void setupFromOptions(string[] a)
+	void setupFromOptions(SValue[string] a)
 	{
-		string centerStr;
-		getopt(a, std.getopt.config.caseSensitive, "center|c", &centerStr, "radius|r",
-			&radius);
-		center = vectorString(centerStr);
+		center = optVec3(a, "CENTER");
+		radius = optFloat(a, "RADIUS", 1);
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
