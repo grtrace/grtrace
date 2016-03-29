@@ -4,6 +4,7 @@ import scene.objects.interfaces;
 import scene.materials.material;
 import scene.scenemgr, scene.camera;
 import image.memory;
+import std.math, std.functional;
 import std.concurrency;
 
 alias fpnum = double;
@@ -13,6 +14,12 @@ fpnum eps = 1e-9;
 alias fpnump = fpnum*;
 alias inump = inum*;
 alias unump = unum*;
+
+/*fpnum fast_atan2(fpnum y, fpnum x)
+{
+	
+}*/
+alias fast_atan2 = atan2;
 
 __gshared
 {

@@ -1,0 +1,1 @@
+dub build --build=avx_ldc --compiler=ldc2 --combined

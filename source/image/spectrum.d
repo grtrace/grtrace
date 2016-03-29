@@ -13,7 +13,14 @@ Color GetSpectrumColor(fpnum WaveLength)
 {
 	if ((!WaveLength.isFinite) || (WaveLength <= 400.0) || (WaveLength >= 700.0))
 	{
-		return Color(0.0, 0.0, 0.0);
+		if(WaveLength <= 400.0)
+		{
+			return Color(0.7, 0.7, 0.7);
+		}
+		else
+		{
+			return Color(0.3, 0.3, 0.3);
+		}
 	}
 	double r = 0.0, g = 0.0, b = 0.0, t = 0.0;
 	alias l = WaveLength;

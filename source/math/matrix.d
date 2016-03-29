@@ -7,7 +7,7 @@ import math.geometric;
 import config;
 import std.format;
 
-struct Matrix4(T)
+align(64) struct Matrix4(T)
 {
 private:
 
@@ -224,6 +224,12 @@ public:
 	body
 	{
 		vals[i] = val;
+	}
+	
+	/// Fast compile-time indexing
+	ref T at(size_t i)()
+	{
+		return vals[i];
 	}
 
 	Matrix4!T opBinary(string op)(const Matrix4!T rhs) const if (op == "+" || op == "-" || op == "*")

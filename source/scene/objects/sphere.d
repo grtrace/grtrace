@@ -83,7 +83,7 @@ class Sphere : Renderable
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
 		Vectorf d = (center - point).normalized;
-		U = 0.5 + atan2(d.z, d.x) / 2 * PI;
+		U = 0.5 + fast_atan2(d.z, d.x) / 2 * PI;
 		V = 0.5 - asin(d.y) / PI;
 	}
 

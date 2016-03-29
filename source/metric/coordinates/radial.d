@@ -24,7 +24,7 @@ class Radial : CoordinateChanger
 		Vectorf tmp = a - origin;
 		fpnum rt = ~tmp;
 		fpnum tt = acos(tmp.z / rt);
-		fpnum pt = atan2(tmp.y, tmp.x);
+		fpnum pt = fast_atan2(tmp.y, tmp.x);
 		return [0, rt, tt, pt];
 	}
 
