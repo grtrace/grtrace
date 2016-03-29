@@ -125,7 +125,6 @@ SETSPACE ANALYTIC KERR
 	[=TEX.PLANE arguments]
 	;
 =TRANSFORMED (S:identifier)
-	(MATERIAL (S:identifier))
 	(M4:transformation matrix)
 	(object definition without "=" and identifier)
 	;
