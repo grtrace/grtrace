@@ -261,6 +261,6 @@ class Kerr : Initiator
 		res["@ergosphere"] = DebugDraw(DrawType.Sphere, Rs, 0, new Plane(origin, vectorf(0, 0,
 			0)), null);
 		
-		assert(0, "NIY");
+		return null;
 	}
 }

@@ -42,7 +42,7 @@ class BoyerLinguist : CoordinateChanger
 
 		fpnum radius = sqrt((A + sqrt(A * A + 4 * C)) / 2);
 		fpnum theta = acos(tmp.z / radius);
-		fpnum phi = atan2(tmp.y, tmp.x);
+		fpnum phi = fast_atan2(tmp.y, tmp.x);
 
 		return [0, radius, theta, phi];
 	}

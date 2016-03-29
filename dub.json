@@ -19,6 +19,15 @@
 			"buildOptions": [
 				"releaseMode", "optimize", "inline", "debugInfo", "debugInfoC"
 			]
+		},
+		"avx_ldc": {
+			"buildOptions": [
+				"releaseMode", "optimize", "inline", "debugInfo"
+			],
+			"dflags": [
+				"-mcpu=native",
+				"-mattr=+sse4.1,+sse4.2,+avx"
+			]
 		}
 	}
 }

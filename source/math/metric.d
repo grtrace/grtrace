@@ -4,9 +4,11 @@ import config;
 import math.matrix;
 import std.range, std.traits;
 
+private enum int[4][4] ercmap = [[0, 1, 2, 3], [1, 4, 5, 6], [2, 5, 7, 8], [3, 6, 8, 9]];
+private immutable rcmap = ercmap;
+
 struct Metric4
 {
-	enum int[4][4] rcmap = [[0, 1, 2, 3], [1, 4, 5, 6], [2, 5, 7, 8], [3, 6, 8, 9]];
 	/**
 	 * [ 0, 1, 2, 3 ]
 	 * [ 1, 4, 5, 6 ]
@@ -64,6 +66,12 @@ struct Metric4
 	ref fpnum opIndex(int row, int col)
 	{
 		return vals[rcmap[row][col]];
+	}
+	
+	/// Fast compile-time indexed fetch
+	ref fpnum at(int row, int col)()
+	{
+		return vals[ercmap[row][col]];
 	}
 
 	alias vals this;
