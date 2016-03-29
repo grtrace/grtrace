@@ -72,6 +72,11 @@ class FlatCartesian : Initiator
 	{
 		return cast(CoordinateChanger) cord;
 	}
+	
+	DebugDraw[string] returnDebugRenderObjects() const
+	{
+		return null;
+	}
 }
 
 class FlatRadial : Initiator
@@ -164,5 +169,10 @@ class FlatRadial : Initiator
 	@property CoordinateChanger coordinate_system() const
 	{
 		return cast(CoordinateChanger) cord;
+	}
+	
+	DebugDraw[string] returnDebugRenderObjects() const
+	{
+		return null;
 	}
 }

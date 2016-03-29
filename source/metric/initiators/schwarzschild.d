@@ -125,4 +125,12 @@ class Schwarzschild : Initiator
 	{
 		return cast(CoordinateChanger) cord;
 	}
+	
+	DebugDraw[string] returnDebugRenderObjects() const
+	{
+		DebugDraw[string] res;
+		res["@event_horizon"] = DebugDraw(DrawType.Sphere, schwarzschild_radius, 0, new Plane(origin, vectorf(0, 0,
+			0)), null);
+		return res;
+	}
 }

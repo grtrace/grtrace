@@ -108,5 +108,10 @@ class Grid : DiscreteMetricContainer
 		}
 		return mdist;
 	}
+	
+	DebugDraw[string] returnDebugRenderObjects() const
+	{
+		return null;
+	}
 
 }

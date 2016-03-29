@@ -259,6 +259,11 @@ abstract class WorldSpace
 		}
 	}
 
+	public DebugDraw[string] returnDebugRenderObjects() const
+	{
+		return null;
+	}
+
 }
 
 class EuclideanSpace : WorldSpace

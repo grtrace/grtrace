@@ -225,5 +225,10 @@ class Analytic : AnalyticMetricContainer
 		}
 		return fpnum.infinity;
 	}
+	
+	DebugDraw[string] returnDebugRenderObjects()
+	{
+		return (cast(Initiator)init).returnDebugRenderObjects();
+	}
 
 }

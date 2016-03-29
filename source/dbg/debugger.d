@@ -211,7 +211,7 @@ class VisualHelper
 		}
 	}
 
-	private DrawnObj objSpatial, objRays;
+	private DrawnObj objSpatial, objRays, objGrid;
 
 	private static struct TCamera
 	{
@@ -257,7 +257,7 @@ class VisualHelper
 	private TSObject*[string] sceneObjects;
 	private TSObject*[] sortedObjects;
 	private bool mouseInGui, mouseLocked;
-	int numverts, numRays;
+	int numverts, numRays, numGridLines;
 	private void initVisuals()
 	{
 		texRendered = new GFXtexture();
@@ -408,7 +408,53 @@ class VisualHelper
 			numverts += 18;
 			sceneObjects[tso.id] = tso;
 		}
-
+		{
+			DebugDraw[string] space_info = DebugDispatcher.space.returnDebugRenderObjects();
+			
+			foreach(string obj_name, DebugDraw obj; space_info)
+			{
+				TSObject* tso = new TSObject();
+				tso.id = obj_name;
+				tso.obj = null;
+				tso.vertIndex = cast(int) e3d.length;
+				switch (obj.type)
+				{
+				case DrawType.None:
+					continue;
+	
+				case DrawType.Sphere:
+					tso.vertCount = VisualPrimitives.appendSphere(v3d, e3d, cast(int) v3d.length,
+						obj);
+					numverts += tso.vertCount;
+					sceneObjects[tso.id] = tso;
+					continue;
+	
+				case DrawType.Triangle:
+					tso.vertCount = VisualPrimitives.appendTriangle(v3d, e3d,
+						cast(int) v3d.length, obj);
+					numverts += tso.vertCount;
+					sceneObjects[tso.id] = tso;
+					continue;
+	
+				case DrawType.Plane:
+					tso.vertCount = VisualPrimitives.appendPlane(v3d, e3d, cast(int) v3d.length,
+						obj);
+					numverts += tso.vertCount;
+					sceneObjects[tso.id] = tso;
+					continue;
+	
+				case DrawType.AccretionDisc:
+					tso.vertCount = VisualPrimitives.appendAccretionDisc(v3d, e3d,
+						cast(int) v3d.length, obj);
+					numverts += tso.vertCount;
+					sceneObjects[tso.id] = tso;
+					continue;
+	
+				default:
+					continue;
+				}
+			}
+		}
 		foreach (shared Renderable obj; DebugDispatcher.space.objects)
 		{
 			auto OBJ = cast(Renderable) obj;
@@ -527,7 +573,19 @@ class VisualHelper
 		objRays.vao.configureAttribute(objSpatial.data, sCol, sh3Color, false, false);
 		objRays.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);
 		objRays.vao.enableAttribs();
-
+		
+		objGrid.vbo = new GFXbufferObject(gBufferUsage.DynamicPush);
+		objGrid.vbo.bindTo(gBufferTarget.VertexArray);
+		objGrid.vbo.updateData(cast(ubyte[]) dummy);
+		objGrid.vao = new GFXvertexArrayObject();
+		objGrid.vao.bind();
+		objRays.vao.disableAttribs();
+		objGrid.vao.configureAttribute(objSpatial.data, sPos, sh3Pos, false, false);
+		objGrid.vao.configureAttribute(objSpatial.data, sTex, sh3Tex, false, false);
+		objGrid.vao.configureAttribute(objSpatial.data, sCol, sh3Color, false, false);
+		objGrid.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);
+		objGrid.vao.enableAttribs();
+		
 	}
 
 	private void rebuildRays()
@@ -555,6 +613,7 @@ class VisualHelper
 	{
 		None,
 		Raytrace,
+		Coordinates,
 		InMiniature
 	}
 
@@ -578,6 +637,7 @@ class VisualHelper
 		GLsizei numvs;
 		vbegins.length = sceneObjects.keys.length;
 		vends.length = vbegins.length;
+		rebuildGrid();
 		while (!glfwWindowShouldClose(rwin))
 		{
 			dt = glfwGetTime();
@@ -622,6 +682,10 @@ class VisualHelper
 			if (DebugDispatcher.saver.dirty)
 				rebuildRays();
 			glDrawArrays(GL_LINES, 0, numRays);
+			
+			objGrid.bind();
+			objGrid.vao.enableAttribs();
+			glDrawArrays(GL_LINES, 0, numGridLines);
 
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
@@ -688,6 +752,7 @@ class VisualHelper
 				imguiLabel("F - Show fullscreen image");
 				imguiLabel("F+Left Click - Raytrace from image");
 				imguiLabel("1 - Do a raytrace");
+				imguiLabel("2 - Coordinate grid settings");
 				//imguiLabel("");
 				imguiEndScrollArea();
 			}
@@ -709,6 +774,7 @@ class VisualHelper
 				imguiEndScrollArea();
 			}
 			mouseInGui |= windowRaytrace();
+			mouseInGui |= windowCoordinates();
 
 			imguiEndFrame();
 			mousescroll = 0;
@@ -849,6 +915,133 @@ class VisualHelper
 
 		imguiEndScrollArea();
 
+		return mig;
+	}
+	
+	struct GridStateData
+	{
+		bool xyShow = false, xzShow = false, yzShow = false;
+		float zPos = 0, yPos = 0, xPos = 0;
+		float xyGSize = 1, xySize = 10;
+		float xzGSize = 1, xzSize = 10;
+		float yzGSize = 1, yzSize = 10;
+	}
+	
+	private GridStateData gridState;
+	
+	private void rebuildGrid()
+	{
+		Vert3D[] v3d = [];
+		
+		with(gridState)
+		{
+			if(xyShow)
+			{
+				int lineCount = cast(int)ceil(xySize/xyGSize);
+				float dim = (lineCount*xyGSize)/2;
+				dim -= fmod(dim, xyGSize);
+				if(dim < lineCount/2*xyGSize) dim+=xyGSize;
+				for(int i = -lineCount/2; i<=lineCount/2; i++)
+				{
+					v3d ~= Vert3D(xPos+ i*xyGSize,yPos- dim, zPos, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos+ i*xyGSize,yPos+ dim, zPos, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos- dim, yPos+ i*xyGSize, zPos, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos+ dim, yPos+ i*xyGSize, zPos, 0,0,0, 1,1,1,1, 0,0,1);
+				}
+			}
+			
+			if(xzShow)
+			{
+				int lineCount = cast(int)ceil(xzSize/xzGSize);
+				float dim = (lineCount*xzGSize)/2;
+				dim -= fmod(dim, xzGSize);
+				if(dim < lineCount/2*xzGSize) dim+=xzGSize;
+				for(int i = -lineCount/2; i<=lineCount/2; i++)
+				{
+					v3d ~= Vert3D(xPos+ i*xzGSize, yPos, zPos- dim, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos+ i*xzGSize, yPos, zPos+ dim, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos- dim, yPos, zPos+ i*xzGSize, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos+ dim, yPos, zPos+ i*xzGSize, 0,0,0, 1,1,1,1, 0,0,1);
+				}
+			}
+			
+			if(yzShow)
+			{
+				int lineCount = cast(int)ceil(yzSize/yzGSize);
+				float dim = (lineCount*yzGSize)/2;
+				dim -= fmod(dim, yzGSize);
+				if(dim < lineCount/2*yzGSize) dim+=yzGSize;
+				for(int i = -lineCount/2; i<=lineCount/2; i++)
+				{
+					v3d ~= Vert3D(xPos, yPos- dim, zPos+ i*yzGSize, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos, yPos+ dim, zPos+i*yzGSize, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos, yPos+ i*yzGSize, zPos- dim, 0,0,0, 1,1,1,1, 0,0,1);
+					v3d ~= Vert3D(xPos, yPos+ i*yzGSize, zPos+ dim, 0,0,0, 1,1,1,1, 0,0,1);
+				}
+			}
+		}
+		
+		numGridLines = cast(int) v3d.length;
+		if (numGridLines > 0)
+		{
+			objGrid.bind();
+			objGrid.vbo.updateData(cast(ubyte[]) v3d);
+		}
+	}
+	
+	private bool windowCoordinates()
+	{
+		if(window != DWindow.Coordinates)
+			return false;
+			
+		static int scroll;
+		bool mig = imguiBeginScrollArea("Grid Settings", winx - 200, winy / 2 - 250, 190,
+			500, &scroll);
+	
+		static bool xyExp, xzExp, yzExp;
+		
+		static GridStateData curGridState;
+		
+		imguiSlider("X Pos", &curGridState.xPos, -15f, 15f, 1f);
+		imguiSlider("Y Pos", &curGridState.yPos, -15f, 15f, 1f);
+		imguiSlider("Z Pos", &curGridState.zPos, -15f, 15f, 1f);
+		
+		imguiCollapse("XY Grid Settings", " ", &xyExp);
+		if(xyExp)
+		{
+			imguiCheck("Show", &curGridState.xyShow);
+			imguiSlider("Grid Size", &curGridState.xyGSize, 0.1f, 5f, 0.1f);
+			imguiSlider("Size", &curGridState.xySize, 5f, 200f, 1f);
+		}
+		
+		imguiCollapse("XZ Grid Settings", " ", &xzExp);
+		if(xzExp)
+		{
+			imguiCheck("Show", &curGridState.xzShow);
+			imguiSlider("Grid Size", &curGridState.xzGSize, 0.1f, 5f, 0.1f);
+			imguiSlider("Size", &curGridState.xzSize, 5f, 200f, 1f);
+		}
+		
+		imguiCollapse("YZ Grid Settings", " ", &yzExp);
+		if(yzExp)
+		{
+			imguiCheck("Show", &curGridState.yzShow);
+			imguiSlider("Grid Size", &curGridState.yzGSize, 0.1f, 5f, 0.1f);
+			imguiSlider("Size", &curGridState.yzSize, 5f, 200f, 1f);
+		}
+	
+		if(curGridState!=gridState)
+		{
+			gridState = curGridState;
+			rebuildGrid();
+		}
+		
+		if (imguiButton("Close"))
+		{
+			window = DWindow.None;
+		}
+	
+		imguiEndScrollArea();
 		return mig;
 	}
 
@@ -1060,6 +1253,11 @@ class VisualHelper
 			{
 				window = DWindow.Raytrace;
 			}
+			else if (id == GLFW_KEY_2 && state == GLFW_PRESS)
+			{
+				window = DWindow.Coordinates;
+			}
+			
 		}
 	}
 

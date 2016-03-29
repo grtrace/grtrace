@@ -133,4 +133,10 @@ class WorldSpaceWrapper : WorldSpace
 		}
 		return tmpc;
 	}
+	
+	override public DebugDraw[string] returnDebugRenderObjects() const
+	{	
+		 return (cast(MetricContainer)smetric).returnDebugRenderObjects();
+	}
+
 }

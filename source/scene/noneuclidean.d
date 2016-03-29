@@ -246,4 +246,11 @@ class PlaneDeflectSpace : WorldSpace
 		}
 		return outc;
 	}
+	
+	override public DebugDraw[string] returnDebugRenderObjects() const
+	{
+		DebugDraw[string] res;
+		res["@defPlane"] = DebugDraw(DrawType.Plane, 0, 0, cast(math.Plane*)&pln.plane, null);
+		return res;
+	}
 }
