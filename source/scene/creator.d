@@ -24,14 +24,12 @@ import scene.camera;
 
 class SceneException : Exception
 {
-	@safe pure this(string msg, string file = __FILE__,
-		size_t line = __LINE__, Throwable next = null)
+	@safe pure this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null)
 	{
 		super(msg, file, line, next);
 	}
 
-	@safe pure this(string msg, Throwable next,
-		string file = __FILE__, size_t line = __LINE__)
+	@safe pure this(string msg, Throwable next, string file = __FILE__, size_t line = __LINE__)
 	{
 		super(msg, file, line, next);
 	}
@@ -467,6 +465,27 @@ struct SceneDescription
 				{
 					cfgSpace.camera = cast(shared) camera;
 				}
+				break;
+			case "ZEROSPACE":
+				fetchEnd();
+				cfgSpace = null;
+				Raytracer.setSpace(null);
+				break;
+			case "ZEROCAMERA":
+				fetchEnd();
+				cfgCamera = null;
+				if (cfgSpace !is null)
+					cfgSpace.camera = null;
+				break;
+			case "MODIFYOBJ":
+				string id = fetchToken();
+				if (id !in cfgObjects)
+				{
+					throw new SceneException("Invalid object id " ~ id);
+				}
+				SValue[string] opts = fetchOptmap();
+				Renderable obj = cfgObjects[id];
+				obj.setupFromOptions(opts);
 				break;
 			default:
 				if (tok[0] == '=')

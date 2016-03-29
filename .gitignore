@@ -1,5 +1,6 @@
 *.ninja*
 .reggae
+*.mp4
 objs
 /grtrace
 compile_commands.json

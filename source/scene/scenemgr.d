@@ -103,6 +103,7 @@ abstract class WorldSpace
 		Image im = new Image(pixelsx, pixelsy);
 		WorldSpace.fullray = cast(shared(Image))(im);
 		__gshared unum todo, done = 0, prostep, dstep = 0;
+		done = 0;
 		enum unum prosteps = 100;
 		todo = pixelsx * pixelsy / 100;
 		prostep = todo / prosteps;
