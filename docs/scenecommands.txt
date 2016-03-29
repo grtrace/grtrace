@@ -64,6 +64,9 @@ SETSPACE ANALYTIC KERR
 	[ANGMOMENTUM (N)]
 	[ORIGIN (V3)]
 	;
+ZEROSPACE ;
+ZEROCAMERA ;
+MODIFYOBJ (S:identifier) [OPTION (T:argument)]+ ;
 !POINT (S:identifier)
 	[POSITION (V3)]
 	[EMIT (C/W)]

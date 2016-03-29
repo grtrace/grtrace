@@ -24,6 +24,9 @@
 			"buildOptions": [
 				"releaseMode", "optimize", "inline", "debugInfo"
 			],
+			"versions": [
+				"UseAVX"
+			],
 			"dflags": [
 				"-mcpu=native",
 				"-mattr=+sse4.1,+sse4.2,+avx"
