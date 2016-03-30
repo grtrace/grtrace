@@ -163,34 +163,38 @@ class Kerr : Initiator
 	//locally nonrotating frame
 	@property Matrix4f getTetradsElementsAtPoint() const  //localy nonrotating frame
 	{
+		fpnum e0 = sqrt(A/(sigma*delta));
 		auto res = Matrix4f(
-			sqrt(A/(sigma*delta)), 0,                                                0, ((Rs*a*r)/A)*sqrt(A/(sigma*delta)),
-			0,                      sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta/sigma)), 0, 0,
+			e0, 0,                                                0, ((Rs*a*r)/A)*e0,
+			0,                      sqrt(((r2+a2*cos2_theta)/(r2+a2))*(delta/sigma)), 0, 0,
 			0,                      0,                                                1, 0,
-			0,                      0,                                                0, (sqrt(r2+a2))*(sqrt(sigma/A)));
+			0,                      0,                                                0, sqrt((r2+a2)*(sigma/A)));
 
 		return res;
 	}
 
 	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		//TODO:Optimize
-		auto res = Matrix4f(
-			sqrt(A/(sigma*delta)), 0,                                                0, ((Rs*a*r)/A)*sqrt(A/(sigma*delta)),
-			0,                      sqrt((r2+a2*cos2_theta)/(r2+a2))*(sqrt(delta/sigma)), 0, 0,
-			0,                      0,                                                1, 0,
-			0,                      0,                                                0, (sqrt(r2+a2))*(sqrt(sigma/A)));
-
-		return (res.inverse);
+		// sage-math inverse :P
+		fpnum e0 = sqrt(A/(sigma*delta));
+		fpnum x = e0;
+		fpnum y = ((Rs*a*r)/A)*e0;
+		fpnum z = sqrt(((r2+a2*cos2_theta)/(r2+a2))*(delta/sigma));
+		fpnum w = sqrt((r2+a2)*(sigma/A));
+		return Matrix4f(
+			1.0/x, 0,  0, -y/(w*x),
+			0, 1.0/z, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1.0/w);
 	}
 	
 	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
 	{
-		auto deriv_normal_t = Matrix4f(
+		/*auto deriv_normal_t = Matrix4f(
 			0, 0, 0, 0,
 			0, 0, 0, 0,
 			0, 0, 0, 0,
-			0, 0, 0, 0);
+			0, 0, 0, 0);*/
 		
 		auto d_r_delta = 2*r-Rs;
 		auto d_r_sigma = 2*r;
@@ -200,12 +204,6 @@ class Kerr : Initiator
 		auto dr_03 = Rs*a*( (r*dr_00)/A + (sqrt(A/(sigma*delta)))*((A-r*d_r_A)/(A*A)) );
 		auto dr_11 = 2*Rs*((r2-a2)/((r2+a2)*(r2+a2)))*sqrt(1-((Rs*r)/(r2+a2)));
 		auto dr_33 = (1/(2*sqrt( (r2+a2)*sigma/A )))*((A*((r2+a2)*d_r_sigma + 2*r*sigma)-(r2+a2)*sigma*d_r_A)/(A*A));
-		
-		auto deriv_normal_r = Matrix4f(
-			dr_00, 0,     0, dr_03,
-			0,     dr_11, 0, 0,
-			0,     0,     0, 0,
-			0,     0,     0, dr_33);
 
 		
 		auto d_theta_A = -2*a2*delta*sin_theta*cos_theta;
@@ -213,25 +211,66 @@ class Kerr : Initiator
 		
 		auto theta_common = (1/(2*sqrt(A/(sigma*delta))))*((d_theta_A*sigma*delta - A*d_theta_sigma*delta)/((delta*sigma)*(delta*sigma)));
 		
-		auto deriv_normal_theta = Matrix4f(
+		/*auto deriv_normal_theta = Matrix4f(
 			theta_common, 0, 0, (Rs*a*r)*(theta_common*A - sqrt(A/(sigma*delta))*d_theta_A)/(A*A),
 			0,            0, 0, 0,
 			0,            0, 0, 0,
-			0,            0, 0, (sqrt(r2+a2))*( (1/(2*sqrt(sigma/A)))*((d_theta_sigma*A - sigma*d_theta_A)/(A*A)) ) );
+			0,            0, 0, (sqrt(r2+a2))*( (1/(2*sqrt(sigma/A)))*((d_theta_sigma*A - sigma*d_theta_A)/(A*A)) ) );*/
 
 		
-		auto deriv_normal_phi = Matrix4f(
+		/*auto deriv_normal_phi = Matrix4f(
 			0, 0, 0, 0,
 			0, 0, 0, 0,
 			0, 0, 0, 0,
-			0, 0, 0, 0);
+			0, 0, 0, 0);*/
 		
 		Matrix4f inverse_tetrad = getInverseTetradsElementsAtPoint;
+		
+		fpnum a = inverse_tetrad.at!(0);
+		fpnum b = inverse_tetrad.at!(3);
+		fpnum c = inverse_tetrad.at!(5);
+		fpnum d = inverse_tetrad.at!(15);
+		
+		fpnum x,y,z,w;
 
-		Matrix4f t_mat = (inverse_tetrad*deriv_normal_t*inverse_tetrad);
-		Matrix4f r_mat = (inverse_tetrad*deriv_normal_r*inverse_tetrad);
-		Matrix4f theta_mat = (inverse_tetrad*deriv_normal_theta*inverse_tetrad);
-		Matrix4f phi_mat = (inverse_tetrad*deriv_normal_phi*inverse_tetrad);
+		Matrix4f t_mat = Matrix4f.Zero;//(inverse_tetrad*deriv_normal_t*inverse_tetrad);
+		/*
+		
+		IT*DerR*IT =
+		[                a^2*x                     0                     0 a*b*x + (b*w + a*y)*d]
+		[                    0                 c^2*z                     0                     0]
+		[                    0                     0                     0                     0]
+		[                    0                     0                     0                 d^2*w]
+		
+		IT*DerT*IT = 
+		[                a^2*x                     0                     0 a*b*x + (a*y + b*z)*d]
+		[                    0                     0                     0                     0]
+		[                    0                     0                     0                     0]
+		[                    0                     0                     0                 d^2*z]
+		*/
+		x = dr_00;
+		y = dr_03;
+		z = dr_11;
+		w = dr_33;
+		//Matrix4f r_mat = (inverse_tetrad*deriv_normal_r*inverse_tetrad);
+		//Matrix4f theta_mat = (inverse_tetrad*deriv_normal_theta*inverse_tetrad);
+		Matrix4f r_mat = Matrix4f(
+			a*a*x, 0, 0, a*b*x + (b*w + a*y)*d,
+			0, c*c*z, 0, 0,
+			0, 0, 0, 0,
+			0, 0, 0, d*d*w
+		);
+		x = theta_common;
+		y = (Rs*a*r)*(theta_common*A - sqrt(A/(sigma*delta))*d_theta_A)/(A*A);
+		z = (sqrt(r2+a2))*( (1/(2*sqrt(sigma/A)))*((d_theta_sigma*A - sigma*d_theta_A)/(A*A)) );
+		w = 0.0;
+		Matrix4f theta_mat = Matrix4f(
+			a*a*x, 0, 0, a*b*x + (a*y + b*z)*d,
+			0, 0, 0, 0,
+			0, 0, 0, 0,
+			0, 0, 0, d*d*z
+		);
+		Matrix4f phi_mat = Matrix4f.Zero;//(inverse_tetrad*deriv_normal_phi*inverse_tetrad);
 		
 		Matrix4f[4] res = [t_mat, r_mat, theta_mat, phi_mat];
 		
