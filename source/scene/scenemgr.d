@@ -104,6 +104,7 @@ abstract class WorldSpace
 		WorldSpace.fullray = cast(shared(Image))(im);
 		__gshared unum todo, done = 0, prostep, dstep = 0;
 		done = 0;
+		dstep = 0;
 		enum unum prosteps = 100;
 		todo = pixelsx * pixelsy / 100;
 		prostep = todo / prosteps;
@@ -222,6 +223,7 @@ abstract class WorldSpace
 				cast(unum) pixelsy, threads, GetRayFunc());
 			//tdg(thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
 			int running = threads;
+			done = 0;
 			while (running > 0)
 			{
 				try
