@@ -73,6 +73,11 @@ class FlatCartesian : Initiator
 		return cast(CoordinateChanger) cord;
 	}
 	
+	@property bool isInForbidenZone() const
+	{
+		return false;
+	}
+	
 	DebugDraw[string] returnDebugRenderObjects() const
 	{
 		return null;
@@ -169,6 +174,11 @@ class FlatRadial : Initiator
 	@property CoordinateChanger coordinate_system() const
 	{
 		return cast(CoordinateChanger) cord;
+	}
+	
+	@property bool isInForbidenZone() const
+	{
+		return false;
 	}
 	
 	DebugDraw[string] returnDebugRenderObjects() const
