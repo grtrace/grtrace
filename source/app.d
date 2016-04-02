@@ -13,7 +13,8 @@ import core.thread : Thread;
 import core.time;
 import math;
 import gpuacc.gpu;
-import dbg.debugger_new : VisualHelper;
+import dbg.debugger : VisualHelper;
+import dbg.calcs;
 
 enum string HelpStr = `
 General Relativity rayTracer usage:
@@ -98,7 +99,7 @@ void main(string[] args)
 		VisualHelper.instance.runGraphics();
 	if (cfgAdditionalCalc && (!cfgDebug))
 	{
-		//StartTest();
+		askCalculation();
 	}
 	FinalizeGPU();
 }

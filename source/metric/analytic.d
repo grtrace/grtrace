@@ -108,7 +108,11 @@ class Analytic : AnalyticMetricContainer
 			DebugDispatcher.saveRay(ray, *hitpoint, RayDebugType.Default);
 			return mdist;
 		}
-		DebugDispatcher.saveRay(ray, to, RayDebugType.Default);
+		if(DebugDispatcher.saveRay(ray, to, RayDebugType.Default))
+		{
+			*didHit = true;
+			return travel_dist;
+		}
 		return travel_dist;
 	}
 

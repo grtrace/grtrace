@@ -1,8 +1,8 @@
 GRTRACE SCENE DESCRIPTION VERSION 1
 REQUIRE _common ;
 
-DEFINE mass FLOAT 1.5 ;
-DEFINE radius FLOAT 3 ;
+DEFINE mass FLOAT 1 ;
+DEFINE radius FLOAT 2 ;
 
 MATERIAL .black EMIT black ;
 

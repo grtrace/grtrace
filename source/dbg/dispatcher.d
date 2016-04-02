@@ -85,6 +85,8 @@ struct DebugDispatcher
 		Image renderResult;
 		/// Ray saver
 		RaySaver saver;
+		/// Breaking function (true=stop rendering)
+		bool function(SavedRay) breakFunction;
 	}
 static:
 	void progress(size_t done, size_t total)
@@ -92,18 +94,20 @@ static:
 		stderr.writef("\r%30c\rProgress: %d/%d", ' ', done, total);
 	}
 
-	void saveRay(Line ray, fpnum dist, RayDebugType rdt, Color customColor = Colors.White)
+	bool saveRay(Line ray, fpnum dist, RayDebugType rdt, Color customColor = Colors.White)
 	{
 		if (!saver.enabled)
-			return;
-		saveRay(ray, ray.origin + ray.direction * dist, rdt, customColor);
+			return false;
+		return saveRay(ray, ray.origin + ray.direction * dist, rdt, customColor);
 	}
 
-	void saveRay(Line ray, Vectorf end, RayDebugType rdt, Color customColor = Colors.White)
+	bool saveRay(Line ray, Vectorf end, RayDebugType rdt, Color customColor = Colors.White)
 	{
 		if (!saver.enabled)
-			return;
-		saver.append(SavedRay(ray.origin, end, ray.direction, rdt,
-			cast(int) saver.rays.length, customColor));
+			return false;
+		auto sray = SavedRay(ray.origin, end, ray.direction, rdt,
+			cast(int) saver.rays.length, customColor);
+		saver.append(sray);
+		return breakFunction?breakFunction(sray):false;
 	}
 }

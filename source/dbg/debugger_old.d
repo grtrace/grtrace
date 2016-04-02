@@ -1,4 +1,4 @@
-module dbg.debugger;
+module dbg.debugger_old;
 
 import derelict.glfw3.glfw3;
 import glad.gl.all;

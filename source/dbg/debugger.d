@@ -1,4 +1,4 @@
-module dbg.debugger_new;
+module dbg.debugger;
 
 import glad.gl.all;
 import glad.gl.loader;
@@ -735,6 +735,11 @@ class VisualHelper
 					imguiSlider("Near", &camera.near, 0.0001f, 1.0f, 0.0001f);
 					imguiSlider("Far", &camera.far, 2.0f, 10_000.0f, 10.0f);
 					imguiUnindent();
+				}
+				if(imguiButton("Calculations"))
+				{
+					import dbg.calcs : askCalculation;
+					askCalculation();
 				}
 			}
 			imguiEndScrollArea();
