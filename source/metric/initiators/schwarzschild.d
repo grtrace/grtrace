@@ -120,6 +120,12 @@ class Schwarzschild : Initiator
 		
 		return [null_mat, r_mat, null_mat, null_mat];
 	}
+	
+	@property bool isInForbidenZone() const
+	{
+		if(r <= schwarzschild_radius) return true;
+		else return false;
+	}
 
 	@property CoordinateChanger coordinate_system() const
 	{

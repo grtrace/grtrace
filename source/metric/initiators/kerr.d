@@ -16,6 +16,8 @@ class Kerr : Initiator
 	private fpnum Rs;
 	private fpnum a;
 	private fpnum a2;
+	
+	private fpnum r_plus;
 
 	//Cache
 	private fpnum r2;
@@ -46,6 +48,8 @@ class Kerr : Initiator
 			a = angular_momentum / m;
 		a2 = a * a;
 		coord = new BoyerLinguist(origin, a);
+		
+		r_plus = Rs/2 + sqrt((Rs*Rs)/4 - a2);
 	}
 
 	this(const Kerr o)
@@ -59,6 +63,7 @@ class Kerr : Initiator
 		a2 = o.a2;
 		r2 = o.r2;
 		r = o.r;
+		r_plus = o.r_plus;
 		theta = o.theta;
 		sin_theta = o.sin_theta;
 		sin2_theta = o.sin2_theta;
@@ -283,6 +288,12 @@ class Kerr : Initiator
 		}
 		
 		return res;
+	}
+	
+	@property bool isInForbidenZone() const
+	{
+		if(r <= r_plus) return true;
+		else return false;
 	}
 
 	@property CoordinateChanger coordinate_system() const

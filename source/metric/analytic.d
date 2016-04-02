@@ -198,18 +198,22 @@ class Analytic : AnalyticMetricContainer
 			auto x1 = ray.origin;
 			auto v1 = ray.direction;
 			auto a1 = returnSecondDerivativeOfGeodescis(x1, v1, init);
+			if(init.isInForbidenZone()) return fpnum.infinity;
 
 			auto x2 = ray.origin + (v1 * param_step * 0.5);
 			auto v2 = ray.direction + (a1 * param_step * 0.5);
 			auto a2 = returnSecondDerivativeOfGeodescis(x2, v2, init);
+			if(init.isInForbidenZone()) return fpnum.infinity;
 
 			auto x3 = ray.origin + (v2 * param_step * 0.5);
 			auto v3 = ray.direction + (a2 * param_step * 0.5);
 			auto a3 = returnSecondDerivativeOfGeodescis(x3, v3, init);
+			if(init.isInForbidenZone()) return fpnum.infinity;
 
 			auto x4 = ray.origin + (v3 * param_step);
 			auto v4 = ray.direction + (a3 * param_step);
 			auto a4 = returnSecondDerivativeOfGeodescis(x4, v4, init);
+			if(init.isInForbidenZone()) return fpnum.infinity;
 
 			newRay.origin = ray.origin + ((v1 + (v2 * 2) + (v3 * 2) + v4) * (param_step / 6.));
 			newRay.direction = ray.direction + ((a1 + (a2 * 2) + (a3 * 2) + a4) * (param_step / 6.));

@@ -19,6 +19,7 @@ interface Initiator
 	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const;
 
 	@property CoordinateChanger coordinate_system() const;
+	@property bool isInForbidenZone() const;
 	
 	import dbg.draws;
 	DebugDraw[string] returnDebugRenderObjects() const;
