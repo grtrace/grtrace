@@ -4,6 +4,9 @@ REQUIRE _common ;
 DEFINE mass FLOAT 1.5 ;
 DEFINE radius FLOAT 3 ;
 
+DEFINE View1 VEC3 0 1.5 20 ;
+DEFINE View2 VEC3 -6 5.5 24 ;
+
 DEFINE cameraOrigin VEC3 -0.9 0.8 -14.6 ;
 DEFINE cameraAngles VEC3 6 10 180 ;
 

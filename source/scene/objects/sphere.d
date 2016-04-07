@@ -14,7 +14,8 @@ class Sphere : Renderable
 	mixin RenderableNameHandler;
 	private Material mat;
 	private Vectorf center;
-	private fpnum radius;
+	private fpnum radius = 1.0;
+	private fpnum texScale = 1.0;
 
 	this()
 	{
@@ -29,7 +30,8 @@ class Sphere : Renderable
 	void setupFromOptions(SValue[string] a)
 	{
 		center = optVec3(a, "CENTER");
-		radius = optFloat(a, "RADIUS", 1);
+		radius = optFloat(a, "RADIUS", radius);
+		texScale = optFloat(a, "TEXSCALE", texScale);
 	}
 
 	bool getClosestIntersection(Line ray, out fpnum dist, out Vectorf normal) const
@@ -83,8 +85,8 @@ class Sphere : Renderable
 	void getUVMapping(Vectorf point, out fpnum U, out fpnum V) const
 	{
 		Vectorf d = (center - point).normalized;
-		U = 0.5 + fast_atan2(d.z, d.x) / 2 * PI;
-		V = 0.5 - asin(d.y) / PI;
+		U = 0.5 + fmod(texScale * (atan2(d.z, d.x) / (2 * PI)), 0.5);
+		V = 0.5 - fmod(texScale * (asin(d.y) / PI), 0.5);
 	}
 
 	override string toString()
