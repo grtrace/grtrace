@@ -11,7 +11,13 @@ import std.stdio, std.string, std.file, std.math, std.exception;
 import std.string, std.format, std.algorithm, std.array, std.range;
 import config, scene.camera, scene.scenemgr, math;
 import scene.objects.interfaces;
+import metric.interfaces;
+import metric.analytic;
+import metric.wrapper;
 import image.color;
+import image.spectrum;
+import scene.creator;
+import std.conv;
 
 /// -
 class TooLowGLVersion : Error
@@ -32,6 +38,23 @@ struct Vert3D
 } // 13 floats = 52 b
 
 private __gshared Color oColor;
+
+private float tryParseVal(char[] v, float ifnot)
+{
+	if(v.length < 1)
+	{
+		return ifnot;
+	}
+	try
+	{
+		float V = to!float(v);
+		return V;
+	}
+	catch(Exception e)
+	{
+		return ifnot;
+	}
+}
 
 private class VisualPrimitives
 {
@@ -167,10 +190,6 @@ private class VisualPrimitives
 class VisualHelper
 {
 	private __gshared VisualHelper _inst;
-	shared static this()
-	{
-		_inst = new VisualHelper();
-	}
 
 	private this()
 	{
@@ -178,6 +197,10 @@ class VisualHelper
 	/// -
 	public static @property VisualHelper instance()
 	{
+		if(_inst is null)
+		{
+			_inst = new VisualHelper();
+		}
 		return _inst;
 	}
 	/// -
@@ -371,7 +394,6 @@ class VisualHelper
 			tso.vertIndex = 0;
 			tso.vertCount = 18;
 			tso.visible = true;
-			// TODO: Add camera model
 			float csz = 1.0f;
 			float cyx = cam.yxratio;
 			float ax, ay, ah;
@@ -753,6 +775,7 @@ class VisualHelper
 				imguiLabel("W,A,S,D,Q,E - Camera movement");
 				imguiLabel("Tab - Object list");
 				imguiLabel("R - Reset camera to raytrace settings");
+				imguiLabel("G - Position list");
 				imguiLabel("Shift+R - Reset camera to 0,0,0");
 				imguiLabel("F - Show fullscreen image");
 				imguiLabel("F+Left Click - Raytrace from image");
@@ -778,6 +801,16 @@ class VisualHelper
 				}
 				imguiEndScrollArea();
 			}
+			if (glfwGetKey(rwin, GLFW_KEY_G) == GLFW_PRESS)
+			{
+				SVec3 sv3;
+				if(showVectors(sv3))
+				{
+					camera.x = sv3.x;
+					camera.y = sv3.y;
+					camera.z = sv3.z;
+				}
+			}
 			mouseInGui |= windowRaytrace();
 			mouseInGui |= windowCoordinates();
 
@@ -791,6 +824,25 @@ class VisualHelper
 		}
 		imguiDestroy();
 		glfwTerminate();
+	}
+
+	private bool showVectors(ref SVec3 vec)
+	{
+		static int scroll_pos;
+		mouseInGui |= imguiBeginScrollArea("Positions", winx / 2 - 200,
+			winy / 2 - 275, 400, 550, &scroll_pos);
+		bool flag = false;
+		foreach (string key, SValue sv; SceneDescription.defines)
+		{
+			if((sv.peek!SVec3) is null){continue;}
+			if(imguiButton(key))
+			{
+				vec = sv.get!SVec3;
+				flag = true;
+			}
+		}
+		imguiEndScrollArea();
+		return flag;
 	}
 
 	private void resetGl()
@@ -848,6 +900,8 @@ class VisualHelper
 	}
 
 	__gshared Color lastRayColor;
+	__gshared bool doRedshift = false;
+	__gshared float wavelength = 700.0;
 
 	private void traceSingleRay(Vectorf origin, Vectorf direction)
 	{
@@ -856,6 +910,23 @@ class VisualHelper
 		DebugDispatcher.saver.clear();
 		WorldSpace.RayFunc rf = DebugDispatcher.space.GetRayFunc();
 		lastRayColor = rf(thisTid, Line(origin, direction, true), 0, 0, 0);
+
+		if(doRedshift)
+		{
+			WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(DebugDispatcher.space);
+			auto mc = cast(AnalyticMetricContainer)(wsw.smetric);
+			auto met = mc.initiator;
+			auto first = DebugDispatcher.saver.rays[0];
+			met.prepareForRequest(first.start);
+			auto met_src = met.getMetricAtPoint()[0, 0];
+			foreach (ref ray; DebugDispatcher.saver.rays)
+			{
+				met.prepareForRequest(ray.end);
+				auto met_rec = met.getMetricAtPoint()[0, 0];
+				ray.color = GetSpectrumColor(wavelength * sqrt(met_rec / met_src));
+			}
+		}
+
 	}
 
 	private bool windowRaytrace()
@@ -863,55 +934,112 @@ class VisualHelper
 		if (window != DWindow.Raytrace)
 			return false;
 		static int scroll;
-		bool mig = imguiBeginScrollArea("Raytrace", winx - 200, winy / 2 - 250, 190,
+		bool mig = imguiBeginScrollArea("Raytrace", winx - 350, winy / 2 - 250, 340,
 			500, &scroll);
-		static float X = 0.0, Y = 0.0;
-		static bool Cont = false;
-		bool mod = false;
-		if (glfwGetKey(rwin, GLFW_KEY_KP_4) == GLFW_PRESS)
+		static bool fromImage = false;
+		static bool predef = false, predefD=false;
+		static SVec3 predefV;
+		if( cast(WorldSpaceWrapper)(DebugDispatcher.space) !is null )
 		{
-			X -= 0.1;
-			mod = true;
+			imguiCheck("Visualise redshift", &doRedshift);
+			if(doRedshift)
+			{
+				imguiSlider("Wavelength", &wavelength, 300.0, 1000.0, 10.0f);
+			}
 		}
-		if (glfwGetKey(rwin, GLFW_KEY_KP_6) == GLFW_PRESS)
+		imguiCheck("Use image coordinates", &fromImage);
+		if(fromImage)
 		{
-			X += 0.1;
-			mod = true;
+			static float X = 0.0, Y = 0.0;
+			static bool Cont = false;
+			bool mod = false;
+			if (glfwGetKey(rwin, GLFW_KEY_KP_4) == GLFW_PRESS)
+			{
+				X -= 0.1;
+				mod = true;
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_KP_6) == GLFW_PRESS)
+			{
+				X += 0.1;
+				mod = true;
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_KP_8) == GLFW_PRESS)
+			{
+				Y -= 0.1;
+				mod = true;
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_KP_2) == GLFW_PRESS)
+			{
+				Y += 0.1;
+				mod = true;
+			}
+			if ((imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f) && Cont) || mod)
+			{
+				float cx = (X / cfgResolutionX) * 2.0 - 1.0;
+				float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
+				Line ray;
+				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+				traceSingleRay(ray.origin, ray.direction);
+			}
+			if ((imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f) && Cont) || mod)
+			{
+				float cx = (X / cfgResolutionX) * 2.0 - 1.0;
+				float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
+				Line ray;
+				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+				traceSingleRay(ray.origin, ray.direction);
+			}
+			imguiCheck("Continuous", &Cont);
+			if (imguiButton("Trace"))
+			{
+				float cx = (X / cfgResolutionX) * 2.0 - 1.0;
+				float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
+				Line ray;
+				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+				traceSingleRay(ray.origin, ray.direction);
+			}
 		}
-		if (glfwGetKey(rwin, GLFW_KEY_KP_8) == GLFW_PRESS)
+		else
 		{
-			Y -= 0.1;
-			mod = true;
-		}
-		if (glfwGetKey(rwin, GLFW_KEY_KP_2) == GLFW_PRESS)
-		{
-			Y += 0.1;
-			mod = true;
-		}
-		if ((imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f) && Cont) || mod)
-		{
-			float cx = (X / cfgResolutionX) * 2.0 - 1.0;
-			float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
-			Line ray;
-			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
-			traceSingleRay(ray.origin, ray.direction);
-		}
-		if ((imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f) && Cont) || mod)
-		{
-			float cx = (X / cfgResolutionX) * 2.0 - 1.0;
-			float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
-			Line ray;
-			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
-			traceSingleRay(ray.origin, ray.direction);
-		}
-		imguiCheck("Continuous", &Cont);
-		if (imguiButton("Trace"))
-		{
-			float cx = (X / cfgResolutionX) * 2.0 - 1.0;
-			float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
-			Line ray;
-			DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
-			traceSingleRay(ray.origin, ray.direction);
+			static float pX=0.0, pY=0.0, pZ=0.0;
+			static float dX=0.0, dY=0.0, dZ=0.0;
+			static char[64] b1,b2,b3,b4,b5,b6;
+			static char[] tx1,tx2,tx3,tx4,tx5,tx6;
+			if(tx1.ptr != b1.ptr)
+			{
+				tx1 = b1[0..0];
+				tx2 = b2[0..0];
+				tx3 = b3[0..0];
+				tx4 = b4[0..0];
+				tx5 = b5[0..0];
+				tx6 = b6[0..0];
+			}
+			imguiLabel("Position:");
+			imguiCheck("Use predefined", &predef);
+			if(predefD)
+			{
+				tx1 = sformat(b1, "%.3f", predefV.x);
+				tx2 = sformat(b2, "%.3f", predefV.y);
+				tx3 = sformat(b3, "%.3f", predefV.z);
+				predefD = false;
+			}
+			imguiTextInput("X", b1, tx1);
+			imguiTextInput("Y", b2, tx2);
+			imguiTextInput("Z", b3, tx3);
+			imguiLabel("Direction:");
+			imguiTextInput("X", b4, tx4);
+			imguiTextInput("Y", b5, tx5);
+			imguiTextInput("Z", b6, tx6);
+			pX = tryParseVal(tx1, pX);
+			pY = tryParseVal(tx2, pY);
+			pZ = -tryParseVal(tx3, pZ);
+			dX = tryParseVal(tx4, dX);
+			dY = tryParseVal(tx5, dY);
+			dZ = -tryParseVal(tx6, dZ);
+			if(imguiButton("Trace"))
+			{
+				traceSingleRay(Point(pX,pY,pZ), Vectorf(dX,dY,dZ).normalized);
+			}
 		}
 		if (imguiButton("Close"))
 		{
@@ -919,6 +1047,14 @@ class VisualHelper
 		}
 
 		imguiEndScrollArea();
+		if(predef)
+		{
+			if(showVectors(predefV))
+			{
+				predef = false;
+				predefD = true;
+			}
+		}
 
 		return mig;
 	}
@@ -1014,25 +1150,31 @@ class VisualHelper
 		imguiCollapse("XY Grid Settings", " ", &xyExp);
 		if(xyExp)
 		{
+			imguiIndent();
 			imguiCheck("Show", &curGridState.xyShow);
-			imguiSlider("Grid Size", &curGridState.xyGSize, 0.1f, 5f, 0.1f);
+			imguiSlider("Grid Size", &curGridState.xyGSize, 0.5f, 5f, 0.5f);
 			imguiSlider("Size", &curGridState.xySize, 5f, 200f, 1f);
+			imguiUnindent();
 		}
 		
 		imguiCollapse("XZ Grid Settings", " ", &xzExp);
 		if(xzExp)
 		{
+			imguiIndent();
 			imguiCheck("Show", &curGridState.xzShow);
-			imguiSlider("Grid Size", &curGridState.xzGSize, 0.1f, 5f, 0.1f);
+			imguiSlider("Grid Size", &curGridState.xzGSize, 0.5f, 5f, 0.5f);
 			imguiSlider("Size", &curGridState.xzSize, 5f, 200f, 1f);
+			imguiUnindent();
 		}
 		
 		imguiCollapse("YZ Grid Settings", " ", &yzExp);
 		if(yzExp)
 		{
+			imguiIndent();
 			imguiCheck("Show", &curGridState.yzShow);
-			imguiSlider("Grid Size", &curGridState.yzGSize, 0.1f, 5f, 0.1f);
+			imguiSlider("Grid Size", &curGridState.yzGSize, 0.5f, 5f, 0.5f);
 			imguiSlider("Size", &curGridState.yzSize, 5f, 200f, 1f);
+			imguiUnindent();
 		}
 	
 		if(curGridState!=gridState)

@@ -38,7 +38,7 @@ class SceneException : Exception
 struct SceneDescription
 {
 	enum scriptHeader = "GRTRACE SCENE DESCRIPTION VERSION 1";
-	SValue[string] defines;
+	__gshared SValue[string] defines;
 	bool[string] modules;
 
 	/**

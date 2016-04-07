@@ -4,6 +4,8 @@ REQUIRE _common ;
 DEFINE mass FLOAT 1.5 ;
 DEFINE radius FLOAT 3 ;
 
+DEFINE View1 VEC3 0 9 45 ;
+
 MATERIAL .black EMIT black ;
 MATERIAL .disc EMIT WAVE 500 ;
 
