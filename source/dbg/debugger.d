@@ -11,7 +11,11 @@ import std.stdio, std.string, std.file, std.math, std.exception;
 import std.string, std.format, std.algorithm, std.array, std.range;
 import config, scene.camera, scene.scenemgr, math;
 import scene.objects.interfaces;
+import metric.interfaces;
+import metric.analytic;
+import metric.wrapper;
 import image.color;
+import image.spectrum;
 import scene.creator;
 import std.conv;
 
@@ -896,6 +900,8 @@ class VisualHelper
 	}
 
 	__gshared Color lastRayColor;
+	__gshared bool doRedshift = false;
+	__gshared float wavelength = 700.0;
 
 	private void traceSingleRay(Vectorf origin, Vectorf direction)
 	{
@@ -904,6 +910,23 @@ class VisualHelper
 		DebugDispatcher.saver.clear();
 		WorldSpace.RayFunc rf = DebugDispatcher.space.GetRayFunc();
 		lastRayColor = rf(thisTid, Line(origin, direction, true), 0, 0, 0);
+
+		if(doRedshift)
+		{
+			WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(DebugDispatcher.space);
+			auto mc = cast(AnalyticMetricContainer)(wsw.smetric);
+			auto met = mc.initiator;
+			auto first = DebugDispatcher.saver.rays[0];
+			met.prepareForRequest(first.start);
+			auto met_src = met.getMetricAtPoint()[0, 0];
+			foreach (ref ray; DebugDispatcher.saver.rays)
+			{
+				met.prepareForRequest(ray.end);
+				auto met_rec = met.getMetricAtPoint()[0, 0];
+				ray.color = GetSpectrumColor(wavelength * sqrt(met_rec / met_src));
+			}
+		}
+
 	}
 
 	private bool windowRaytrace()
@@ -911,11 +934,19 @@ class VisualHelper
 		if (window != DWindow.Raytrace)
 			return false;
 		static int scroll;
-		bool mig = imguiBeginScrollArea("Raytrace", winx - 200, winy / 2 - 250, 190,
+		bool mig = imguiBeginScrollArea("Raytrace", winx - 350, winy / 2 - 250, 340,
 			500, &scroll);
 		static bool fromImage = false;
 		static bool predef = false, predefD=false;
 		static SVec3 predefV;
+		if( cast(WorldSpaceWrapper)(DebugDispatcher.space) !is null )
+		{
+			imguiCheck("Visualise redshift", &doRedshift);
+			if(doRedshift)
+			{
+				imguiSlider("Wavelength", &wavelength, 300.0, 1000.0, 10.0f);
+			}
+		}
 		imguiCheck("Use image coordinates", &fromImage);
 		if(fromImage)
 		{
