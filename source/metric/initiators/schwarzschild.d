@@ -5,6 +5,7 @@ import metric.coordinates.radial;
 import math;
 import config;
 import std.math;
+import dbg.draws;
 
 class Schwarzschild : Initiator
 {

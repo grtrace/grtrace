@@ -3,6 +3,7 @@ module metric.interfaces;
 import math;
 import scene;
 import config;
+import dbg.draws;
 
 import metric.coordinates;
 

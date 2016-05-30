@@ -424,6 +424,10 @@ struct SceneDescription
 						A.initiator = new Kerr(optFloat(optMap, "MASS"),
 							optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
 						break;
+					case "REISSNER":
+						A.initiator = new Reissner(optFloat(optMap, "MASS"),
+							optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
+						break;
 					default:
 						throw new SceneException("Unknown analytic subtype: " ~ subtype);
 					}

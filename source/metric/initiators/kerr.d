@@ -5,19 +5,20 @@ import metric.coordinates.boyer;
 import math;
 import std.math;
 import config;
+import dbg.draws;
 
 class Kerr : Initiator
 {
-	private Vectorf origin;
-	private BoyerLinguist coord; //TODO:Werify
-	private fpnum m;
-	private fpnum j;
+	public Vectorf origin;
+	public BoyerLinguist coord; //TODO:Werify
+	public fpnum m;
+	public fpnum j;
 
-	private fpnum Rs;
-	private fpnum a;
-	private fpnum a2;
+	public fpnum Rs;
+	public fpnum a;
+	public fpnum a2;
 	
-	private fpnum r_plus;
+	public fpnum r_plus;
 
 	//Cache
 	private fpnum r2;
@@ -313,4 +314,5 @@ class Kerr : Initiator
 		
 		return null;
 	}
+	
 }
