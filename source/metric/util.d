@@ -153,6 +153,49 @@ Vectorf returnSecondDerivativeOfGeodescis(Vectorf point, Vectorf direction, Init
 	return second;
 }
 
+fpnum[4] returnTransformedCartesianVectorAndPrepareInitiator(Vectorf point, Vectorf direction, Initiator init)
+{
+	init.prepareForRequest(point); //prepare initiator for future requests
+
+	CoordinateChanger coords = init.coordinate_system;
+
+	//get local metric at point
+	Metric4 local_metric = init.getLocalMetricAtPoint;
+
+	Matrix4f tetrad = init.getTetradsElementsAtPoint;
+
+	fpnum[4] local_dr = coords.transformForwardSpacialFirstDerivatives(point, direction);
+	local_dr[0] = returnTimeDerivativeFromSpatialDerivatives(local_metric, local_dr);
+
+	fpnum[4] dr = [0, 0, 0, 0];
+
+	/**Unrolled:for (byte i = 0; i < 4; i++)
+	{
+		for (byte j = 0; j < 4; j++)
+		{
+			dr[i] += tetrad[j * 4 + i] * local_dr[j];
+		}
+	}*/
+	dr[0] = tetrad.at!(0) * local_dr[0] + 
+		tetrad.at!(4) * local_dr[1] + 
+		tetrad.at!(8) * local_dr[2] + 
+		tetrad.at!(12) * local_dr[3];
+	dr[1] = tetrad.at!(1) * local_dr[0] + 
+		tetrad.at!(5) * local_dr[1] + 
+		tetrad.at!(9) * local_dr[2] + 
+		tetrad.at!(13) * local_dr[3];
+	dr[2] = tetrad.at!(2) * local_dr[0] + 
+		tetrad.at!(6) * local_dr[1] + 
+		tetrad.at!(10) * local_dr[2] + 
+		tetrad.at!(14) * local_dr[3];
+	dr[3] = tetrad.at!(3) * local_dr[0] + 
+		tetrad.at!(7) * local_dr[1] + 
+		tetrad.at!(11) * local_dr[2] + 
+		tetrad.at!(15) * local_dr[3];
+		
+	return dr;
+}
+
 //TODO: NOT CHECKED
 Metric4[4] returnChristoffelsSymbols(const Metric4 g, const Metric4[3] dgs)
 {

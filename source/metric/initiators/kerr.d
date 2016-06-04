@@ -315,4 +315,11 @@ class Kerr : Initiator
 		return null;
 	}
 	
+	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir) //TODO: Implement
+	{
+		fpnum[string] res;
+		
+		return res;
+	}
+	
 }

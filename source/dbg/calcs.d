@@ -12,6 +12,7 @@ import std.file, std.math;
 import math.vector;
 import math.matrix;
 import math.geometric;
+import std.algorithm;
 
 struct AdditionalCalculation
 {
@@ -233,8 +234,7 @@ void calcTotalDistantRayDeflection()
 		
 		if(cfgVerbose) writeln("Detected Schwarzschild metric");
 		
-		metric_info = format("Metric: Analitic-Schwarzschild\n
-		Mass: %#.16e\n", mass);
+		metric_info = format("Metric: Analitic-Schwarzschild\nMass: %#.16e\n", mass);
 	}
 	/*else if(cast(Kerr)init !is null)
 	{
@@ -278,14 +278,13 @@ void calcTotalDistantRayDeflection()
 		
 		if(cfgVerbose) writeln("Detected Reissner-Nordstrom metric");
 		
-		metric_info = format("Metric: Analitic-Reissner\n
-		Mass: %#.16e\tCharge: %#.16e\n", mass, charge);
+		metric_info = format("Metric: Analitic-Reissner\nMass: %#.16e\tCharge: %#.16e\n", mass, charge);
 	}
-	else if(cast(FlatCartesian)init !is null || cast(FlatRadial)init !is null)
+	/*else if(cast(FlatCartesian)init !is null || cast(FlatRadial)init !is null)
 	{
 		if(cfgVerbose) writeln("Detected flat Minkowski metric");
 		metric_info = "Metric: Analitic-Flat\n";
-	}
+	}*/
 	else
 	{
 		writeln("Unsuported metric type!");
@@ -296,7 +295,7 @@ void calcTotalDistantRayDeflection()
 	fpnum timestep, distFromHole;
 	int minDeflectionMag;
 	size_t max_num_of_steps;
-	fpnum castingDistFromHole, castingDistFromHoleStep;
+	fpnum castingDistFromHoleMin, castingDistFromHoleMax, castingDistFromHoleStep;
 	
 	do
 	{
@@ -312,15 +311,27 @@ void calcTotalDistantRayDeflection()
 	
 	distFromHole = ReadBoundedFloat!"x>0"("Enter starting dist from hole: ");
 	
-	castingDistFromHole = ReadBoundedFloat!"x>0"("Enter ray casting dist: "); //TODO: better name
+	castingDistFromHoleMin = ReadBoundedFloat!"x>0"("Enter ray casting dist min: "); //TODO: better name
+	castingDistFromHoleMax = ReadBoundedFloat!"x>0"("Enter ray casting dist max: "); //TODO: better name!!!
 	castingDistFromHoleStep = ReadBoundedFloat!"x>0"("Enter ray casting dist step: "); //TODO: better name
 	
 	bool display = cast(bool)cast(int)readFloat("Do you wanna a visualisation of the rays(0/1): ");
 	
+	if(castingDistFromHoleMax < castingDistFromHoleMin)
+	{
+		swap(castingDistFromHoleMax, castingDistFromHoleMin);
+	}
+	
 	File f = File(opath, "a");
 	f.writef(metric_info);	//metric info
-	//f.writef(format("\n")); //simulation info
-	f.writef("Closest Dist \t Total Deflection Angle\n"); //header
+	f.writef(format(
+			"IntegStep: %#.16e\tDistFromHole: %#.16e\nCastDistMin: %#.16e\tCastDistMax: %#.16e\nCastDistStep: %#.16e\n\n",
+			timestep,
+			distFromHole,
+			castingDistFromHoleMin,
+			castingDistFromHoleMax,
+			castingDistFromHoleStep)); //simulation info
+	f.writef("Closest Dist\tE\tL\tPHI_tot\n"); //header
 	f.flush();
 	
 	static fpnum minDistToHole2 = fpnum.infinity;
@@ -337,14 +348,14 @@ void calcTotalDistantRayDeflection()
 	};
 	
 	int stepi = 0;
-	int numsteps = cast(int)(castingDistFromHole/castingDistFromHoleStep);
+	int numsteps = cast(int)((castingDistFromHoleMax-castingDistFromHoleMin)/castingDistFromHoleStep);
 	
 	anl.paramStep = timestep;
 	anl.maxNumberOfSteps = max_num_of_steps;
 	
 	DebugDispatcher.saver.clear();
 	
-	for(fpnum curCastingDist = castingDistFromHole; curCastingDist > 0; curCastingDist -= castingDistFromHoleStep)
+	for(fpnum curCastingDist = castingDistFromHoleMax; curCastingDist >= castingDistFromHoleMin; curCastingDist -= castingDistFromHoleStep)
 	{
 		size_t first_id = DebugDispatcher.saver.rays.length;
 		
@@ -355,6 +366,8 @@ void calcTotalDistantRayDeflection()
 
 		Line ray = Line(vectorf(0, distFromHole, 0), vectorf(curCastingDist,-distFromHole,0).normalized);
 		ray.ray = true;
+		
+		auto cOfMotion = init.returnConstantsOfMotion(ray.origin, ray.direction);
 		
 		try
 		{
@@ -373,10 +386,13 @@ void calcTotalDistantRayDeflection()
 			DebugDispatcher.saver.rays[first_id].dir.normalized);
 		fpnum minDistToHole = sqrt(minDistToHole2);
 		
-		
-		f.writef("%#.16e \t %#.16e \n", minDistToHole, totalDeflection);
+		f.writef(
+			"%#.16e\t%#.16e\t%#.16e\t%#.16e\n",
+			minDistToHole,
+			cOfMotion["E"],
+			cOfMotion["L"],
+			totalDeflection);
 		f.flush();
-		
 		
 		if(!display) DebugDispatcher.saver.clear();
 	}

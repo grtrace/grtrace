@@ -42,9 +42,13 @@ class Reissner : Initiator
 		Q = charge;
 		Q2 = charge*charge;
 		
-		det = (Rs/2) * sqrt(1-(4*Q2)/(Rs*Rs));
-		r_ext = (Rs/2) + det;
-		r_cauchy = (Rs/2) - det;
+		if(1-(4*Q2)/(Rs*Rs)>=0)
+		{
+			det = (Rs/2) * sqrt(1-(4*Q2)/(Rs*Rs));
+			r_ext = (Rs/2) + det;
+			r_cauchy = (Rs/2) - det;
+		}
+		else r_ext=r_cauchy=0;
 	}
 	
 	this(const Reissner o)
@@ -171,6 +175,19 @@ class Reissner : Initiator
 			0)), null);
 		res["@cauchy_event_horizon"] = DebugDraw(DrawType.Sphere, r_cauchy, 0, new Plane(origin, vectorf(0, 0,
 			0)), null);
+		return res;
+	}
+	
+	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir)
+	{
+		fpnum[string] res;
+		
+		import metric.util;
+		fpnum[4] vec = returnTransformedCartesianVectorAndPrepareInitiator(point, dir, cast(Initiator)this);
+		
+		res["E"] = -Arn * vec[0];
+		res["L"] = r2 * sin_theta*sin_theta * vec[3];
+		
 		return res;
 	}
 };

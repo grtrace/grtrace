@@ -24,6 +24,8 @@ interface Initiator
 	
 	import dbg.draws;
 	DebugDraw[string] returnDebugRenderObjects() const;
+	
+	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir);
 }
 
 interface CoordinateChanger

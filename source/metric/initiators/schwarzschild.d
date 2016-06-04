@@ -140,4 +140,18 @@ class Schwarzschild : Initiator
 			0)), null);
 		return res;
 	}
+	
+	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir)
+	{
+		fpnum[string] res;
+		
+		import metric.util;
+		fpnum[4] vec = returnTransformedCartesianVectorAndPrepareInitiator(point, dir, cast(Initiator)this);
+		
+		res["E"] = -tmp * vec[0];
+		res["L"] = r2 * sin_theta*sin_theta * vec[3];
+		
+		return res;
+	}
+	
 }

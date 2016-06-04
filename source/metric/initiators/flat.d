@@ -83,6 +83,12 @@ class FlatCartesian : Initiator
 	{
 		return null;
 	}
+	
+	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir) //TODO: implement
+	{
+		fpnum[string] res;
+		return res;
+	}
 }
 
 class FlatRadial : Initiator
@@ -185,5 +191,11 @@ class FlatRadial : Initiator
 	DebugDraw[string] returnDebugRenderObjects() const
 	{
 		return null;
+	}
+	
+	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir) //TODO: Implement
+	{
+		fpnum[string] res;
+		return res;
 	}
 }
