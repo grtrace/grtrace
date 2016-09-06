@@ -263,6 +263,53 @@ class VisualHelper
 			z += V.z * scale;
 		}
 	}
+	
+	private static struct MCamera
+	{
+		double focus_x = 0.5f, focus_y = 0.5f;
+		float zoom = 1.0f;
+		float zoom_max = 6.0f;
+		float zoom_min = 1.0f;
+		float zoom_speed = 0.1f;
+		
+		GFXmatrix4 matrix;
+		
+		///Normalizes parameters
+		private void normalize()
+		{
+			zoom = clamp(zoom, zoom_min, zoom_max);
+			focus_x = clamp(focus_x, 0.0f, 1.0f);
+			focus_y = clamp(focus_y, 0.0f, 1.0f);
+		}
+		
+		///Transforms miniature ray cordinates (-1,1) to texture ray cordinates
+		void getNormalizedRayCoordinates(float x, float y, ref double ray_x, ref double ray_y)
+		{
+			getNormalizedTexCoordinates(x, y, ray_x, ray_y);
+			ray_x = (ray_x-0.5f)*2;
+			ray_y = (ray_y-0.5f)*2;
+		}
+		
+		///Transforms miniature ray cordinates (-1,1) to texture cordinates
+		void getNormalizedTexCoordinates(float x, float y, ref double tex_x, ref double tex_y)
+		{
+			auto res = gVecMatTransform(matrix, GFXvector4((x/2)+0.5f, (y/2)+0.5f, 0.0f, 1.0f));
+			tex_x = res.x;
+			tex_y = res.y;
+		}
+		
+		///Rebuilds texture view matrix
+		void rebuildView()
+		{
+			normalize();
+			
+			matrix = gMat4Mul(
+				gMatTranslation(GFXvector3(focus_x, focus_y, 0.0f)),
+				gMat4Mul(
+				gMatScaling(GFXvector3(1.0f/zoom, 1.0f/zoom, 1.0f)), 
+				gMatTranslation(GFXvector3(-focus_x, -focus_y, 0.0f))));
+		}
+	}
 
 	private static struct TSObject
 	{
@@ -275,6 +322,7 @@ class VisualHelper
 	}
 
 	private TCamera camera;
+	private MCamera miniatureCamera;
 	private DrawnObj objRendered;
 	private GFXshader shader2D, shader3D;
 	private GFXmatrix4 matProjection;
@@ -317,6 +365,7 @@ class VisualHelper
 		shader2D.setUniformM4("model", gIdentity4());
 		shader2D.setUniformM4("view", gIdentity4());
 		shader2D.setUniformM4("proj", gIdentity4());
+		shader2D.setUniformM4("texModel", gIdentity4());
 		shader3D = new GFXshader();
 		shader3D.loadVertShader("shaders/space.vert");
 		shader3D.loadFragShader("shaders/space.frag");
@@ -609,6 +658,8 @@ class VisualHelper
 		objGrid.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);
 		objGrid.vao.enableAttribs();
 		
+		miniatureCamera.rebuildView();
+		
 	}
 
 	private void rebuildRays()
@@ -718,12 +769,15 @@ class VisualHelper
 				shader2D.setUniformM4("model",
 					gMat4Mul(gMatTranslation(gVec3(-winx + 60, -winy + 60, 0)),
 					gMatScaling(gVec3(50, 50, 1))));
+				
+				shader2D.setUniformM4("texModel", miniatureCamera.matrix);
 			}
 			else if(g_state.inputable == 0)
 			{
 				shader2D.setUniformM4("model",
 					gMat4Mul(gMatTranslation(gVec3(-winx / 2, -winy / 2, 0)),
 					gMatScaling(gVec3(winx / 2.0, winy / 2.0, 1))));
+				shader2D.setUniformM4("texModel", gIdentity4());
 			}
 			shader2D.setUniformM4("view", gIdentity4());
 			shader2D.setUniformM4("proj", gMatOrthographic(0, winx, 0, winy, 0, 1));
@@ -1273,10 +1327,11 @@ class VisualHelper
 				}
 				else
 				{
-					double xd = min(max(x, 10), 110) - 10.0;
-					double yd = min(max(y, winy - 110), winy - 10) - (winy - 110.0);
+					double xd = clamp(mousex, 10, 110) - 10.0f;
+					double yd = clamp(mousey, winy - 110, winy - 10) - (winy - 110.0f);
 					xd = (xd / 50.0) - 1.0;
 					yd = (yd / 50.0) - 1.0;
+					miniatureCamera.getNormalizedRayCoordinates(xd, yd, xd, yd);
 					nextRayConf.X = ((xd + 1.0)/2.0) * cfgResolutionX;
 					nextRayConf.Y = ((yd + 1.0)/2.0) * cfgResolutionY;
 					Line ray;
@@ -1360,10 +1415,11 @@ class VisualHelper
 		}
 		else if (mouseInMiniature)
 		{
-			double xd = min(max(x, 10), 110) - 10.0;
-			double yd = min(max(y, winy - 110), winy - 10) - (winy - 110.0);
+			double xd = clamp(mousex, 10, 110) - 10.0f;
+			double yd = clamp(mousey, winy - 110, winy - 10) - (winy - 110.0f);
 			xd = (xd / 50.0) - 1.0;
 			yd = (yd / 50.0) - 1.0;
+			miniatureCamera.getNormalizedRayCoordinates(xd, yd, xd, yd);
 			nextRayConf.X = ((xd + 1.0)/2.0) * cfgResolutionX;
 			nextRayConf.Y = ((yd + 1.0)/2.0) * cfgResolutionY;
 			Line ray;
@@ -1378,6 +1434,22 @@ class VisualHelper
 	public void onScroll(double axis, double dir)
 	{
 		mousescroll = cast(int) dir;
+		
+		if ((mousex >= 10) && (mousey >= winy - 110) && (mousex <= 110) && (mousey <= winy - 10))
+		{
+			double xd = clamp(mousex, 10, 110) - 10.0f;
+			double yd = clamp(mousey, winy - 110, winy - 10) - (winy - 110.0f);
+			xd = (xd / 50.0f) - 1.0f;
+			yd = (yd / 50.0f) - 1.0f;
+			
+			with(miniatureCamera)
+			{
+				getNormalizedTexCoordinates(xd, yd, focus_x, focus_y);
+				zoom += zoom*zoom_speed*mousescroll;
+				rebuildView();
+			}
+		}
+		
 	}
 
 	/// -

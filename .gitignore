@@ -1,3 +1,7 @@
+*.RES
+./bin/.ipynb_checkpoints/*
+*.ipynb
+*.ods
 *.ninja*
 .reggae
 *.mp4
