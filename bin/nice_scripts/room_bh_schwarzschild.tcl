@@ -1,5 +1,5 @@
-configSet "ResolutionX" 200
-configSet "ResolutionY" 200
+configSet "ResolutionX" 400
+configSet "ResolutionY" 400
 
 configSet "Samples" 1
 configSet "OutputFile" "room_bh_schwarzschild.png"

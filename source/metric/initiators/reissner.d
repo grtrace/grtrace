@@ -18,21 +18,24 @@ class Reissner : Initiator
 	public fpnum r_cauchy, r_ext;
 	public fpnum det;
 
-	//Cache
-	private fpnum r2;
-	private fpnum r;
-	private fpnum r3;
-	private fpnum inv_r;
-	private fpnum inv_r2;
-	private fpnum inv_r3;
-	private fpnum theta;
-	private fpnum sin_theta;
-	private fpnum sin2_theta;
-	private fpnum cos_theta;
-	private fpnum Arn;
-	private fpnum inv_Arn;
-
+	struct CachedData
+	{
+		fpnum r2;
+		fpnum r;
+		fpnum r3;
+		fpnum inv_r;
+		fpnum inv_r2;
+		fpnum inv_r3;
+		fpnum theta;
+		fpnum sin_theta;
+		fpnum sin2_theta;
+		fpnum cos_theta;
+		fpnum Arn;
+		fpnum inv_Arn;
+	}
 	
+	private CachedData* cache = null;
+
 	this(fpnum mass, fpnum charge, Vectorf orig)
 	{
 		origin = orig;
@@ -62,54 +65,66 @@ class Reissner : Initiator
 		r_cauchy = o.r_cauchy;
 		r_ext = o.r_ext;
 		det = o.det;
-
-		r2 = o.r2;
-		r3 = o.r3;
-		r = o.r;
-		inv_r = o.inv_r;
-		inv_r2 = o.inv_r2;
-		inv_r3 = o.inv_r3;
-		theta = o.theta;
-		sin_theta = o.sin_theta;
-		sin2_theta = o.sin2_theta;
-		cos_theta = o.cos_theta;
-		Arn = o.Arn;
-		inv_Arn = o.inv_Arn;
 	}
 	
 	@property Initiator clone() const
 	{
+		auto cloned = new Reissner(this);
+		cloned.cache = new CachedData;
+		return cloned;
+	}
+	
+	@property Initiator cloneParams() const
+	{
 		return new Reissner(this);
+	}
+	
+	@nogc nothrow size_t getCacheSize() const
+	{
+		return CachedData.sizeof;
+	}
+	@nogc nothrow void setCacheBuffer(ubyte* prt)
+	{
+		cache = cast(CachedData*) prt;
 	}
 	
 	void prepareForRequest(Vectorf point)
 	{
-		Vectorf v = point - origin;
-
-		r2 = (*v);
-		r = sqrt(r2);
-		r3 = r2*r;
-		inv_r = 1. / r;
-		inv_r2 = 1. / r2;
-		inv_r3 = 1. / r3;
-
-		theta = acos(v.z / r);
-		sin_theta = sin(theta);
-		sin2_theta = sin_theta*sin_theta;
-		cos_theta = cos(theta);
-
-		Arn = (1. - Rs * inv_r + Q2 * inv_r2);
-		inv_Arn = 1. / Arn;
+		with(cache)
+		{
+			Vectorf v = point - origin;
+	
+			r2 = (*v);
+			r = sqrt(r2);
+			r3 = r2*r;
+			inv_r = 1. / r;
+			inv_r2 = 1. / r2;
+			inv_r3 = 1. / r3;
+	
+			theta = acos(v.z / r);
+			sin_theta = sin(theta);
+			sin2_theta = sin_theta*sin_theta;
+			cos_theta = cos(theta);
+	
+			Arn = (1. - Rs * inv_r + Q2 * inv_r2);
+			inv_Arn = 1. / Arn;
+		}
 	}
 	
 	@property Metric4 getMetricAtPoint() const
 	{
-		return Metric4(-Arn, 0, 0, 0, inv_Arn, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
+		with(cache)
+		{
+			return Metric4(-Arn, 0, 0, 0, inv_Arn, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
+		}
 	}
 	
 	@property Metric4 getLocalMetricAtPoint() const
 	{
-		return Metric4(-1, 0, 0, 0, 1, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
+		with(cache)
+		{
+			return Metric4(-1, 0, 0, 0, 1, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
+		}
 	}
 	
 	@property Metric4[3] getDerivativesAtPoint() const
@@ -119,35 +134,44 @@ class Reissner : Initiator
 	
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
-		Metric4 time, radius, theta, phi;
-		
-		time = radius = theta = phi = Metric4(0,0,0,0, 0,0,0, 0,0, 0);
-		
-		radius[0,0] = (Arn*(Rs*r - 2*Q2)*inv_r3)/2;
-		theta[1,2] = inv_r;
-		phi[2,3] = cos_theta / sin_theta;
-		time[0,1] = ((Rs*r - 2*Q2)*inv_r3*inv_Arn)/2;
-		phi[1,3] = inv_r;
-		radius[3,3] = -(r*Arn*sin2_theta);
-		radius[1,1] = -time[0,1];
-		radius[2,2] = -(r*Arn);
-		theta[3,3] = -(sin_theta*cos_theta);
-		
-		return [time,radius,theta,phi];
+		with(cache)
+		{
+			Metric4 time, radius, theta, phi;
+			
+			time = radius = theta = phi = Metric4(0,0,0,0, 0,0,0, 0,0, 0);
+			
+			radius[0,0] = (Arn*(Rs*r - 2*Q2)*inv_r3)/2;
+			theta[1,2] = inv_r;
+			phi[2,3] = cos_theta / sin_theta;
+			time[0,1] = ((Rs*r - 2*Q2)*inv_r3*inv_Arn)/2;
+			phi[1,3] = inv_r;
+			radius[3,3] = -(r*Arn*sin2_theta);
+			radius[1,1] = -time[0,1];
+			radius[2,2] = -(r*Arn);
+			theta[3,3] = -(sin_theta*cos_theta);
+			
+			return [time,radius,theta,phi];
+		}
 	}
 	
 	@property Matrix4f getTetradsElementsAtPoint() const
 	{
-		auto res = Matrix4f(sqrt(inv_Arn), 0, 0, 0, 0, sqrt(Arn), 0, 0, 0, 0, 1, 0,
-			0, 0, 0, 1);
-		return res;
+		with(cache)
+		{
+			auto res = Matrix4f(sqrt(inv_Arn), 0, 0, 0, 0, sqrt(Arn), 0, 0, 0, 0, 1, 0,
+				0, 0, 0, 1);
+			return res;
+		}
 	}
 
 	@property Matrix4f getInverseTetradsElementsAtPoint() const
 	{
-		auto res = Matrix4f(sqrt(Arn), 0, 0, 0, 0, sqrt(inv_Arn), 0, 0, 0, 0, 1, 0,
-			0, 0, 0, 1);
-		return res;
+		with(cache)
+		{
+			auto res = Matrix4f(sqrt(Arn), 0, 0, 0, 0, sqrt(inv_Arn), 0, 0, 0, 0, 1, 0,
+				0, 0, 0, 1);
+			return res;
+		}
 	}
 	
 	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const //TODO: implement fully
@@ -164,8 +188,11 @@ class Reissner : Initiator
 	
 	@property bool isInForbidenZone() const
 	{
-		if(r <= r_ext) return true;
-		else return false;
+		with(cache)
+		{
+			if(r <= r_ext) return true;
+			else return false;
+		}
 	}
 	
 	DebugDraw[string] returnDebugRenderObjects() const
@@ -180,14 +207,17 @@ class Reissner : Initiator
 	
 	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir)
 	{
-		fpnum[string] res;
-		
-		import metric.util;
-		fpnum[4] vec = returnTransformedCartesianVectorAndPrepareInitiator(point, dir, cast(Initiator)this);
-		
-		res["E"] = -Arn * vec[0];
-		res["L"] = r2 * sin_theta*sin_theta * vec[3];
-		
-		return res;
+		with(cache)
+		{
+			fpnum[string] res;
+			
+			import metric.util;
+			fpnum[4] vec = returnTransformedCartesianVectorAndPrepareInitiator(point, dir, cast(Initiator)this);
+			
+			res["E"] = -Arn * vec[0];
+			res["L"] = r2 * sin_theta*sin_theta * vec[3];
+			
+			return res;
+		}
 	}
 };

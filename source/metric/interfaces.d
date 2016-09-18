@@ -9,7 +9,11 @@ import metric.coordinates;
 
 interface Initiator
 {
+	@nogc nothrow size_t getCacheSize() const;
+	@nogc nothrow void setCacheBuffer(ubyte* prt);
+	
 	@property Initiator clone() const;
+	@property Initiator cloneParams() const;
 	void prepareForRequest(Vectorf point);
 	@property Metric4 getMetricAtPoint() const;
 	@property Metric4 getLocalMetricAtPoint() const;

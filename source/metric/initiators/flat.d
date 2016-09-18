@@ -22,6 +22,20 @@ class FlatCartesian : Initiator
 	{
 		return new FlatCartesian();
 	}
+	
+	@property Initiator cloneParams() const
+	{
+		return new FlatCartesian();
+	}
+	
+	@nogc nothrow size_t getCacheSize() const
+	{
+		return 0;
+	}
+	@nogc nothrow void setCacheBuffer(ubyte* prt)
+	{
+		return;
+	}
 
 	void prepareForRequest(Vectorf point)
 	{
@@ -95,13 +109,17 @@ class FlatRadial : Initiator
 {
 	private static const Radial cord = new Radial;
 
-	//Cached data
-	private fpnum r2;
-	private fpnum r;
-	private fpnum inv_r;
-	private fpnum inv_r2;
-	private fpnum theta;
-	private fpnum sin_theta;
+	struct CachedData
+	{
+		fpnum r2;
+		fpnum r;
+		fpnum inv_r;
+		fpnum inv_r2;
+		fpnum theta;
+		fpnum sin_theta;
+	}
+	
+	private CachedData* cache = null;
 
 	this()
 	{
@@ -109,32 +127,48 @@ class FlatRadial : Initiator
 
 	this(const FlatRadial o)
 	{
-		r2 = o.r2;
-		r = o.r;
-		inv_r = o.inv_r;
-		inv_r2 = o.inv_r2;
-		theta = o.theta;
-		sin_theta = o.sin_theta;
 	}
 
 	@property Initiator clone() const
 	{
+		auto cloned = new FlatRadial(this);
+		cloned.cache = new CachedData;
+		return cloned;
+	}
+	
+	@property Initiator cloneParams() const
+	{
 		return new FlatRadial(this);
+	}
+	
+	@nogc nothrow size_t getCacheSize() const
+	{
+		return CachedData.sizeof;
+	}
+	@nogc nothrow void setCacheBuffer(ubyte* prt)
+	{
+		cache = cast(CachedData*) prt;
 	}
 
 	void prepareForRequest(Vectorf point)
 	{
-		r2 = (*point);
-		r = sqrt(r2);
-		inv_r = 1. / r;
-		inv_r2 = 1. / r2;
-		theta = acos(point.z / r);
-		sin_theta = sin(theta);
+		with(cache)
+		{
+			r2 = (*point);
+			r = sqrt(r2);
+			inv_r = 1. / r;
+			inv_r2 = 1. / r2;
+			theta = acos(point.z / r);
+			sin_theta = sin(theta);
+		}
 	}
 
 	@property Metric4 getMetricAtPoint() const
 	{
-		return Metric4(-1, 0, 0, 0, 1, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
+		with(cache)
+		{
+			return Metric4(-1, 0, 0, 0, 1, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
+		}
 	}
 
 	@property Metric4 getLocalMetricAtPoint() const
@@ -149,15 +183,18 @@ class FlatRadial : Initiator
 
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
-		static auto a = Metric4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-		auto b = Metric4(0, 0, 0, 0, 0, 0, 0, -r, 0, -r * sin_theta * sin_theta);
-
-		auto c = Metric4(0, 0, 0, 0, 0, inv_r, 0, 0, 0, -sin_theta * cos(theta));
-
-		auto d = Metric4(0, 0, 0, 0, 0, 0, inv_r, 0, 1. / tan(theta), 0);
-
-		return [a, b, c, d];
+		with(cache)
+		{
+			static auto a = Metric4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	
+			auto b = Metric4(0, 0, 0, 0, 0, 0, 0, -r, 0, -r * sin_theta * sin_theta);
+	
+			auto c = Metric4(0, 0, 0, 0, 0, inv_r, 0, 0, 0, -sin_theta * cos(theta));
+	
+			auto d = Metric4(0, 0, 0, 0, 0, 0, inv_r, 0, 1. / tan(theta), 0);
+	
+			return [a, b, c, d];
+		}
 	}
 
 	@property Matrix4f getTetradsElementsAtPoint() const
