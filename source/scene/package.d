@@ -8,3 +8,6 @@ public import scene.objects.sphere;
 public import scene.objects.triangle;
 
 public import scene.materials.material;
+
+public import scene.raymgr;
+public import scene.compute;

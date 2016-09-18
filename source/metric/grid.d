@@ -13,6 +13,19 @@ class Grid : DiscreteMetricContainer
 	private size_t probingParam;
 
 	private Metric4[] storage;
+	
+	size_t getRayDataSize()
+	{
+		assert(0);
+	}
+	int getStageCount()
+	{
+		assert(0);
+	}
+	ComputeStep[RayState.Finished] getComputeStages()
+	{
+		assert(0);
+	}
 
 	void setProbingParam(size_t pP)
 	{

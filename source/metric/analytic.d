@@ -18,6 +18,95 @@ class Analytic : AnalyticMetricContainer
 	private __gshared fpnum param_step;
 	private __gshared size_t max_number_of_steps;
 	private shared Initiator init = null;
+	
+	static struct RayData
+	{
+	}
+	ComputeStep[RayState.Finished] steps;
+	
+	this()
+	{
+		steps[RayState.Initialised] = ComputeStep(RayState.Initialised,
+			RayState.Finished, &computeRay1, false, "");
+	}
+	
+	size_t getRayDataSize()
+	{
+		return RayData.sizeof;	
+	}
+	
+	int getStageCount()
+	{
+		return 1;
+	}
+	
+	ComputeStep[RayState.Finished] getComputeStages()
+	{
+		return steps;
+	}
+	
+	private static RayState computeRay1(RayComputation* rc)
+	{
+		Vectorf rayhit;
+		Vectorf normal;
+		Renderable closest;
+		bool hit = false;
+		Vectorf origin = rc.curRay.origin;
+		import metric.wrapper;
+		(cast(MetricContainer)(cast(WorldSpaceWrapper)cfgSpace).smetric).TraceRay(rc.curRay, &hit, &rayhit, &normal, &closest);
+		if (!hit)
+		{
+			rc.color = Colors.Black;
+			return RayState.Finished;
+		}
+		if (!closest.material)
+		{
+			rc.color = Colors.Magenta;
+			return RayState.Finished;
+		}
+		rc.curRay.origin = rayhit + normal * 0.01;
+		fpnum u, v;
+		closest.getUVMapping(rayhit, u, v);
+	
+		auto metricContainer = cast(MetricContainer)(cast(WorldSpaceWrapper)cfgSpace).smetric;
+
+		Color tmpc = closest.material.emission_color;
+		Color textureColor = Colors.White;
+
+		if (closest.material.hasTexture())
+		{
+			fpnum U, V;
+			closest.getUVMapping(rayhit, U, V);
+			textureColor = closest.material.peekUV(U, V);
+		}
+
+		tmpc *= textureColor;
+
+		auto init = cast(AnalyticMetricContainer) metricContainer;
+	
+		if (init !is null && isFinite(closest.material.emission_wave_length))
+		{
+			
+			auto Initiator = init.initiator.clone;
+			
+			fpnum est_lamda_src = closest.material.emission_wave_length;
+
+			Initiator.prepareForRequest(rayhit);
+			fpnum src_met = Initiator.getMetricAtPoint()[0, 0];
+
+			Initiator.prepareForRequest(origin);
+			fpnum rec_met = Initiator.getMetricAtPoint()[0, 0];
+
+			fpnum red_shift_plus_one = sqrt(rec_met / src_met);
+
+			fpnum l_obs = est_lamda_src * red_shift_plus_one;
+			
+			tmpc = GetSpectrumColor(l_obs);
+		}
+		
+		rc.color = tmpc;
+		return RayState.Finished;
+	}
 
 	@property ref fpnum paramStep()
 	{
