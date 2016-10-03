@@ -9,6 +9,8 @@ import config;
 import image;
 import std.algorithm;
 import dbg.debugger;
+import scene.raymgr;
+import scene.compute;
 
 Initiator tlsInitiator = null;
 
@@ -19,6 +21,37 @@ class WorldSpaceWrapper : WorldSpace
 	this(MetricContainer met)
 	{
 		smetric = cast(shared(MetricContainer)) met;
+	}
+
+	static shared(uint) rdata = 0;
+
+	override public size_t getRayDataSize()
+	{
+		return (cast(MetricContainer)smetric).getRayDataSize();
+	}
+
+	override public int allocNewRayData()
+	{
+		import core.atomic : atomicOp;
+
+		uint idx = atomicOp!"+="(rdata, getRayDataSize());
+		idx -= getRayDataSize();
+		return idx;
+	}
+
+	override public void freeRayData()
+	{
+		rdata = 0;
+	}
+
+	override public int getStageCount()
+	{
+		return (cast(MetricContainer)smetric).getStageCount();
+	}
+
+	override public ComputeStep[RayState.Finished] getComputeStages()
+	{
+		return (cast(MetricContainer)smetric).getComputeStages();
 	}
 
 	override protected RayFunc GetRayFunc()
@@ -103,10 +136,8 @@ class WorldSpaceWrapper : WorldSpace
 
 				if (isFinite(closest.material.emission_wave_length))
 				{
-					if (tlsInitiator is null)
-					{
-						tlsInitiator = init.initiator.clone;
-					}
+					tlsInitiator = init.initiator.clone;
+					
 					fpnum est_lamda_src = closest.material.emission_wave_length;
 
 					tlsInitiator.prepareForRequest(rayhit);

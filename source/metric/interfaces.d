@@ -9,7 +9,11 @@ import metric.coordinates;
 
 interface Initiator
 {
+	@nogc nothrow size_t getCacheSize() const;
+	@nogc nothrow void setCacheBuffer(ubyte* prt);
+	
 	@property Initiator clone() const;
+	@property Initiator cloneParams() const;
 	void prepareForRequest(Vectorf point);
 	@property Metric4 getMetricAtPoint() const;
 	@property Metric4 getLocalMetricAtPoint() const;
@@ -38,6 +42,10 @@ interface CoordinateChanger
 
 interface MetricContainer
 {
+	size_t getRayDataSize();
+	int getStageCount();
+	ComputeStep[RayState.Finished] getComputeStages();
+	
 	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint = null,
 		Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0);
 	

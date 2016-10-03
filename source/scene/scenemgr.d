@@ -288,7 +288,7 @@ class EuclideanSpace : WorldSpace
 	{
 		steps[RayState.Initialised] = ComputeStep(RayState.Initialised,
 			RayState.InComputation1, &computeRay1, false, "");
-		steps[RayState.InComputation1] = ComputeStep(RayState.Initialised,
+		steps[RayState.InComputation1] = ComputeStep(RayState.InComputation1,
 			RayState.Finished, &computeRayLight, false, "");
 	}
 

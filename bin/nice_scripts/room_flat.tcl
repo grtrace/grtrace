@@ -9,6 +9,7 @@ sceneCmd "SETCAMERA LINEAR ORIGIN cameraOrigin ANGLES cameraAngles FOV 30 ;"
 sceneCmd "SETSPACE FLAT ;"
 
 puts "Tcl config finished"
-doTrace
-waitForTrace
+#doTrace
+#waitForTrace
+dbgTrace
 puts "Tcl script finished"

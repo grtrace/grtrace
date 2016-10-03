@@ -4,6 +4,7 @@ import glad.gl.all;
 import glad.gl.loader;
 import derelict.glfw3.glfw3;
 import imgui.api;
+import imgui.engine;
 import dbg.glhelpers;
 import dbg.dispatcher;
 import dbg.draws;
@@ -262,6 +263,53 @@ class VisualHelper
 			z += V.z * scale;
 		}
 	}
+	
+	private static struct MCamera
+	{
+		double focus_x = 0.5f, focus_y = 0.5f;
+		float zoom = 1.0f;
+		float zoom_max = 6.0f;
+		float zoom_min = 1.0f;
+		float zoom_speed = 0.1f;
+		
+		GFXmatrix4 matrix;
+		
+		///Normalizes parameters
+		private void normalize()
+		{
+			zoom = clamp(zoom, zoom_min, zoom_max);
+			focus_x = clamp(focus_x, 0.0f, 1.0f);
+			focus_y = clamp(focus_y, 0.0f, 1.0f);
+		}
+		
+		///Transforms miniature ray cordinates (-1,1) to texture ray cordinates
+		void getNormalizedRayCoordinates(float x, float y, ref double ray_x, ref double ray_y)
+		{
+			getNormalizedTexCoordinates(x, y, ray_x, ray_y);
+			ray_x = (ray_x-0.5f)*2;
+			ray_y = (ray_y-0.5f)*2;
+		}
+		
+		///Transforms miniature ray cordinates (-1,1) to texture cordinates
+		void getNormalizedTexCoordinates(float x, float y, ref double tex_x, ref double tex_y)
+		{
+			auto res = gVecMatTransform(matrix, GFXvector4((x/2)+0.5f, (y/2)+0.5f, 0.0f, 1.0f));
+			tex_x = res.x;
+			tex_y = res.y;
+		}
+		
+		///Rebuilds texture view matrix
+		void rebuildView()
+		{
+			normalize();
+			
+			matrix = gMat4Mul(
+				gMatTranslation(GFXvector3(focus_x, focus_y, 0.0f)),
+				gMat4Mul(
+				gMatScaling(GFXvector3(1.0f/zoom, 1.0f/zoom, 1.0f)), 
+				gMatTranslation(GFXvector3(-focus_x, -focus_y, 0.0f))));
+		}
+	}
 
 	private static struct TSObject
 	{
@@ -274,12 +322,13 @@ class VisualHelper
 	}
 
 	private TCamera camera;
+	private MCamera miniatureCamera;
 	private DrawnObj objRendered;
 	private GFXshader shader2D, shader3D;
 	private GFXmatrix4 matProjection;
 	private TSObject*[string] sceneObjects;
 	private TSObject*[] sortedObjects;
-	private bool mouseInGui, mouseLocked;
+	private bool mouseInGui, mouseLocked, mouseInMiniature;
 	int numverts, numRays, numGridLines;
 	private void initVisuals()
 	{
@@ -316,6 +365,7 @@ class VisualHelper
 		shader2D.setUniformM4("model", gIdentity4());
 		shader2D.setUniformM4("view", gIdentity4());
 		shader2D.setUniformM4("proj", gIdentity4());
+		shader2D.setUniformM4("texModel", gIdentity4());
 		shader3D = new GFXshader();
 		shader3D.loadVertShader("shaders/space.vert");
 		shader3D.loadFragShader("shaders/space.frag");
@@ -608,6 +658,8 @@ class VisualHelper
 		objGrid.vao.configureAttribute(objSpatial.data, sNorm, sh3Normal, false, false);
 		objGrid.vao.enableAttribs();
 		
+		miniatureCamera.rebuildView();
+		
 	}
 
 	private void rebuildRays()
@@ -635,8 +687,7 @@ class VisualHelper
 	{
 		None,
 		Raytrace,
-		Coordinates,
-		InMiniature
+		Coordinates
 	}
 
 	private DWindow window;
@@ -718,12 +769,15 @@ class VisualHelper
 				shader2D.setUniformM4("model",
 					gMat4Mul(gMatTranslation(gVec3(-winx + 60, -winy + 60, 0)),
 					gMatScaling(gVec3(50, 50, 1))));
+				
+				shader2D.setUniformM4("texModel", miniatureCamera.matrix);
 			}
-			else
+			else if(g_state.inputable == 0)
 			{
 				shader2D.setUniformM4("model",
 					gMat4Mul(gMatTranslation(gVec3(-winx / 2, -winy / 2, 0)),
 					gMatScaling(gVec3(winx / 2.0, winy / 2.0, 1))));
+				shader2D.setUniformM4("texModel", gIdentity4());
 			}
 			shader2D.setUniformM4("view", gIdentity4());
 			shader2D.setUniformM4("proj", gMatOrthographic(0, winx, 0, winy, 0, 1));
@@ -765,7 +819,7 @@ class VisualHelper
 				}
 			}
 			imguiEndScrollArea();
-			if (glfwGetKey(rwin, GLFW_KEY_F1) == GLFW_PRESS)
+			if (g_state.inputable == 0 && glfwGetKey(rwin, GLFW_KEY_F1) == GLFW_PRESS)
 			{
 				static int scroll_cs;
 				mouseInGui |= imguiBeginScrollArea("Help", winx / 2 - 150,
@@ -784,7 +838,7 @@ class VisualHelper
 				//imguiLabel("");
 				imguiEndScrollArea();
 			}
-			if (glfwGetKey(rwin, GLFW_KEY_TAB) == GLFW_PRESS)
+			if (g_state.inputable == 0 && glfwGetKey(rwin, GLFW_KEY_TAB) == GLFW_PRESS)
 			{
 				static int scroll_ol;
 				mouseInGui |= imguiBeginScrollArea("Objects", winx / 2 - 150,
@@ -801,7 +855,7 @@ class VisualHelper
 				}
 				imguiEndScrollArea();
 			}
-			if (glfwGetKey(rwin, GLFW_KEY_G) == GLFW_PRESS)
+			if (g_state.inputable == 0 && glfwGetKey(rwin, GLFW_KEY_G) == GLFW_PRESS)
 			{
 				SVec3 sv3;
 				if(showVectors(sv3))
@@ -929,6 +983,22 @@ class VisualHelper
 
 	}
 
+	struct CurrentRaySettings
+	{
+		float X = 0.0, Y = 0.0;
+	}
+	
+	private CurrentRaySettings nextRayConf;
+
+	private void TextFloatInput(const(char)[]label, char[] buffer, ref char[] slice)
+	{
+		imguiTextInput(label, buffer, slice);
+		while(slice.length>0 && !((slice[$-1]>='0' && slice[$-1]<='9') || slice[$-1] == '.'))
+		{
+			slice = slice[0..$-1];
+		}
+	}
+
 	private bool windowRaytrace()
 	{
 		if (window != DWindow.Raytrace)
@@ -950,41 +1020,40 @@ class VisualHelper
 		imguiCheck("Use image coordinates", &fromImage);
 		if(fromImage)
 		{
-			static float X = 0.0, Y = 0.0;
 			static bool Cont = false;
 			bool mod = false;
 			if (glfwGetKey(rwin, GLFW_KEY_KP_4) == GLFW_PRESS)
 			{
-				X -= 0.1;
+				nextRayConf.X -= 0.1;
 				mod = true;
 			}
 			if (glfwGetKey(rwin, GLFW_KEY_KP_6) == GLFW_PRESS)
 			{
-				X += 0.1;
+				nextRayConf.X += 0.1;
 				mod = true;
 			}
 			if (glfwGetKey(rwin, GLFW_KEY_KP_8) == GLFW_PRESS)
 			{
-				Y -= 0.1;
+				nextRayConf.Y -= 0.1;
 				mod = true;
 			}
 			if (glfwGetKey(rwin, GLFW_KEY_KP_2) == GLFW_PRESS)
 			{
-				Y += 0.1;
+				nextRayConf.Y += 0.1;
 				mod = true;
 			}
-			if ((imguiSlider("X", &X, 0.0, cfgResolutionX, 1.0f) && Cont) || mod)
+			if ((imguiSlider("X", &nextRayConf.X, 0.0, cfgResolutionX, 1.0f) && Cont) || mod)
 			{
-				float cx = (X / cfgResolutionX) * 2.0 - 1.0;
-				float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
+				float cx = (nextRayConf.X / cfgResolutionX) * 2.0 - 1.0;
+				float cy = (nextRayConf.Y / cfgResolutionY) * 2.0 - 1.0;
 				Line ray;
 				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
 			}
-			if ((imguiSlider("Y", &Y, 0.0, cfgResolutionY, 1.0f) && Cont) || mod)
+			if ((imguiSlider("Y", &nextRayConf.Y, 0.0, cfgResolutionY, 1.0f) && Cont) || mod)
 			{
-				float cx = (X / cfgResolutionX) * 2.0 - 1.0;
-				float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
+				float cx = (nextRayConf.X / cfgResolutionX) * 2.0 - 1.0;
+				float cy = (nextRayConf.Y / cfgResolutionY) * 2.0 - 1.0;
 				Line ray;
 				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
@@ -992,8 +1061,8 @@ class VisualHelper
 			imguiCheck("Continuous", &Cont);
 			if (imguiButton("Trace"))
 			{
-				float cx = (X / cfgResolutionX) * 2.0 - 1.0;
-				float cy = (Y / cfgResolutionY) * 2.0 - 1.0;
+				float cx = (nextRayConf.X / cfgResolutionX) * 2.0 - 1.0;
+				float cy = (nextRayConf.Y / cfgResolutionY) * 2.0 - 1.0;
 				Line ray;
 				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
@@ -1001,8 +1070,8 @@ class VisualHelper
 		}
 		else
 		{
-			static float pX=0.0, pY=0.0, pZ=0.0;
-			static float dX=0.0, dY=0.0, dZ=0.0;
+			static Point p = Point(0.0, 0.0, 0.0);
+			static Vectorf d = Vectorf(0.0, 0.0, 0.0);
 			static char[64] b1,b2,b3,b4,b5,b6;
 			static char[] tx1,tx2,tx3,tx4,tx5,tx6;
 			if(tx1.ptr != b1.ptr)
@@ -1023,22 +1092,23 @@ class VisualHelper
 				tx3 = sformat(b3, "%.3f", predefV.z);
 				predefD = false;
 			}
-			imguiTextInput("X", b1, tx1);
-			imguiTextInput("Y", b2, tx2);
-			imguiTextInput("Z", b3, tx3);
+			
+			TextFloatInput("X", b1, tx1);
+			TextFloatInput("Y", b2, tx2);
+			TextFloatInput("Z", b3, tx3);
 			imguiLabel("Direction:");
-			imguiTextInput("X", b4, tx4);
-			imguiTextInput("Y", b5, tx5);
-			imguiTextInput("Z", b6, tx6);
-			pX = tryParseVal(tx1, pX);
-			pY = tryParseVal(tx2, pY);
-			pZ = -tryParseVal(tx3, pZ);
-			dX = tryParseVal(tx4, dX);
-			dY = tryParseVal(tx5, dY);
-			dZ = -tryParseVal(tx6, dZ);
+			TextFloatInput("X", b4, tx4);
+			TextFloatInput("Y", b5, tx5);
+			TextFloatInput("Z", b6, tx6);
+			p.x = tryParseVal(tx1, p.x);
+			p.y = tryParseVal(tx2, p.y);
+			p.z = -tryParseVal(tx3, p.z);
+			d.x = tryParseVal(tx4, d.x);
+			d.y = tryParseVal(tx5, d.y);
+			d.z = -tryParseVal(tx6, d.z);
 			if(imguiButton("Trace"))
 			{
-				traceSingleRay(Point(pX,pY,pZ), Vectorf(dX,dY,dZ).normalized);
+				traceSingleRay(p, d.normalized);
 			}
 		}
 		if (imguiButton("Close"))
@@ -1112,7 +1182,7 @@ class VisualHelper
 				float dim = (lineCount*yzGSize)/2;
 				dim -= fmod(dim, yzGSize);
 				if(dim < lineCount/2*yzGSize) dim+=yzGSize;
-				for(int i = -lineCount/2; i<=lineCount/2; i++)
+				for(int i = -lineCount/2	; i<=lineCount/2; i++)
 				{
 					v3d ~= Vert3D(xPos, yPos- dim, zPos+ i*yzGSize, 0,0,0, 1,1,1,1, 0,0,1);
 					v3d ~= Vert3D(xPos, yPos+ dim, zPos+i*yzGSize, 0,0,0, 1,1,1,1, 0,0,1);
@@ -1230,50 +1300,53 @@ class VisualHelper
 		{
 			if (button == GLFW_MOUSE_BUTTON_LEFT)
 			{
-				if (state != GLFW_RELEASE)
+				if(state != GLFW_RELEASE)
 				{
 					double xd, yd;
 					glfwGetCursorPos(rwin, &xd, &yd);
-					xd = (xd / winx) * 2.0 - 1.0;
-					yd = (yd / winy) * 2.0 - 1.0;
+					xd = (cast(double)x / winx) * 2.0 - 1.0;
+					yd = (cast(double)y / winy) * 2.0 - 1.0;
+					nextRayConf.X = ((xd + 1.0)/2.0) * cfgResolutionX;
+					nextRayConf.Y = ((yd + 1.0)/2.0) * cfgResolutionY;
 					Line ray;
 					DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
 					traceSingleRay(ray.origin, ray.direction);
-					return;
+				}
+			}
+			
+			return;
+		}
+		
+		if ((x >= 10) && (y >= winy - 110) && (x <= 110) && (y <= winy - 10))
+		{
+			if (button == GLFW_MOUSE_BUTTON_LEFT)
+			{
+				if(state != GLFW_RELEASE)
+				{
+					mouseInMiniature = true;
+				}
+				else
+				{
+					double xd = clamp(mousex, 10, 110) - 10.0f;
+					double yd = clamp(mousey, winy - 110, winy - 10) - (winy - 110.0f);
+					xd = (xd / 50.0) - 1.0;
+					yd = (yd / 50.0) - 1.0;
+					miniatureCamera.getNormalizedRayCoordinates(xd, yd, xd, yd);
+					nextRayConf.X = ((xd + 1.0)/2.0) * cfgResolutionX;
+					nextRayConf.Y = ((yd + 1.0)/2.0) * cfgResolutionY;
+					Line ray;
+					DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+					traceSingleRay(ray.origin, ray.direction);
+					mouseInMiniature = false;
 				}
 			}
 			return;
-		}
-		if ((x >= 10) && (y >= winy - 110) && (x <= 110) && (y <= winy - 10))
-		{
-			if (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_PRESS)
-			{
-				if (window == DWindow.None)
-				{
-					window = DWindow.InMiniature;
-				}
-			}
 		}
 		else
 		{
-			if (window == DWindow.InMiniature)
-			{
-				window = DWindow.None;
-			}
+			mouseInMiniature = false;
 		}
-		if (window == DWindow.InMiniature)
-		{
-			double xd, yd;
-			glfwGetCursorPos(rwin, &xd, &yd);
-			xd -= 10.0;
-			yd -= winy - 110.0;
-			xd = (xd / 50.0) - 1.0;
-			yd = (yd / 50.0) - 1.0;
-			Line ray;
-			DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
-			traceSingleRay(ray.origin, ray.direction);
-			return;
-		}
+		
 		if (mouseLocked)
 		{
 			if (button == GLFW_MOUSE_BUTTON_LEFT)
@@ -1340,6 +1413,19 @@ class VisualHelper
 			camera.yaw -= dYaw;
 			camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
 		}
+		else if (mouseInMiniature)
+		{
+			double xd = clamp(mousex, 10, 110) - 10.0f;
+			double yd = clamp(mousey, winy - 110, winy - 10) - (winy - 110.0f);
+			xd = (xd / 50.0) - 1.0;
+			yd = (yd / 50.0) - 1.0;
+			miniatureCamera.getNormalizedRayCoordinates(xd, yd, xd, yd);
+			nextRayConf.X = ((xd + 1.0)/2.0) * cfgResolutionX;
+			nextRayConf.Y = ((yd + 1.0)/2.0) * cfgResolutionY;
+			Line ray;
+			DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+			traceSingleRay(ray.origin, ray.direction);
+		}
 		mousex = x;
 		mousey = y;
 	}
@@ -1348,6 +1434,22 @@ class VisualHelper
 	public void onScroll(double axis, double dir)
 	{
 		mousescroll = cast(int) dir;
+		
+		if ((mousex >= 10) && (mousey >= winy - 110) && (mousex <= 110) && (mousey <= winy - 10))
+		{
+			double xd = clamp(mousex, 10, 110) - 10.0f;
+			double yd = clamp(mousey, winy - 110, winy - 10) - (winy - 110.0f);
+			xd = (xd / 50.0f) - 1.0f;
+			yd = (yd / 50.0f) - 1.0f;
+			
+			with(miniatureCamera)
+			{
+				getNormalizedTexCoordinates(xd, yd, focus_x, focus_y);
+				zoom += zoom*zoom_speed*mousescroll;
+				rebuildView();
+			}
+		}
+		
 	}
 
 	/// -
@@ -1361,8 +1463,19 @@ class VisualHelper
 	{
 		if (id == GLFW_KEY_ESCAPE && state == GLFW_RELEASE)
 		{
-			glfwSetWindowShouldClose(rwin, GL_TRUE);
-			return;
+			if(window == DWindow.None)
+			{
+				glfwSetWindowShouldClose(rwin, GL_TRUE);
+				return;
+			}
+			else if(g_state.inputable == 0) //hacked :)
+			{
+				window = DWindow.None;
+			}
+			else
+			{
+				g_state.inputable = 0; //hacked :)
+			}
 		}
 		if (id == GLFW_KEY_BACKSPACE && state != GLFW_RELEASE)
 		{
@@ -1371,69 +1484,95 @@ class VisualHelper
 		else if (id == GLFW_KEY_ENTER && state != GLFW_RELEASE)
 		{
 			keychar = '\n';
+			if(g_state.inputable != 0) //hacked :)
+				g_state.inputable = 0;
 		}
-		if (window == DWindow.None)
+		
+		//hacked :)
+		if(g_state.inputable == 0)
 		{
-			if (id == GLFW_KEY_R && state == GLFW_PRESS)
+			if (window == DWindow.None)
 			{
-				if (modLShift || modRShift) // reset to 0,0,0
+				if (id == GLFW_KEY_R && state == GLFW_PRESS)
 				{
-					camera.x = 0.0;
-					camera.y = 0.0;
-					camera.z = 0.0;
-					camera.pitch = 0.0;
-					camera.yaw = 0.0;
-					sceneObjects["@camera"].visible = true;
+					if (modLShift || modRShift) // reset to 0,0,0
+					{
+						camera.x = 0.0;
+						camera.y = 0.0;
+						camera.z = 0.0;
+						camera.pitch = 0.0;
+						camera.yaw = 0.0;
+						sceneObjects["@camera"].visible = true;
+					}
+					else
+					{
+						auto rcam = DebugDispatcher.space.getCamera();
+						camera.x = rcam.origin.x;
+						camera.y = rcam.origin.y;
+						camera.z = -rcam.origin.z;
+						camera.pitch = acos(rcam.lookdir.z);
+						camera.yaw = atan2(rcam.lookdir.y, rcam.lookdir.x);
+						sceneObjects["@camera"].visible = false;
+					}
+				}
+			}
+			
+			if (id == GLFW_KEY_1 && state == GLFW_PRESS)
+			{
+				if(window == DWindow.Raytrace)
+				{
+					window = DWindow.None;
 				}
 				else
 				{
-					auto rcam = DebugDispatcher.space.getCamera();
-					camera.x = rcam.origin.x;
-					camera.y = rcam.origin.y;
-					camera.z = -rcam.origin.z;
-					camera.pitch = acos(rcam.lookdir.z);
-					camera.yaw = atan2(rcam.lookdir.y, rcam.lookdir.x);
-					sceneObjects["@camera"].visible = false;
+					window = DWindow.Raytrace;
+			
 				}
-			}
-			else if (id == GLFW_KEY_1 && state == GLFW_PRESS)
-			{
-				window = DWindow.Raytrace;
 			}
 			else if (id == GLFW_KEY_2 && state == GLFW_PRESS)
 			{
-				window = DWindow.Coordinates;
+				if(window == DWindow.Coordinates)
+				{
+					window = DWindow.None;
+				}
+				else
+				{
+					window = DWindow.Coordinates;
+				}
 			}
-			
 		}
 	}
 
 	void camMover()
 	{
-		double CamSpeed = camera.speed * dt;
-		if (glfwGetKey(rwin, GLFW_KEY_W) != GLFW_RELEASE)
+		//hacked :)
+		if(g_state.inputable == 0)
 		{
-			camera.addVec(camera.dirFwd, -CamSpeed);
-		}
-		if (glfwGetKey(rwin, GLFW_KEY_S) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirFwd, CamSpeed);
-		}
-		if (glfwGetKey(rwin, GLFW_KEY_A) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirRight, -CamSpeed);
-		}
-		if (glfwGetKey(rwin, GLFW_KEY_D) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirRight, CamSpeed);
-		}
-		if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirUp, CamSpeed);
-		}
-		if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
-		{
-			camera.addVec(camera.dirUp, -CamSpeed);
+			double CamSpeed = camera.speed * dt;
+			if (glfwGetKey(rwin, GLFW_KEY_W) != GLFW_RELEASE)
+			{
+				camera.addVec(camera.dirFwd, -CamSpeed);
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_S) != GLFW_RELEASE)
+			{
+				camera.addVec(camera.dirFwd, CamSpeed);
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_A) != GLFW_RELEASE)
+			{
+				camera.addVec(camera.dirRight, -CamSpeed);
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_D) != GLFW_RELEASE)
+			{
+				camera.addVec(camera.dirRight, CamSpeed);
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_E) != GLFW_RELEASE)
+			{
+				camera.addVec(camera.dirUp, CamSpeed);
+			}
+			if (glfwGetKey(rwin, GLFW_KEY_Q) != GLFW_RELEASE)
+			{
+				camera.addVec(camera.dirUp, -CamSpeed);
+			}
 		}
 	}
 
