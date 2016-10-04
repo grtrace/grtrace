@@ -6,14 +6,14 @@ DEFINE negskyDist FLOAT -1000000 ;
 DEFINE cameraOrigin VEC3 0 0 0 ;
 DEFINE cameraAngles VEC3 0 0 180 ;
 
-TEXTURE up textures/MWCubeBox/MWCubeBox-4.png ;
-TEXTURE down textures/MWCubeBox/MWCubeBox-5.png ;
+TEXTURE up textures/MWCubeBox/up.png ;
+TEXTURE down textures/MWCubeBox/down.png ;
 
-TEXTURE front textures/MWCubeBox/MWCubeBox-2.png ;
-TEXTURE back textures/MWCubeBox/MWCubeBox-3.png ;
+TEXTURE front textures/MWCubeBox/front.png ;
+TEXTURE back textures/MWCubeBox/back.png ;
 
-TEXTURE left textures/MWCubeBox/MWCubeBox-0.png ;
-TEXTURE right textures/MWCubeBox/MWCubeBox-1.png ;
+TEXTURE left textures/MWCubeBox/left.png ;
+TEXTURE right textures/MWCubeBox/right.png ;
 
 MATERIAL .up EMIT white DIFFUSE up FILTER LINEAR ;
 MATERIAL .down EMIT white DIFFUSE down FILTER LINEAR ;
