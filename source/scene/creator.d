@@ -18,7 +18,7 @@ import scene.objects;
 import scene.materials;
 import metric.initiators;
 import scene.noneuclidean : PlaneDeflectSpace;
-import metric.analytic : Analytic;
+import metric.analytic;
 import metric.wrapper : WorldSpaceWrapper;
 import scene.camera;
 
@@ -82,6 +82,10 @@ struct SceneDescription
 		fpnum fetchNumber()
 		{
 			string tok = fetchToken();
+			if (tok in defines)
+			{
+				return cast(fpnum)(defines[tok].get!(SFloat));
+			}
 			return to!fpnum(tok);
 		}
 
@@ -398,6 +402,45 @@ struct SceneDescription
 					string subtype = fetchToken();
 					SValue[string] optMap = fetchOptmap();
 					Analytic A = new Analytic();
+					A.maxNumberOfSteps = cast(ulong) optFloat(optMap, "STEPS");
+					A.paramStep = optFloat(optMap, "STEPPARAM");
+					if (A.maxNumberOfSteps == 0)
+					{
+						throw new SceneException("Analytic number of steps cannot be 0");
+					}
+					if (A.paramStep == 0)
+					{
+						throw new SceneException("Analytic step parameter cannot be 0");
+					}
+					switch (subtype)
+					{
+					case "SCHWARZSCHILD":
+						A.initiator = new Schwarzschild(optFloat(optMap,
+							"MASS"), optVec3(optMap, "ORIGIN"));
+						break;
+					case "FLAT.CARTESIAN":
+						A.initiator = new FlatCartesian();
+						break;
+					case "FLAT.RADIAL":
+						A.initiator = new FlatRadial();
+						break;
+					case "KERR":
+						A.initiator = new Kerr(optFloat(optMap, "MASS"),
+							optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
+						break;
+					case "REISSNER":
+						A.initiator = new Reissner(optFloat(optMap, "MASS"),
+							optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
+						break;
+					default:
+						throw new SceneException("Unknown analytic subtype: " ~ subtype);
+					}
+					space = new WorldSpaceWrapper(A);
+					break;
+				case "SKYBOXANALYTIC":
+					string subtype = fetchToken();
+					SValue[string] optMap = fetchOptmap();
+					AnalyticSkyBox A = new AnalyticSkyBox();
 					A.maxNumberOfSteps = cast(ulong) optFloat(optMap, "STEPS");
 					A.paramStep = optFloat(optMap, "STEPPARAM");
 					if (A.maxNumberOfSteps == 0)
