@@ -81,8 +81,8 @@ class Triangle : Renderable
 		// Compute barycentric coordinates (u, v, w) for
 		// point p with respect to triangle (a, b, c)
 
-		Vectorf v0 = triangle.b - triangle.plane.origin;
-		Vectorf v1 = triangle.c - triangle.plane.origin;
+		Vectorf v0 = triangle.b; //- triangle.plane.origin;
+		Vectorf v1 = triangle.c; //- triangle.plane.origin;
 		Vectorf v2 = point - triangle.plane.origin;
 		fpnum d00 = v0 * v0;
 		fpnum d01 = v0 * v1;
@@ -152,8 +152,8 @@ class TexturableTriangle : Triangle
 
 	private void setCache()
 	{
-		Vectorf v0 = triangle.b - triangle.plane.origin;
-		Vectorf v1 = triangle.c - triangle.plane.origin;
+		Vectorf v0 = triangle.b; //- triangle.plane.origin;
+		Vectorf v1 = triangle.c; //- triangle.plane.origin;
 
 		cached = Cached(v0 * v0, v0 * v1, v1 * v1, 1 / ((v0 * v0) * (v1 * v1) - (v0 * v1) * (v0 * v1)));
 	}
@@ -178,8 +178,8 @@ class TexturableTriangle : Triangle
 	{
 		// Compute barycentric coordinates (u, v, w) for
 		// point p with respect to triangle (a, b, c)
-		Vectorf v0 = triangle.b - triangle.plane.origin;
-		Vectorf v1 = triangle.c - triangle.plane.origin;
+		Vectorf v0 = triangle.b;// - triangle.plane.origin;
+		Vectorf v1 = triangle.c;// - triangle.plane.origin;
 		Vectorf v2 = point - triangle.plane.origin;
 
 		fpnum d20 = v2 * v0;
