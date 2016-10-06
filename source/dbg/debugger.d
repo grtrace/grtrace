@@ -969,7 +969,7 @@ class VisualHelper
 		{
 			WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(DebugDispatcher.space);
 			auto mc = cast(AnalyticMetricContainer)(wsw.smetric);
-			auto met = mc.initiator;
+			auto met = mc.initiator.clone;
 			auto first = DebugDispatcher.saver.rays[0];
 			met.prepareForRequest(first.start);
 			auto met_src = met.getMetricAtPoint()[0, 0];

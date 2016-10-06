@@ -1,11 +1,11 @@
-set FOLDER "out_mway_bh_schwarzschild"
+set FOLDER "new_out_mway_bh_schwarzschild"
 file mkdir "$FOLDER"
 set POS_MIN -35
-set POS_MAX 35	
-set ITERATIONS 10
+set POS_MAX 0
+set ITERATIONS 40
 
-configSet "ResolutionX" 700
-configSet "ResolutionY" 700
+configSet "ResolutionX" 600
+configSet "ResolutionY" 600
 configSet "Samples" 1
 
 loadScene "scenes/_common.grt"
@@ -23,7 +23,7 @@ for {set Iter 0} {$Iter <= $ITERATIONS} { incr Iter } {
 	sceneCmd "ZEROSPACE ;"
 	sceneCmd "SETSPACE ANALYTIC SCHWARZSCHILD STEPS 5000 STEPPARAM 0.1 MASS mass ORIGIN VEC3 0 $pos $pos ;"
 
-	configSet "OutputFile" [format "$FOLDER/img%03d.png" $Iter]
+	configSet "OutputFile" [format "$FOLDER/img%06.3f.png" $pos]
   	doTrace
   	waitForTrace
 }
