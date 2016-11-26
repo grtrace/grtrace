@@ -7,6 +7,7 @@
 *.mp4
 objs
 /grtrace
+bin/grtrace-*
 compile_commands.json
 # Created by https://www.gitignore.io
 timing*csv
