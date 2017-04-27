@@ -327,7 +327,7 @@ class VisualHelper
 	private GFXmatrix4 matProjection;
 	private TSObject*[string] sceneObjects;
 	private TSObject*[] sortedObjects;
-	private bool mouseInGui, pMouseInGui, mouseLocked, mouseInMiniature;
+	private bool mouseInGui, mouseLocked, mouseInMiniature, miniatureMove, pMouseInGui;
 	int numverts, numRays, numGridLines;
 	private void initVisuals()
 	{
@@ -774,9 +774,13 @@ class VisualHelper
 			}
 			else if(!pMouseInGui)
 			{
+				glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+				auto tex_aspect = cast(double)texRendered.getWidth() / texRendered.getHeight();
+				auto min_res = min(winx, winy);
+				
 				shader2D.setUniformM4("model",
 					gMat4Mul(gMatTranslation(gVec3(-winx / 2, -winy / 2, 0)),
-					gMatScaling(gVec3(winx / 2.0, winy / 2.0, 1))));
+					gMatScaling(gVec3(min_res*tex_aspect / 2.0, min_res / 2.0, 1))));
 				shader2D.setUniformM4("texModel", gIdentity4());
 			}
 			shader2D.setUniformM4("view", gIdentity4());
@@ -1304,8 +1308,10 @@ class VisualHelper
 				{
 					double xd, yd;
 					glfwGetCursorPos(rwin, &xd, &yd);
-					xd = (cast(double)x / winx) * 2.0 - 1.0;
-					yd = (cast(double)y / winy) * 2.0 - 1.0;
+					auto tex_aspect = cast(double)texRendered.getWidth() / texRendered.getHeight();
+					auto min_res = min(winx, winy);
+					xd = (cast(double)(x-winx/2) / (min_res/2.0));
+					yd = (cast(double)(y-winy/2) / ((min_res*tex_aspect)/2.0));
 					nextRayConf.X = ((xd + 1.0)/2.0) * cfgResolutionX;
 					nextRayConf.Y = ((yd + 1.0)/2.0) * cfgResolutionY;
 					Line ray;
@@ -1324,6 +1330,7 @@ class VisualHelper
 				if(state != GLFW_RELEASE)
 				{
 					mouseInMiniature = true;
+					miniatureMove = false;
 				}
 				else
 				{
@@ -1340,11 +1347,23 @@ class VisualHelper
 					mouseInMiniature = false;
 				}
 			}
+			if (button == GLFW_MOUSE_BUTTON_RIGHT)
+			{
+				if(state != GLFW_RELEASE)
+				{
+					miniatureMove = true;
+				}
+				else
+				{
+					miniatureMove = false;
+				}
+			}
 			return;
 		}
 		else
 		{
 			mouseInMiniature = false;
+			miniatureMove = false;
 		}
 		
 		if (mouseLocked)
@@ -1426,6 +1445,28 @@ class VisualHelper
 			DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
 			traceSingleRay(ray.origin, ray.direction);
 		}
+		else if(miniatureMove)
+		{
+			if(clamp(mousex, 10, 110) != mousex || clamp(mousey, winy - 110, winy - 10) != mousey)
+			{
+				miniatureMove = false;
+			}
+			else
+			{
+				with(miniatureCamera)
+				{
+					double dx = (x - mousex)/(100.0*zoom);
+					double dy = (y - mousey)/(100.0*zoom);
+					
+					focus_x += dx;
+					focus_y += dy;
+					
+					normalize();
+					rebuildView();
+				}
+			}
+			
+		}
 		mousex = x;
 		mousey = y;
 	}
@@ -1444,7 +1485,7 @@ class VisualHelper
 			
 			with(miniatureCamera)
 			{
-				getNormalizedTexCoordinates(xd, yd, focus_x, focus_y);
+				//getNormalizedTexCoordinates(xd, yd, focus_x, focus_y);
 				zoom += zoom*zoom_speed*mousescroll;
 				rebuildView();
 			}
