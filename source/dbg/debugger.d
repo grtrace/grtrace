@@ -4,7 +4,6 @@ import glad.gl.all;
 import glad.gl.loader;
 import derelict.glfw3.glfw3;
 import imgui.api;
-import imgui.engine;
 import dbg.glhelpers;
 import dbg.dispatcher;
 import dbg.draws;
@@ -328,7 +327,7 @@ class VisualHelper
 	private GFXmatrix4 matProjection;
 	private TSObject*[string] sceneObjects;
 	private TSObject*[] sortedObjects;
-	private bool mouseInGui, mouseLocked, mouseInMiniature;
+	private bool mouseInGui, pMouseInGui, mouseLocked, mouseInMiniature;
 	int numverts, numRays, numGridLines;
 	private void initVisuals()
 	{
@@ -716,6 +715,7 @@ class VisualHelper
 			dt = glfwGetTime();
 			Taccum += dt;
 			glfwSetTime(0.0);
+			pMouseInGui = mouseInGui;
 			mouseInGui = false;
 			camera.normalize();
 			camera.rmatrix = gMat4Mul(gMatRotX(camera.pitch), gMatRotY(camera.yaw));
@@ -772,7 +772,7 @@ class VisualHelper
 				
 				shader2D.setUniformM4("texModel", miniatureCamera.matrix);
 			}
-			else if(g_state.inputable == 0)
+			else if(!pMouseInGui)
 			{
 				shader2D.setUniformM4("model",
 					gMat4Mul(gMatTranslation(gVec3(-winx / 2, -winy / 2, 0)),
@@ -819,7 +819,7 @@ class VisualHelper
 				}
 			}
 			imguiEndScrollArea();
-			if (g_state.inputable == 0 && glfwGetKey(rwin, GLFW_KEY_F1) == GLFW_PRESS)
+			if ((!pMouseInGui) && glfwGetKey(rwin, GLFW_KEY_F1) == GLFW_PRESS)
 			{
 				static int scroll_cs;
 				mouseInGui |= imguiBeginScrollArea("Help", winx / 2 - 150,
@@ -838,7 +838,7 @@ class VisualHelper
 				//imguiLabel("");
 				imguiEndScrollArea();
 			}
-			if (g_state.inputable == 0 && glfwGetKey(rwin, GLFW_KEY_TAB) == GLFW_PRESS)
+			if ((!pMouseInGui) && glfwGetKey(rwin, GLFW_KEY_TAB) == GLFW_PRESS)
 			{
 				static int scroll_ol;
 				mouseInGui |= imguiBeginScrollArea("Objects", winx / 2 - 150,
@@ -855,7 +855,7 @@ class VisualHelper
 				}
 				imguiEndScrollArea();
 			}
-			if (g_state.inputable == 0 && glfwGetKey(rwin, GLFW_KEY_G) == GLFW_PRESS)
+			if ((!pMouseInGui) && glfwGetKey(rwin, GLFW_KEY_G) == GLFW_PRESS)
 			{
 				SVec3 sv3;
 				if(showVectors(sv3))
@@ -1468,13 +1468,9 @@ class VisualHelper
 				glfwSetWindowShouldClose(rwin, GL_TRUE);
 				return;
 			}
-			else if(g_state.inputable == 0) //hacked :)
+			else if((!pMouseInGui)) //hacked :)
 			{
 				window = DWindow.None;
-			}
-			else
-			{
-				g_state.inputable = 0; //hacked :)
 			}
 		}
 		if (id == GLFW_KEY_BACKSPACE && state != GLFW_RELEASE)
@@ -1484,12 +1480,10 @@ class VisualHelper
 		else if (id == GLFW_KEY_ENTER && state != GLFW_RELEASE)
 		{
 			keychar = '\n';
-			if(g_state.inputable != 0) //hacked :)
-				g_state.inputable = 0;
 		}
 		
 		//hacked :)
-		if(g_state.inputable == 0)
+		if((!pMouseInGui))
 		{
 			if (window == DWindow.None)
 			{
@@ -1546,7 +1540,7 @@ class VisualHelper
 	void camMover()
 	{
 		//hacked :)
-		if(g_state.inputable == 0)
+		if((!pMouseInGui))
 		{
 			double CamSpeed = camera.speed * dt;
 			if (glfwGetKey(rwin, GLFW_KEY_W) != GLFW_RELEASE)

@@ -1,8 +1,11 @@
 {
-	"name": "grtrace", 
+	"name": "grtrace",
 	"description": "General Relativity rayTracer",
 	"copyright": "Copyright © 2016, Jakub Szewczyk&Grzegorz Uriasz",
-	"authors": ["Jakub Szewczyk", "Grzegorz Uriasz"],
+	"authors": [
+		"Jakub Szewczyk",
+		"Grzegorz Uriasz"
+	],
 	"workingDirectory": "bin",
 	"license": "MIT",
 	"homepage": "https://github.com/grtrace/grtrace",
@@ -13,17 +16,30 @@
 		"derelict-glfw3": "~>3.1.1"
 	},
 	"mainSourceFile": "source/app.d",
-	"lflags-ldc": ["-L=--allow-multiple-definition","-O5"],
-	"dflags-ldc": ["-L=--allow-multiple-definition","-O5"],
+	"lflags-ldc": [
+		"-L=--allow-multiple-definition",
+		"-O5"
+	],
+	"dflags-ldc": [
+		"-L=--allow-multiple-definition",
+		"-O5"
+	],
 	"buildTypes": {
 		"relinfo": {
 			"buildOptions": [
-				"releaseMode", "optimize", "inline", "debugInfo", "debugInfoC"
+				"releaseMode",
+				"optimize",
+				"inline",
+				"debugInfo",
+				"debugInfoC"
 			]
 		},
 		"avx_ldc": {
 			"buildOptions": [
-				"releaseMode", "optimize", "inline", "debugInfo"
+				"releaseMode",
+				"optimize",
+				"inline",
+				"debugInfo"
 			],
 			"versions": [
 				"UseAVX"
