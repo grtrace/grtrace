@@ -206,7 +206,7 @@ public:
 		return tmp.transposed * (1 / this.determinant);
 	}
 
-	auto ref T opIndex()(size_t i) const
+	ref T opIndex()(size_t i)
 	in
 	{
 		assert((i >= 0) && (i < 16));
