@@ -22,6 +22,9 @@ alias Point = Vectorf;
 /// Line in vector representation
 struct Line
 {
+	enum Line infinity = Line(Point(fpnum.infinity, fpnum.infinity, fpnum.infinity),
+				Vectorf(fpnum.infinity, fpnum.infinity, fpnum.infinity), true);
+
 	this(Point p, Vectorf dir, bool ry = false)
 	{
 		origin = p;
@@ -66,7 +69,7 @@ Plane PlaneAngles(fpnum OXZ_deg_angle, fpnum OXY_deg_angle, Vectorf pointOnPlane
 	OXZ_deg_angle *= PI / 180;
 	OXY_deg_angle *= PI / 180;
 	return Plane(pointOnPlane, Vectorf(sin(OXZ_deg_angle) * cos(OXY_deg_angle),
-		sin(OXZ_deg_angle) * sin(OXY_deg_angle), cos(OXZ_deg_angle)));
+			sin(OXZ_deg_angle) * sin(OXY_deg_angle), cos(OXZ_deg_angle)));
 }
 
 Plane InversePlane(Plane p)
@@ -96,7 +99,7 @@ struct AABB
 bool PointInBox(AABB box, Point p)
 {
 	return InRange(p.x, box.min.x, box.max.x) && InRange(p.y, box.min.y,
-		box.max.y) && InRange(p.z, box.min.z, box.max.z);
+			box.max.y) && InRange(p.z, box.min.z, box.max.z);
 }
 
 bool LineIntersectsBox(AABB box, Line l)
