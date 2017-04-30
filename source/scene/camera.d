@@ -66,7 +66,7 @@ class OrthogonalCamera : ICamera
 	/// X,Y in <-1;1>
 	bool fetchRay(fpnum X, fpnum Y, out Line ray)
 	{
-		ray = Line(orig + righ * X * xdim + up * Y * xdim * yx, dir, true);
+		ray = Line(orig + righ * X * xdim + up * Y * xdim * yx, -dir, true);
 		return true;
 	}
 }
@@ -113,7 +113,7 @@ class LinearPerspectiveCamera : ICamera
 	/// X,Y in <-1;1>
 	bool fetchRay(fpnum X, fpnum Y, out Line ray)
 	{
-		ray = Line(orig, (dirm + rightdir * X + up * Y * yx).normalized, true);
+		ray = Line(orig, -(dirm + rightdir * X + up * Y * yx).normalized, true);
 		return true;
 	}
 }
