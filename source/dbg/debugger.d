@@ -1112,7 +1112,7 @@ class VisualHelper
 			d.z = -tryParseVal(tx6, d.z);
 			if(imguiButton("Trace"))
 			{
-				traceSingleRay(p, d.normalized);
+				traceSingleRay(p, -d.normalized);
 			}
 		}
 		if (imguiButton("Close"))

@@ -412,6 +412,10 @@ struct SceneDescription
 					{
 						throw new SceneException("Analytic step parameter cannot be 0");
 					}
+					if (A.paramStep > 0)
+					{
+						A.paramStep = -A.paramStep;
+					}
 					switch (subtype)
 					{
 					case "SCHWARZSCHILD":
@@ -450,6 +454,10 @@ struct SceneDescription
 					if (A.paramStep == 0)
 					{
 						throw new SceneException("Analytic step parameter cannot be 0");
+					}
+					if (A.paramStep > 0)
+					{
+						A.paramStep = -A.paramStep;
 					}
 					switch (subtype)
 					{
