@@ -58,6 +58,32 @@ public shared
 	long cfgTraceEnd = 0;
 }
 
+//debug info
+enum WorldType : string
+{
+	Unknown = "Unknown",
+	Flat = "Clasical",
+	Deflect = "Deflection",
+	Analytic = "Analytical",
+	AnalyticSkyBox = "Analytical Sky Box"
+}
+
+enum MetricType : string
+{
+	Unknown = "Unknown",
+	FlatCartesian = "Flat Cartesian",
+	FlatRadial = "Flat Radial",
+	Schwarzchild = "Schwarzschild",
+	Reisnerr = "Reisnerr Nordstrom",
+	Kerr = "Kerr"
+}
+
+public shared
+{
+	string dbgWorldType = WorldType.Unknown;
+	string dbgMetricType = MetricType.Unknown;
+}
+
 // physical constants
 enum P : fpnum
 {

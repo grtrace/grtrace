@@ -1,5 +1,6 @@
 *.RES
 ./bin/.ipynb_checkpoints/*
+.metadata/*
 *.ipynb
 *.ods
 *.ninja*

@@ -394,11 +394,14 @@ struct SceneDescription
 				{
 				case "FLAT", "EUCLIDEAN":
 					space = new EuclideanSpace();
+					dbgWorldType = WorldType.Flat;
 					break;
 				case "DEFLECT":
 					space = new PlaneDeflectSpace();
+					dbgWorldType = WorldType.Deflect;
 					break;
 				case "ANALYTIC":
+					dbgWorldType = WorldType.Analytic;
 					string subtype = fetchToken();
 					SValue[string] optMap = fetchOptmap();
 					Analytic A = new Analytic();
@@ -421,20 +424,25 @@ struct SceneDescription
 					case "SCHWARZSCHILD":
 						A.initiator = new Schwarzschild(optFloat(optMap,
 							"MASS"), optVec3(optMap, "ORIGIN"));
+						dbgMetricType = MetricType.Schwarzchild;
 						break;
 					case "FLAT.CARTESIAN":
 						A.initiator = new FlatCartesian();
+						dbgMetricType = MetricType.FlatCartesian;
 						break;
 					case "FLAT.RADIAL":
 						A.initiator = new FlatRadial();
+						dbgMetricType = MetricType.FlatRadial;
 						break;
 					case "KERR":
 						A.initiator = new Kerr(optFloat(optMap, "MASS"),
 							optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
+						dbgMetricType = MetricType.Kerr;
 						break;
 					case "REISSNER":
 						A.initiator = new Reissner(optFloat(optMap, "MASS"),
 							optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
+						dbgMetricType = MetricType.Reisnerr;
 						break;
 					default:
 						throw new SceneException("Unknown analytic subtype: " ~ subtype);
@@ -442,6 +450,7 @@ struct SceneDescription
 					space = new WorldSpaceWrapper(A);
 					break;
 				case "SKYBOXANALYTIC":
+					dbgWorldType = WorldType.AnalyticSkyBox;
 					string subtype = fetchToken();
 					SValue[string] optMap = fetchOptmap();
 					AnalyticSkyBox A = new AnalyticSkyBox();
@@ -464,20 +473,25 @@ struct SceneDescription
 					case "SCHWARZSCHILD":
 						A.initiator = new Schwarzschild(optFloat(optMap,
 							"MASS"), optVec3(optMap, "ORIGIN"));
+						dbgMetricType = MetricType.Schwarzchild;
 						break;
 					case "FLAT.CARTESIAN":
 						A.initiator = new FlatCartesian();
+						dbgMetricType = MetricType.FlatCartesian;
 						break;
 					case "FLAT.RADIAL":
 						A.initiator = new FlatRadial();
+						dbgMetricType = MetricType.FlatRadial;
 						break;
 					case "KERR":
 						A.initiator = new Kerr(optFloat(optMap, "MASS"),
 							optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
+						dbgMetricType = MetricType.Kerr;
 						break;
 					case "REISSNER":
 						A.initiator = new Reissner(optFloat(optMap, "MASS"),
 							optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
+						dbgMetricType = MetricType.Reisnerr;
 						break;
 					default:
 						throw new SceneException("Unknown analytic subtype: " ~ subtype);

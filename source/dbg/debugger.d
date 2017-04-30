@@ -313,6 +313,7 @@ class VisualHelper
 	{
 		string id;
 		Renderable obj;
+		int dataIndex;
 		int vertIndex;
 		int vertCount;
 		bool visible = true;
@@ -440,6 +441,7 @@ class VisualHelper
 			tso.id = "@camera";
 			tso.obj = null;
 			tso.vertIndex = 0;
+			tso.dataIndex = 0;
 			tso.vertCount = 18;
 			tso.visible = true;
 			float csz = 1.0f;
@@ -487,6 +489,7 @@ class VisualHelper
 				tso.id = obj_name;
 				tso.obj = null;
 				tso.vertIndex = cast(int) e3d.length;
+				tso.dataIndex = cast(int) v3d.length;
 				switch (obj.type)
 				{
 				case DrawType.None:
@@ -549,6 +552,7 @@ class VisualHelper
 			tso.id = OBJ.getName();
 			tso.obj = OBJ;
 			tso.vertIndex = cast(int) e3d.length;
+			tso.dataIndex = cast(int) v3d.length;
 			DebugDraw deb = OBJ.getDebugDraw();
 
 			switch (deb.type)
@@ -812,11 +816,202 @@ class VisualHelper
 					imguiSlider("Far", &camera.far, 2.0f, 10_000.0f, 10.0f);
 					imguiUnindent();
 				}
+				imguiCheck("Persistant Ray Saver", &persistantTracing);
+				if(imguiButton("Clear Ray History"))
+				{
+					ClearTraceHistory();
+				}
 				if (imguiButton("Calculations"))
 				{
 					import dbg.calcs : askCalculation;
 
 					askCalculation();
+				}
+				static bool checkState = false;
+				imguiCollapse("Simulation Details", "", &checkState);
+				if(checkState)
+				{
+					imguiLabel("World: %s".format(dbgWorldType));
+					fpnum param_step;
+					size_t max_number_of_steps;
+					bool dirty_history = false;
+					MetricContainer wrp = cast(MetricContainer)(cast(WorldSpaceWrapper)cfgSpace).smetric;
+	
+					final switch(dbgWorldType) with (WorldType)
+					{
+						case Unknown:
+						{
+							throw new Exception("[DBG] Unknown WorldType");
+						}
+						case Flat:
+						{
+							break;
+						}
+						case Analytic:
+							param_step = (cast(metric.analytic.Analytic)wrp).paramStep;
+							max_number_of_steps = (cast(metric.analytic.Analytic)wrp).maxNumberOfSteps;
+							goto case AnalyticSkyBox;
+						case AnalyticSkyBox:
+						{
+							if(dbgWorldType == WorldType.AnalyticSkyBox)
+							{
+								param_step = (cast(metric.analytic.AnalyticSkyBox)wrp).paramStep;
+								max_number_of_steps = (cast(metric.analytic.AnalyticSkyBox)wrp).maxNumberOfSteps;
+							}
+							param_step = abs(param_step);
+							imguiLabel("Metric: %s".format(dbgMetricType));
+							Initiator ini = (cast(AnalyticMetricContainer)wrp).initiator;
+							
+							float gui_param_step = cast(float)param_step;
+							float gui_max_number_of_steps = cast(float)max_number_of_steps;
+							imguiLabel("Param Step: %f".format(param_step));
+							imguiSlider("", &gui_param_step, 0.001f, 1.0f, 0.001f);
+							imguiLabel("Max Number of Steps: %d".format(max_number_of_steps));
+							imguiSlider("", &gui_max_number_of_steps, 1, 10000, 1);
+							
+							if(gui_max_number_of_steps != max_number_of_steps || gui_param_step != param_step)
+							{
+								dirty_history = true;
+								
+								if(dbgWorldType == WorldType.AnalyticSkyBox)
+								{
+									(cast(metric.analytic.AnalyticSkyBox)wrp).paramStep = -gui_param_step;
+									(cast(metric.analytic.AnalyticSkyBox)wrp).maxNumberOfSteps = cast(size_t)gui_max_number_of_steps;
+								}
+								else
+								{
+									(cast(metric.analytic.Analytic)wrp).paramStep = -gui_param_step;
+									(cast(metric.analytic.Analytic)wrp).maxNumberOfSteps = cast(size_t)gui_max_number_of_steps;
+								}
+							}
+							
+							final switch(dbgMetricType) with (MetricType)
+							{
+								case MetricType.Unknown:
+								{
+									throw new Exception("[DBG] Unknown MetricType");
+								}
+								case FlatCartesian:
+								case FlatRadial:
+									break;
+								case MetricType.Schwarzchild:
+								{
+									import metric.initiators.schwarzschild;
+									auto met = cast(Schwarzschild)ini;
+									float mass = met.mass;
+									imguiLabel("Mass: %f".format(mass));
+									imguiSlider("", &mass, 0.0f, 10.0f, 0.1f);
+									
+									if(mass != cast(float)met.mass)
+									{
+										dirty_history = true;
+										met.mass = mass;
+										met.schwarzschild_radius = 2*met.mass;
+										
+										Vert3D[] v3d = [];
+										uint[] e3d = [];
+										
+										auto deb = met.returnDebugRenderObjects()["@event_horizon"];
+										TSObject* tso = sceneObjects["@event_horizon"];
+										
+										VisualPrimitives.appendSphere(v3d,
+										e3d, tso.dataIndex, deb);
+										
+										(cast(Vert3D[])objSpatial.data.data)[(tso.dataIndex) .. (tso.dataIndex+v3d.length)] = v3d[0 .. $];
+										
+										objSpatial.bind();
+										//TODO: update only the changed slice
+										//TODO: append a modelview matrix to every object
+										objSpatial.vbo.updateData(objSpatial.data.data);
+										
+									}
+									break;
+								}
+								case MetricType.Reisnerr:
+								{
+									import metric.initiators.reissner;
+									auto met = cast(Reissner)ini;
+									float mass = met.M;
+									float charge = met.Q;
+									imguiLabel("Mass: %f".format(mass));
+									imguiSlider("", &mass, 0.0f, 10.0f, 0.1f);
+									imguiLabel("Charge: %f".format(charge));
+									imguiSlider("", &charge, 0.0f, 10.0f, 0.1f);
+									if(mass != cast(float)met.M || charge != cast(float)met.Q)
+									{
+										dirty_history = true;
+										with(met)
+										{
+											M = mass;
+											Q = charge;
+											Rs = 2 * M;
+											Q2 = Q*Q;
+											
+											if(1-(4*Q2)/(Rs*Rs)>=0)
+											{
+												det = (Rs/2) * sqrt(1-(4*Q2)/(Rs*Rs));
+												r_ext = (Rs/2) + det;
+												r_cauchy = (Rs/2) - det;
+											}
+											else r_ext=r_cauchy=0;
+											
+											Vert3D[] v3d = [];
+											uint[] e3d = [];
+											
+											auto deb = returnDebugRenderObjects()["@event_horizon"];
+											TSObject* tso = sceneObjects["@event_horizon"];
+											
+											VisualPrimitives.appendSphere(v3d,
+											e3d, tso.dataIndex, deb);
+											
+											(cast(Vert3D[])objSpatial.data.data)[(tso.dataIndex) .. (tso.dataIndex+v3d.length)] = v3d[0 .. $];
+											
+											objSpatial.bind();
+											//TODO: update only the changed slice
+											//TODO: append a modelview matrix to every object
+											objSpatial.vbo.updateData(objSpatial.data.data);
+										}
+									}
+									
+									break;
+								}
+								case MetricType.Kerr:
+								{
+									import metric.initiators.kerr;
+									auto met = cast(metric.initiators.kerr.Kerr)ini;
+									float mass = met.m;
+									float angular_momentum = met.j;
+									imguiLabel("Mass: %f".format(mass));
+									imguiSlider("", &mass, 0.0f, 10.0f, 0.1f);
+									imguiLabel("Momentum: %f".format(angular_momentum));
+									imguiSlider("", &angular_momentum, 0.0f, 10.0f, 0.1f);
+									if(mass != cast(float)met.m || angular_momentum != cast(float)met.j)
+									{
+										dirty_history = true;
+										with(met)
+										{
+											m = mass;
+											Rs = 2 * m;
+											j = angular_momentum;
+											if (mass == 0)
+												a = 0;
+											else
+												a = angular_momentum / m;
+											a2 = a * a;
+											r_plus = Rs/2 + sqrt((Rs*Rs)/4 - a2);
+										}
+									}
+									break;
+								}
+							}
+							break;
+						}	
+					}
+					
+					if(dirty_history)
+					{
+						RetraceTraceHistory();
+					}
 				}
 			}
 			imguiEndScrollArea();
@@ -957,15 +1152,32 @@ class VisualHelper
 		glfwSetFramebufferSizeCallback(rwin, &coreSize);
 	}
 
+	struct TraceHistoryEntry
+	{
+		Vectorf origin;
+		Vectorf direction;
+		bool doRedshift;
+	}
+
 	__gshared Color lastRayColor;
 	__gshared bool doRedshift = false;
+	__gshared bool persistantTracing = false;
+	__gshared TraceHistoryEntry[] TraceHistory = [];
 	__gshared float wavelength = 700.0;
 
-	private void traceSingleRay(Vectorf origin, Vectorf direction)
+	private void traceSingleRay(bool history = true)(Vectorf origin, Vectorf direction)
 	{
 		import std.concurrency : thisTid;
 
-		DebugDispatcher.saver.clear();
+		static if(history)
+		{
+			if(!persistantTracing)
+			{
+				ClearTraceHistory();
+			}
+			TraceHistory ~= TraceHistoryEntry(origin, direction, doRedshift);
+		}
+		
 		WorldSpace.RayFunc rf = DebugDispatcher.space.GetRayFunc();
 		lastRayColor = rf(thisTid, Line(origin, direction, true), 0, 0, 0);
 
@@ -986,6 +1198,26 @@ class VisualHelper
 		}
 
 	}
+	
+	private void RetraceTraceHistory()
+	{
+		bool saved_doRedshift = doRedshift;
+		DebugDispatcher.saver.clear();
+		
+		foreach(TraceHistoryEntry ent ; TraceHistory)
+		{
+			doRedshift = ent.doRedshift;
+			traceSingleRay!(false)(ent.origin, ent.direction);
+		}
+		
+		doRedshift = saved_doRedshift;
+	}
+	
+	private void ClearTraceHistory()
+	{
+		DebugDispatcher.saver.clear();
+		TraceHistory = [];
+	}
 
 	struct CurrentRaySettings
 	{
@@ -998,7 +1230,7 @@ class VisualHelper
 	{
 		imguiTextInput(label, buffer, slice);
 		while (slice.length > 0 && !((slice[$ - 1] >= '0' && slice[$ - 1] <= '9')
-				|| slice[$ - 1] == '.'))
+				|| slice[$ - 1] == '.' || slice[$ - 1] == '-'))
 		{
 			slice = slice[0 .. $ - 1];
 		}
