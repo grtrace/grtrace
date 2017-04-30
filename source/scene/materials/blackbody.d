@@ -8,12 +8,13 @@ import image.memory;
 import std.string, std.algorithm, std.array, std.range, std.conv, std.math;
 
 enum string[][] blackBodyDataRaw = splitLines(import("blackbody.txt"), KeepTerminator.no).map!(
-		a => strip(a)).filter!(a => !startsWith(a, "#")).map!(a => a.split()).array;
+			a => strip(a)).filter!(a => !startsWith(a, "#")).map!(a => a.split()).array;
 
-__gshared Color[391] lookupTable; // range [1000;40000;d=100]
+__gshared Color[391] lookupTable = initLookupTable(); // range [1000;40000;d=100]
 
-private void initLookupTable()
+private Color[391] initLookupTable()
 {
+	Color[391] lookupTable;
 	enum bool useC10 = true;
 	int id = 0;
 	foreach (i, string[] D; blackBodyDataRaw)
@@ -40,11 +41,7 @@ private void initLookupTable()
 			break;
 		}
 	}
-}
-
-shared static this()
-{
-	initLookupTable();
+	return lookupTable;
 }
 
 class BlackBodyEmissionMaterial : Material
