@@ -818,6 +818,14 @@ class VisualHelper
 
 					askCalculation();
 				}
+				if (imguiButton("Single trace"))
+				{
+					window = DWindow.Raytrace;
+				}
+				if (imguiButton("Grid settings"))
+				{
+					window = DWindow.Coordinates;
+				}
 			}
 			imguiEndScrollArea();
 			if ((!pMouseInGui) && glfwGetKey(rwin, GLFW_KEY_F1) == GLFW_PRESS)
@@ -959,7 +967,7 @@ class VisualHelper
 
 	__gshared Color lastRayColor;
 	__gshared bool doRedshift = false;
-	__gshared float wavelength = 700.0;
+	__gshared float wavelength = 650.0;
 
 	private void traceSingleRay(Vectorf origin, Vectorf direction)
 	{
@@ -1013,13 +1021,29 @@ class VisualHelper
 		static bool fromImage = false;
 		static bool predef = false, predefD = false;
 		static SVec3 predefV;
-		if (cast(WorldSpaceWrapper)(DebugDispatcher.space) !is null)
+		if (WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(DebugDispatcher.space))
 		{
 			imguiCheck("Visualise redshift", &doRedshift);
 			if (doRedshift)
 			{
 				imguiSlider("Wavelength", &wavelength, 300.0, 1000.0, 10.0f);
 			}
+			bool integr;
+			imguiLabel("Integrator: ");
+			imguiIndent();
+			foreach (i, memb; __traits(allMembers, Integrator))
+			{
+				static if (memb[0] >= 'A' && memb[0] <= 'Z')
+				{
+					enum val = mixin("Integrator." ~ memb);
+					integr = (cfgIntegrator == val);
+					if (imguiCheck(memb, &integr))
+					{
+						cfgIntegrator = val;
+					}
+				}
+			}
+			imguiUnindent();
 		}
 		imguiCheck("Use image coordinates", &fromImage);
 		if (fromImage)

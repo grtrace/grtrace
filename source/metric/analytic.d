@@ -121,7 +121,7 @@ class Analytic : AnalyticMetricContainer
 		for (; rayDat.geodesic_iteration < max_number_of_steps; rayDat.geodesic_iteration++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
-			Line newRay = integrateStep(Integrator.RK4, ray, param_step, init);
+			Line newRay = integrateStep(cfgIntegrator, ray, param_step, init);
 
 			fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin,
 					newRay.origin, didHit, hitpoint, hitnormal, hit);
@@ -239,7 +239,7 @@ class Analytic : AnalyticMetricContainer
 			return fpnum.infinity;
 
 		//calculate deflected ray
-		Line newRay = integrateStep(Integrator.RK4, ray, param_step, initiator);
+		Line newRay = integrateStep(cfgIntegrator, ray, param_step, initiator);
 
 		fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin,
 				newRay.origin, didHit, hitpoint, hitnormal, hit);
@@ -258,7 +258,7 @@ class Analytic : AnalyticMetricContainer
 		for (size_t i = 0; i < max_number_of_steps; i++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
-			Line newRay = integrateStep(Integrator.RK4, ray, param_step, init);
+			Line newRay = integrateStep(cfgIntegrator, ray, param_step, init);
 
 			fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin,
 					newRay.origin, didHit, hitpoint, hitnormal, hit);
@@ -298,7 +298,7 @@ class AnalyticSkyBox : Analytic
 		for (size_t i = 0; i < max_number_of_steps; i++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
-			Line newRay = integrateStep(Integrator.RK4, ray, param_step, init);
+			Line newRay = integrateStep(cfgIntegrator, ray, param_step, init);
 
 			fpnum m_dist = super.TraceBetweenPoints!(doP, doN, doO)(ray.origin,
 					newRay.origin, didHit, hitpoint, hitnormal, hit);
