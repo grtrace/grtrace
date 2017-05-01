@@ -6,6 +6,7 @@ import scene.scenemgr, scene.camera;
 import image.memory;
 import std.math, std.functional;
 import std.concurrency;
+public import metric.integrators : Integrator;
 
 alias fpnum = double;
 alias inum = long;
@@ -23,6 +24,7 @@ alias fast_atan2 = atan2;
 
 __gshared
 {
+
 	bool cfgVerbose = false;
 	bool cfgDebug = false;
 	bool cfgAdditionalCalc = false;
@@ -34,6 +36,7 @@ __gshared
 	inum cfgResolutionY = 240;
 	inum cfgThreads = 6;
 	inum cfgMaxDepth = 5;
+	Integrator cfgIntegrator = Integrator.RK5;
 
 	unum cfgSamples = 1;
 	string cfgOutputFile = "raytrace.png";

@@ -19,7 +19,7 @@ import core.time : dur;
 import core.atomic;
 import metric;
 
-alias ConfigValue = Algebraic!(inump, unump, fpnump, string*);
+alias ConfigValue = Algebraic!(inump, unump, fpnump, string*, Integrator*);
 private ConfigValue[string] cfgOptions;
 public __gshared Tcl_Interp* tcl;
 
@@ -46,6 +46,7 @@ void InitScripting(string arg0)
 
 	mixin(ConfigMixin("ResolutionX"));
 	mixin(ConfigMixin("ResolutionY"));
+	mixin(ConfigMixin("Integrator"));
 
 	mixin(ConfigMixin("Samples"));
 	mixin(ConfigMixin("OutputFile"));
@@ -65,13 +66,13 @@ void DoScript(string path)
 	int res = Tcl_EvalFile(tcl, path.toStringz());
 	if (res != TCL_OK)
 	{
-		throw new Exception(
-			"Tcl error " ~ text(Tcl_GetErrorLine(tcl)) ~ " " ~ Tcl_GetStringResult(tcl).text());
+		throw new Exception("Tcl error " ~ text(
+				Tcl_GetErrorLine(tcl)) ~ " " ~ Tcl_GetStringResult(tcl).text());
 	}
 }
 
 extern (C) int tclLoadGUI(ClientData clientData, Tcl_Interp* interp, int objc,
-	const(Tcl_Obj*)* objv) nothrow
+		const(Tcl_Obj*)* objv) nothrow
 {
 	Tk_Init(interp);
 	return TCL_OK;
@@ -82,7 +83,7 @@ import scene.creator;
 __gshared SceneDescription sceneParser;
 
 extern (C) int tclLoadScene(ClientData clientData, Tcl_Interp* interp, int objc,
-	const(Tcl_Obj*)* objv) nothrow
+		const(Tcl_Obj*)* objv) nothrow
 {
 	try
 	{
@@ -91,7 +92,7 @@ extern (C) int tclLoadScene(ClientData clientData, Tcl_Interp* interp, int objc,
 		if (objc != 2)
 		{
 			Tcl_WrongNumArgs(interp, objc, objv,
-				"loadScene requires a path to the scene description");
+					"loadScene requires a path to the scene description");
 			return TCL_ERROR;
 		}
 		string path = tclToStr(objv[1]);
@@ -106,7 +107,7 @@ extern (C) int tclLoadScene(ClientData clientData, Tcl_Interp* interp, int objc,
 }
 
 extern (C) int tclSceneCmd(ClientData clientData, Tcl_Interp* interp, int objc,
-	const(Tcl_Obj*)* objv) nothrow
+		const(Tcl_Obj*)* objv) nothrow
 {
 	try
 	{
@@ -129,7 +130,7 @@ extern (C) int tclSceneCmd(ClientData clientData, Tcl_Interp* interp, int objc,
 }
 
 extern (C) int tclDbgTrace(ClientData clientData, Tcl_Interp* interp, int objc,
-	const(Tcl_Obj*)* objv) nothrow
+		const(Tcl_Obj*)* objv) nothrow
 {
 	try
 	{
@@ -148,7 +149,7 @@ extern (C) int tclDbgTrace(ClientData clientData, Tcl_Interp* interp, int objc,
 }
 
 extern (C) int tclDoTrace(ClientData clientData, Tcl_Interp* interp, int objc,
-	const(Tcl_Obj*)* objv) nothrow
+		const(Tcl_Obj*)* objv) nothrow
 {
 	try
 	{
@@ -167,7 +168,7 @@ extern (C) int tclDoTrace(ClientData clientData, Tcl_Interp* interp, int objc,
 }
 
 extern (C) int tclFinishTrace(ClientData clientData, Tcl_Interp* interp,
-	int objc, const(Tcl_Obj*)* objv) nothrow
+		int objc, const(Tcl_Obj*)* objv) nothrow
 {
 	while (cfgTraceStart > cfgTraceEnd)
 	{
@@ -177,7 +178,7 @@ extern (C) int tclFinishTrace(ClientData clientData, Tcl_Interp* interp,
 }
 
 extern (C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc,
-	const(Tcl_Obj*)* objv) nothrow
+		const(Tcl_Obj*)* objv) nothrow
 {
 	string tar;
 	if (objc != 3)
@@ -198,6 +199,11 @@ extern (C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc,
 		if (cv.peek!(string*)() !is null)
 		{
 			*(cv.get!(string*)) = tclToStr(objv[2]);
+		}
+		else if (cv.peek!(Integrator*)() !is null)
+		{
+			string V = tclToStr(objv[2]);
+			*(cv.get!(Integrator*)) = to!Integrator(V);
 		}
 		else if (cv.peek!(fpnump)() !is null)
 		{
@@ -233,8 +239,9 @@ extern (C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc,
 	return TCL_OK;
 }
 
-void AddConfig(T)(string name, T val) if (is(T == unump) || is(T == inump)
-		|| is(T == string*) || is(T == fpnump))
+void AddConfig(T)(string name, T val)
+		if (is(T == unump) || is(T == inump) || is(T == string*)
+			|| is(T == fpnump) || is(T == Integrator*))
 {
 	cfgOptions[name] = val;
 }
@@ -247,25 +254,25 @@ string ConfigMixin(string name)
 Color colorString(string str)
 {
 	return str.toLower().predSwitch!("a==b")("", Colors.Black, "black",
-		Colors.Black, "white", Colors.White, "red", Colors.Red, "green",
-		Colors.Green, "blue", Colors.Blue, "cyan", Colors.Cyan, "magenta",
-		Colors.Magenta, "yellow", Colors.Yellow, {
-		fpnum[] components = [0.0, 0.0, 0.0];
-		str.filter!((c) => ((!isWhite(c))))().array().splitter(',').map!((a) => to!fpnum(a)).copy(
-			components);
-		return Color(components[0], components[1], components[2]);
-	}());
+			Colors.Black, "white", Colors.White, "red", Colors.Red, "green",
+			Colors.Green, "blue", Colors.Blue, "cyan", Colors.Cyan, "magenta",
+			Colors.Magenta, "yellow", Colors.Yellow, {
+				fpnum[] components = [0.0, 0.0, 0.0];
+				str.filter!((c) => ((!isWhite(c))))().array().splitter(',')
+					.map!((a) => to!fpnum(a)).copy(components);
+				return Color(components[0], components[1], components[2]);
+			}());
 }
 
 Vectorf vectorString(string str)
 {
 	ICamera cam = cast(ICamera)(WorldSpace.camera);
 	return str.toLower().predSwitch!("a==b")("", vectorf(0, 0, 0), "up",
-		cam.updir, "down", -cam.updir, "left", -cam.rightdir, "right",
-		cam.rightdir, "front", cam.lookdir, "back", -cam.lookdir, {
-		fpnum[] components = [0.0, 0.0, 0.0];
-		str.filter!((c) => ((!isWhite(c))))().array().splitter(',').map!((a) => to!fpnum(a)).copy(
-			components);
-		return vectorf(components[0], components[1], components[2]);
-	}());
+			cam.updir, "down", -cam.updir, "left", -cam.rightdir, "right",
+			cam.rightdir, "front", cam.lookdir, "back", -cam.lookdir, {
+				fpnum[] components = [0.0, 0.0, 0.0];
+				str.filter!((c) => ((!isWhite(c))))().array().splitter(',')
+					.map!((a) => to!fpnum(a)).copy(components);
+				return vectorf(components[0], components[1], components[2]);
+			}());
 }
