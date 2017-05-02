@@ -797,7 +797,7 @@ class VisualHelper
 					mouseLocked ? 0 : mousescroll, cast(dchar) keychar);
 			// GUI code
 
-			mouseInGui |= imguiBeginScrollArea("Controls", 10, winy - 510, 190, 500, &scroll_d);
+			mouseInGui |= imguiBeginScrollArea("Controls", 10, 270, 240, winy - 280, &scroll_d);
 			{
 				imguiLabel("FPS: %.1f".format(1.0 / dt));
 				imguiSlider("BG", &bgIntensity, 0.0f, 1.0f, 0.02f);
@@ -816,8 +816,8 @@ class VisualHelper
 					imguiSlider("Far", &camera.far, 2.0f, 10_000.0f, 10.0f);
 					imguiUnindent();
 				}
-				imguiCheck("Persistant Ray Saver", &persistantTracing);
-				if(imguiButton("Clear Ray History"))
+				imguiCheck("Persistent Ray Saver", &persistentTracing);
+				if (imguiButton("Clear Ray History"))
 				{
 					ClearTraceHistory();
 				}
@@ -827,168 +827,193 @@ class VisualHelper
 
 					askCalculation();
 				}
-				static bool checkState = false;
-				imguiCollapse("Simulation Details", "", &checkState);
-				if(checkState)
+				if (imguiButton("Single trace"))
 				{
+					window = DWindow.Raytrace;
+				}
+				if (imguiButton("Grid settings"))
+				{
+					window = DWindow.Coordinates;
+				}
+				static bool checkState = true;
+				imguiCollapse("Simulation Details", "", &checkState);
+				if (checkState)
+				{
+					imguiIndent();
 					imguiLabel("World: %s".format(dbgWorldType));
 					fpnum param_step;
 					size_t max_number_of_steps;
 					bool dirty_history = false;
-					MetricContainer wrp = cast(MetricContainer)(cast(WorldSpaceWrapper)cfgSpace).smetric;
-	
-					final switch(dbgWorldType) with (WorldType)
+					MetricContainer wrp = cast(MetricContainer)(cast(WorldSpaceWrapper) cfgSpace)
+						.smetric;
+
+					final switch (dbgWorldType) with (WorldType)
 					{
-						case Unknown:
+					case Unknown:
 						{
 							throw new Exception("[DBG] Unknown WorldType");
 						}
-						case Flat:
+					case Flat:
 						{
 							break;
 						}
-						case Analytic:
-							param_step = (cast(metric.analytic.Analytic)wrp).paramStep;
-							max_number_of_steps = (cast(metric.analytic.Analytic)wrp).maxNumberOfSteps;
-							goto case AnalyticSkyBox;
-						case AnalyticSkyBox:
+					case Analytic:
+						param_step = (cast(metric.analytic.Analytic) wrp).paramStep;
+						max_number_of_steps = (cast(metric.analytic.Analytic) wrp).maxNumberOfSteps;
+						goto case AnalyticSkyBox;
+					case AnalyticSkyBox:
 						{
-							if(dbgWorldType == WorldType.AnalyticSkyBox)
+							if (dbgWorldType == WorldType.AnalyticSkyBox)
 							{
-								param_step = (cast(metric.analytic.AnalyticSkyBox)wrp).paramStep;
-								max_number_of_steps = (cast(metric.analytic.AnalyticSkyBox)wrp).maxNumberOfSteps;
+								param_step = (cast(metric.analytic.AnalyticSkyBox) wrp).paramStep;
+								max_number_of_steps = (cast(metric.analytic.AnalyticSkyBox) wrp)
+									.maxNumberOfSteps;
 							}
 							param_step = abs(param_step);
 							imguiLabel("Metric: %s".format(dbgMetricType));
-							Initiator ini = (cast(AnalyticMetricContainer)wrp).initiator;
-							
-							float gui_param_step = cast(float)param_step;
-							float gui_max_number_of_steps = cast(float)max_number_of_steps;
+							Initiator ini = (cast(AnalyticMetricContainer) wrp).initiator;
+
+							float gui_param_step = cast(float) param_step;
+							float gui_max_number_of_steps = cast(float) max_number_of_steps;
 							imguiLabel("Param Step: %f".format(param_step));
 							imguiSlider("", &gui_param_step, 0.001f, 1.0f, 0.001f);
 							imguiLabel("Max Number of Steps: %d".format(max_number_of_steps));
 							imguiSlider("", &gui_max_number_of_steps, 1, 10000, 1);
-							
-							if(gui_max_number_of_steps != max_number_of_steps || gui_param_step != param_step)
+
+							if (gui_max_number_of_steps != max_number_of_steps
+									|| gui_param_step != param_step)
 							{
 								dirty_history = true;
-								
-								if(dbgWorldType == WorldType.AnalyticSkyBox)
+
+								if (dbgWorldType == WorldType.AnalyticSkyBox)
 								{
-									(cast(metric.analytic.AnalyticSkyBox)wrp).paramStep = -gui_param_step;
-									(cast(metric.analytic.AnalyticSkyBox)wrp).maxNumberOfSteps = cast(size_t)gui_max_number_of_steps;
+									(cast(metric.analytic.AnalyticSkyBox) wrp).paramStep
+										= -gui_param_step;
+									(cast(metric.analytic.AnalyticSkyBox) wrp).maxNumberOfSteps = cast(
+											size_t) gui_max_number_of_steps;
 								}
 								else
 								{
-									(cast(metric.analytic.Analytic)wrp).paramStep = -gui_param_step;
-									(cast(metric.analytic.Analytic)wrp).maxNumberOfSteps = cast(size_t)gui_max_number_of_steps;
+									(cast(metric.analytic.Analytic) wrp).paramStep
+										= -gui_param_step;
+									(cast(metric.analytic.Analytic) wrp).maxNumberOfSteps = cast(
+											size_t) gui_max_number_of_steps;
 								}
 							}
-							
-							final switch(dbgMetricType) with (MetricType)
+
+							final switch (dbgMetricType) with (MetricType)
 							{
-								case MetricType.Unknown:
+							case MetricType.Unknown:
 								{
 									throw new Exception("[DBG] Unknown MetricType");
 								}
-								case FlatCartesian:
-								case FlatRadial:
-									break;
-								case MetricType.Schwarzchild:
+							case FlatCartesian:
+							case FlatRadial:
+								break;
+							case MetricType.Schwarzchild:
 								{
 									import metric.initiators.schwarzschild;
-									auto met = cast(Schwarzschild)ini;
+
+									auto met = cast(Schwarzschild) ini;
 									float mass = met.mass;
 									imguiLabel("Mass: %f".format(mass));
 									imguiSlider("", &mass, 0.0f, 10.0f, 0.1f);
-									
-									if(mass != cast(float)met.mass)
+
+									if (mass != cast(float) met.mass)
 									{
 										dirty_history = true;
 										met.mass = mass;
-										met.schwarzschild_radius = 2*met.mass;
-										
+										met.schwarzschild_radius = 2 * met.mass;
+
 										Vert3D[] v3d = [];
 										uint[] e3d = [];
-										
+
 										auto deb = met.returnDebugRenderObjects()["@event_horizon"];
 										TSObject* tso = sceneObjects["@event_horizon"];
-										
-										VisualPrimitives.appendSphere(v3d,
-										e3d, tso.dataIndex, deb);
-										
-										(cast(Vert3D[])objSpatial.data.data)[(tso.dataIndex) .. (tso.dataIndex+v3d.length)] = v3d[0 .. $];
-										
+
+										VisualPrimitives.appendSphere(v3d, e3d, tso.dataIndex, deb);
+
+										(cast(Vert3D[]) objSpatial.data.data)[(
+												tso.dataIndex) .. (tso.dataIndex + v3d.length)] = v3d[0
+											.. $];
+
 										objSpatial.bind();
 										//TODO: update only the changed slice
 										//TODO: append a modelview matrix to every object
 										objSpatial.vbo.updateData(objSpatial.data.data);
-										
+
 									}
 									break;
 								}
-								case MetricType.Reisnerr:
+							case MetricType.Reisnerr:
 								{
 									import metric.initiators.reissner;
-									auto met = cast(Reissner)ini;
+
+									auto met = cast(Reissner) ini;
 									float mass = met.M;
 									float charge = met.Q;
 									imguiLabel("Mass: %f".format(mass));
 									imguiSlider("", &mass, 0.0f, 10.0f, 0.1f);
 									imguiLabel("Charge: %f".format(charge));
 									imguiSlider("", &charge, 0.0f, 10.0f, 0.1f);
-									if(mass != cast(float)met.M || charge != cast(float)met.Q)
+									if (mass != cast(float) met.M || charge != cast(float) met.Q)
 									{
 										dirty_history = true;
-										with(met)
+										with (met)
 										{
 											M = mass;
 											Q = charge;
 											Rs = 2 * M;
-											Q2 = Q*Q;
-											
-											if(1-(4*Q2)/(Rs*Rs)>=0)
+											Q2 = Q * Q;
+
+											if (1 - (4 * Q2) / (Rs * Rs) >= 0)
 											{
-												det = (Rs/2) * sqrt(1-(4*Q2)/(Rs*Rs));
-												r_ext = (Rs/2) + det;
-												r_cauchy = (Rs/2) - det;
+												det = (Rs / 2) * sqrt(1 - (4 * Q2) / (Rs * Rs));
+												r_ext = (Rs / 2) + det;
+												r_cauchy = (Rs / 2) - det;
 											}
-											else r_ext=r_cauchy=0;
-											
+											else
+												r_ext = r_cauchy = 0;
+
 											Vert3D[] v3d = [];
 											uint[] e3d = [];
-											
-											auto deb = returnDebugRenderObjects()["@event_horizon"];
-											TSObject* tso = sceneObjects["@event_horizon"];
-											
+
+											auto deb = returnDebugRenderObjects()[
+											"@ext_event_horizon"];
+											TSObject* tso = sceneObjects["@ext_event_horizon"];
+
 											VisualPrimitives.appendSphere(v3d,
-											e3d, tso.dataIndex, deb);
-											
-											(cast(Vert3D[])objSpatial.data.data)[(tso.dataIndex) .. (tso.dataIndex+v3d.length)] = v3d[0 .. $];
-											
+													e3d, tso.dataIndex, deb);
+
+											(cast(Vert3D[]) objSpatial.data.data)[(
+													tso.dataIndex) .. (tso.dataIndex + v3d.length)] = v3d[0
+												.. $];
+
 											objSpatial.bind();
 											//TODO: update only the changed slice
 											//TODO: append a modelview matrix to every object
 											objSpatial.vbo.updateData(objSpatial.data.data);
 										}
 									}
-									
+
 									break;
 								}
-								case MetricType.Kerr:
+							case MetricType.Kerr:
 								{
 									import metric.initiators.kerr;
-									auto met = cast(metric.initiators.kerr.Kerr)ini;
+
+									auto met = cast(metric.initiators.kerr.Kerr) ini;
 									float mass = met.m;
 									float angular_momentum = met.j;
 									imguiLabel("Mass: %f".format(mass));
 									imguiSlider("", &mass, 0.0f, 10.0f, 0.1f);
 									imguiLabel("Momentum: %f".format(angular_momentum));
 									imguiSlider("", &angular_momentum, 0.0f, 10.0f, 0.1f);
-									if(mass != cast(float)met.m || angular_momentum != cast(float)met.j)
+									if (mass != cast(float) met.m
+											|| angular_momentum != cast(float) met.j)
 									{
 										dirty_history = true;
-										with(met)
+										with (met)
 										{
 											m = mass;
 											Rs = 2 * m;
@@ -998,20 +1023,22 @@ class VisualHelper
 											else
 												a = angular_momentum / m;
 											a2 = a * a;
-											r_plus = Rs/2 + sqrt((Rs*Rs)/4 - a2);
+											r_plus = Rs / 2 + sqrt((Rs * Rs) / 4 - a2);
 										}
 									}
 									break;
 								}
 							}
 							break;
-						}	
+						}
 					}
-					
-					if(dirty_history)
+
+					if (dirty_history)
 					{
 						RetraceTraceHistory();
 					}
+
+					imguiUnindent();
 				}
 			}
 			imguiEndScrollArea();
@@ -1161,23 +1188,23 @@ class VisualHelper
 
 	__gshared Color lastRayColor;
 	__gshared bool doRedshift = false;
-	__gshared bool persistantTracing = false;
+	__gshared bool persistentTracing = false;
 	__gshared TraceHistoryEntry[] TraceHistory = [];
-	__gshared float wavelength = 700.0;
+	__gshared float wavelength = 650.0;
 
 	private void traceSingleRay(bool history = true)(Vectorf origin, Vectorf direction)
 	{
 		import std.concurrency : thisTid;
 
-		static if(history)
+		static if (history)
 		{
-			if(!persistantTracing)
+			if (!persistentTracing)
 			{
 				ClearTraceHistory();
 			}
 			TraceHistory ~= TraceHistoryEntry(origin, direction, doRedshift);
 		}
-		
+
 		WorldSpace.RayFunc rf = DebugDispatcher.space.GetRayFunc();
 		lastRayColor = rf(thisTid, Line(origin, direction, true), 0, 0, 0);
 
@@ -1198,21 +1225,21 @@ class VisualHelper
 		}
 
 	}
-	
+
 	private void RetraceTraceHistory()
 	{
 		bool saved_doRedshift = doRedshift;
 		DebugDispatcher.saver.clear();
-		
-		foreach(TraceHistoryEntry ent ; TraceHistory)
+
+		foreach (TraceHistoryEntry ent; TraceHistory)
 		{
 			doRedshift = ent.doRedshift;
 			traceSingleRay!(false)(ent.origin, ent.direction);
 		}
-		
+
 		doRedshift = saved_doRedshift;
 	}
-	
+
 	private void ClearTraceHistory()
 	{
 		DebugDispatcher.saver.clear();
@@ -1245,13 +1272,29 @@ class VisualHelper
 		static bool fromImage = false;
 		static bool predef = false, predefD = false;
 		static SVec3 predefV;
-		if (cast(WorldSpaceWrapper)(DebugDispatcher.space) !is null)
+		if (WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(DebugDispatcher.space))
 		{
 			imguiCheck("Visualise redshift", &doRedshift);
 			if (doRedshift)
 			{
 				imguiSlider("Wavelength", &wavelength, 300.0, 1000.0, 10.0f);
 			}
+			bool integr;
+			imguiLabel("Integrator: ");
+			imguiIndent();
+			foreach (i, memb; __traits(allMembers, Integrator))
+			{
+				static if (memb[0] >= 'A' && memb[0] <= 'Z')
+				{
+					enum val = mixin("Integrator." ~ memb);
+					integr = (cfgIntegrator == val);
+					if (imguiCheck(memb, &integr))
+					{
+						cfgIntegrator = val;
+					}
+				}
+			}
+			imguiUnindent();
 		}
 		imguiCheck("Use image coordinates", &fromImage);
 		if (fromImage)
