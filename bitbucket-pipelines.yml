@@ -8,7 +8,7 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - pacman -Sy --noconfirm dub dmd ldc
+          - pacman -Sy --noconfirm dub dmd ldc tcl tk
           - dub upgrade
           - dub build --compiler=dmd
           - dub build --compiler=ldc
