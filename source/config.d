@@ -36,7 +36,7 @@ __gshared
 	inum cfgResolutionY = 240;
 	inum cfgThreads = 6;
 	inum cfgMaxDepth = 5;
-	Integrator cfgIntegrator = Integrator.RK5;
+	Integrator cfgIntegrator = Integrator.RK4;
 
 	unum cfgSamples = 1;
 	string cfgOutputFile = "raytrace.png";
