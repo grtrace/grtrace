@@ -8,6 +8,11 @@ import std.math, std.functional;
 import std.concurrency;
 public import metric.integrators : Integrator;
 
+version(GRTrace_NoUI)
+	enum bool GRTRACE_HAS_UI = false;
+else
+	enum bool GRTRACE_HAS_UI = true;
+
 alias fpnum = double;
 alias inum = long;
 alias unum = ulong;
@@ -31,6 +36,7 @@ __gshared
 	bool cfgNoImage = false;
 	bool cfgGpuAcc = false;
 	bool cfgFastApproximation = false;
+	inum cfgUiDpi = 96;
 	string cfgScript = "raytrace.tcl";
 	inum cfgResolutionX = 320;
 	inum cfgResolutionY = 240;

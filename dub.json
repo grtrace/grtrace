@@ -13,7 +13,10 @@
 	"targetPath": "bin/",
 	"dependencies": {
 		"tcltk": "~>8.6.5",
-		"derelict-glfw3": "~>4.0.0-alpha.5"
+		"dlangui": "~>0.9.173"
+	},
+	"subConfigurations": {
+		"dlangui": "sdl"
 	},
 	"mainSourceFile": "source/app.d",
 	"lflags-ldc": [
@@ -23,6 +26,9 @@
 	"dflags-ldc": [
 		"-L=--allow-multiple-definition",
 		"-O5"
+	],
+	"versions": [
+		"EmbedStandardResources"
 	],
 	"buildTypes": {
 		"relinfo": {

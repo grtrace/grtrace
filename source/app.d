@@ -13,7 +13,6 @@ import core.thread : Thread;
 import core.time;
 import math;
 import gpuacc.gpu;
-import dbg.debugger : VisualHelper;
 import dbg.calcs;
 
 enum string HelpStr = `
@@ -24,7 +23,8 @@ Options:
 --script|-s      - Script to load the configuration from (default raytrace.tcl)
 --help|-h        - Displays this text
 --threads|-t     - Thread number to use
---debug|-d       - Launches the visual debugger
+--ui|-u          - Launches the graphical user interface
+--dpi|-d         - Sets the DPI for the GUI to the specified value
 --noimage|-n     - Doesn't run the main rendering loop
 --nogpu|-g       - Force-disable GPU acceleration
 --addcalc|-c     - Do only additional calculations
@@ -48,46 +48,70 @@ void RenderSpawner(Tid owner)
 	}
 }
 
-void main(string[] args)
+static if (!GRTRACE_HAS_UI)
 {
-	/*auto A = new Radial();
+	void main(string[] args)
+	{
+		grtrace_main(args);
+	}
+}
+else
+{
+	import dlangui;
 
-	writeln(A.transformForwardSpacialFirstDerivatives(vectorf(1,0,0), vectorf(0,1,0)));
+	mixin APP_ENTRY_POINT;
 
-	auto D2 = [0,1,0,0];
-	auto D = A.transformForwardSpacialFirstDerivatives(vectorf(1,0,0), vectorf(0,1,0));
-	//0,1,0,0
-	D[] = (D[]+D2[]*0.01)*0.01 + A.transformForwardPosition(vectorf(1,0,0))[];
+	extern (C) int UIAppMain(string[] args)
+	{
+		grtrace_main(args);
+		return 0;
+	}
+}
 
-	writeln(A.transformBackSpacialFirstDerivatives(D, [0,0.01,0,1]));
-	writeln(A.transformBackSpacialSecondDerivatives(A.transformForwardPosition(vectorf(1,0,0)),[0,0,0,1],[0,1,0,0]));
-
-	return;*/
-
-	/*auto B = A.getCoordinatesFromCartesian(vectorf(-100,200,300));
-
-	auto C = A.getSpacialDerivativesFromCartesianVector(vectorf(-100,200,300), vectorf(1,-2,-3));
-
-	auto D = A.getSpacialCartesianVectorFromDerivatives(B, C);
-
-	writeln("POS-RADIAL:",B,"DIR-RADIAL",C,"DIR-CARTESIAN",D);*/
-
+void grtrace_main(string[] args)
+{
 	//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
-	string arg0 = args[0].idup; //asds
+	string arg0 = args[0].idup;
 	InitGPU();
 	InitScripting(arg0);
 	bool doHelp;
-	getopt(args, "verbose|v", &cfgVerbose, "script|s", &cfgScript, "help|h",
-		&doHelp, "threads|t", &cfgThreads, "debug|d", &cfgDebug, "noimage|n",
-		&cfgNoImage, "nogpu|g", &cfgGpuAcc, "addcalc|c", &cfgAdditionalCalc,
-		"fastapprox|f", &cfgFastApproximation);
+	if (args.length == 1)
+		cfgDebug = 1;
+	// dfmt off
+	getopt(args, 
+		"verbose|v", &cfgVerbose,
+		"script|s", &cfgScript,
+		"help|h", &doHelp,
+		"threads|t", &cfgThreads,
+		"ui|u", &cfgDebug,
+		"dpi|d", &cfgUiDpi,
+		"noimage|n", &cfgNoImage,
+		"nogpu|g", &cfgGpuAcc,
+		"addcalc|c", &cfgAdditionalCalc,
+		"fastapprox|f", &cfgFastApproximation,
+		);
+	// dfmt on
 	cfgGpuAcc = !cfgGpuAcc;
 	if (doHelp)
 	{
 		writefln(HelpStr, arg0);
 		return;
 	}
-	VisualHelper.instance.initialize();
+	//VisualHelper.instance.initialize();
+	if (cfgDebug)
+	{
+		static if (GRTRACE_HAS_UI)
+		{
+			import ui.window;
+
+			runUI();
+		}
+		else
+		{
+			writefln("GUI not supported, please run with -h to show available options");
+		}
+		return;
+	}
 	MonoTime startTime = MonoTime.currTime;
 	renderTid = spawn(&RenderSpawner, thisTid);
 	DoScript(cfgScript);
@@ -95,8 +119,8 @@ void main(string[] args)
 	Thread.sleep(dur!"msecs"(50));
 	Duration duration = (MonoTime.currTime - startTime);
 	writefln("Total rendering time: %s", duration);
-	if (cfgDebug)
-		VisualHelper.instance.runGraphics();
+	//if (cfgDebug)
+	//VisualHelper.instance.runGraphics();
 	if (cfgAdditionalCalc && (!cfgDebug))
 	{
 		askCalculation();

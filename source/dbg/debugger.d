@@ -1,5 +1,5 @@
 module dbg.debugger;
-
+enum string _old_code_d = q{
 import glad.gl.all;
 import glad.gl.loader;
 import derelict.glfw3.glfw3;
@@ -1980,3 +1980,4 @@ extern (C) void coreSize(GLFWwindow* win, int w, int h) nothrow
 	{
 	}
 }
+};

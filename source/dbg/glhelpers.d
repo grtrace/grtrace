@@ -2,7 +2,6 @@ module dbg.glhelpers;
 
 import glad.gl.all;
 import glad.gl.loader;
-import derelict.glfw3.glfw3;
 import std.conv, std.math;
 import std.string, std.algorithm;
 public import std.exception;

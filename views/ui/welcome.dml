@@ -1,0 +1,22 @@
+VerticalLayout {
+    id: welcomePanel
+    padding: 10
+    margins: 10
+    layoutWidth: fill
+    layoutHeight: fill
+
+    TextWidget { text: "GRTrace - General Relativity Raytracer"; fontSize: 175%; fontWeight: 800 }
+
+    TableLayout {
+        colCount: 3
+        HSpacer { layoutWidth: fill }
+        Button { text: "Open a rendering script"; id: openButton }
+        HSpacer { layoutWidth: fill }
+        HSpacer { layoutWidth: fill }
+        Button { text: "Create a new script"; id: createButton }
+        HSpacer { layoutWidth: fill }
+        HSpacer { layoutWidth: fill }
+        Button { text: "Exit"; id: exitButton }
+        HSpacer { layoutWidth: fill }
+    }
+}
