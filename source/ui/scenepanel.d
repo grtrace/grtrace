@@ -399,8 +399,30 @@ class GrtraceScenePanel : VerticalLayout
 	{
 		dt = interval_hnsecs * 1.0e-7;
 		totalDt += dt;
-		if (totalDt > 1.0 / 30.0)
+		invalidate();
+	}
+
+	private int oldmx, oldmy;
+	protected override bool onMouseEvent(MouseEvent me)
+	{
+		int dx = me.x - oldmx;
+		int dy = me.y - oldmy;
+		oldmx = me.x;
+		oldmy = me.y;
+
+		if(!mouseLocked && me.lbutton.isDown)
+			mouseLocked = true;
+		if(mouseLocked && !me.lbutton.isDown)
+			mouseLocked = false;
+		if(mouseLocked)
+		{
+			double dYaw = dx * M_2_PI / 150.0;
+			double dPitch = dy * PI / 200.0;
+			camera.yaw -= dYaw;
+			camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
 			invalidate();
+		}
+		return true;
 	}
 
 	private void render(Rect windowRect, Rect rc)
