@@ -1,7 +1,6 @@
 module dbg.glhelpers;
 
-import glad.gl.all;
-import glad.gl.loader;
+import derelict.opengl3.gl3;
 import std.conv, std.math;
 import std.string, std.algorithm;
 public import std.exception;
@@ -1377,7 +1376,7 @@ class GFXvertexArrayObject
 			GLsizei a4, const(GLvoid)* a5) {
 			glVertexAttribPointer(a1, a2, a3, GL_FALSE, a4, a5);
 		};
-		if (GL_ARB_vertex_attrib_64bit)
+		if (!!glVertexAttribLPointer)
 		{
 			ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
 				GLsizei a4, const(GLvoid)* a5) {
@@ -1806,7 +1805,7 @@ class GFXtexture
 		_w = cast(int) img.w;
 		_h = cast(int) img.h;
 
-		if (GL_EXT_direct_state_access)
+		if (!!glTextureImage2DEXT)
 		{
 			glTextureImage2DEXT(_id, GL_TEXTURE_2D, 0,
 				(_monochrome) ? (GL_R8) : (GL_RGB8), _w, _h, 0,
@@ -1828,7 +1827,7 @@ class GFXtexture
 		(_w == img.w) || assert(0);
 		(_h == img.h) || assert(0);
 
-		if (GL_EXT_direct_state_access)
+		if (!!glTextureImage2DEXT)
 		{
 			glTextureSubImage2DEXT(_id, GL_TEXTURE_2D, 0, 0, 0, _w, _h,
 				(_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);

@@ -6,7 +6,7 @@ import math.geometric;
 import math.matrix;
 import math.util;
 import std.string, std.getopt, std.array, std.range, std.math, std.algorithm;
-import glad.gl.all;
+import derelict.opengl3.gl3;
 import scene.objects.interfaces;
 
 interface ICamera

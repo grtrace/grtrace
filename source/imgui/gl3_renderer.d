@@ -23,8 +23,7 @@ import core.stdc.string;
 import std.math;
 import std.stdio;
 
-import glad.gl.all;
-import glad.gl.loader;
+import derelict.opengl3.gl3;
 
 import imgui.api;
 import imgui.engine;

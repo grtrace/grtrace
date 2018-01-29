@@ -103,7 +103,13 @@ void grtrace_main(string[] args)
 		static if (GRTRACE_HAS_UI)
 		{
 			import ui.window;
-
+			//TEMP
+			MonoTime startTime = MonoTime.currTime;
+			renderTid = spawn(&RenderSpawner, thisTid);
+			DoScript(cfgScript);
+			renderTid.send(false);
+			Thread.sleep(dur!"msecs"(50));
+			//
 			runUI();
 		}
 		else

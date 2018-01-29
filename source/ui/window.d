@@ -3,8 +3,7 @@ module ui.window;
 import config;
 static if(GRTRACE_HAS_UI):
 
-import glad.gl.all;
-import glad.gl.loader;
+import derelict.opengl3.gl3;
 import dbg.glhelpers;
 import dbg.dispatcher;
 import dbg.draws;
@@ -13,6 +12,7 @@ import std.string, std.format, std.algorithm, std.array, std.range;
 import scene.camera, scene.scenemgr, math;
 import std.conv;
 import dlangui;
+import ui.scenepanel;
 
 private enum string DML_WELCOME = import("ui/welcome.dml");
 
@@ -38,13 +38,14 @@ class UIMain : AppFrame
 	override protected ToolBarHost createToolbars()
 	{
 		ToolBarHost tbh = new ToolBarHost;
+		ToolBar tb = tbh.getOrAddToolbar("apptoolbar");
+		tb.addButtons([new Action(3, "Quit")]);
 		return tbh;
 	}
 
 	override protected StatusLine createStatusLine()
 	{
 		StatusLine sl = new StatusLine;
-		sl.addChild(new TextWidget("st1", "Hello, GRTrace!"d));
 		return sl;
 	}
 
@@ -55,7 +56,10 @@ class UIMain : AppFrame
 		tabWidget.layoutHeight = FILL_PARENT;
 
 		Widget welcomePane = parseML(DML_WELCOME);
-		tabWidget.addTab(welcomePane, "Welcome");
+		tabWidget.addTab(welcomePane, "Welcome"d);
+
+		GrtraceScenePanel gsp = new GrtraceScenePanel();
+		tabWidget.addTab(gsp, "Scene view"d);
 
 		return tabWidget;
 	}
