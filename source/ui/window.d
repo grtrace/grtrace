@@ -1,9 +1,9 @@
 module ui.window;
 
 import config;
-static if(GRTRACE_HAS_UI):
 
-import derelict.opengl3.gl3;
+static if (GRTRACE_HAS_UI)
+	 : import derelict.opengl3.gl3;
 import dbg.glhelpers;
 import dbg.dispatcher;
 import dbg.draws;
@@ -16,10 +16,17 @@ import ui.scenepanel;
 
 private enum string DML_WELCOME = import("ui/welcome.dml");
 
+enum UIActions : int
+{
+	quit = 1,
+	menuFile
+}
+
 class UIMain : AppFrame
 {
 	Window window;
 	TabWidget tabWidget;
+	GrtraceScenePanel gsp;
 
 	private this(Window w)
 	{
@@ -28,10 +35,15 @@ class UIMain : AppFrame
 		super();
 	}
 
+	void requestExit()
+	{
+		this.window.close();
+	}
+
 	override protected MainMenu createMainMenu()
 	{
 		MenuItem items = new MenuItem();
-		items.add(new MenuItem(new Action(1, "File")));
+		items.add(new MenuItem(new Action(UIActions.menuFile, "File"d)));
 		return new MainMenu(items);
 	}
 
@@ -39,7 +51,7 @@ class UIMain : AppFrame
 	{
 		ToolBarHost tbh = new ToolBarHost;
 		ToolBar tb = tbh.getOrAddToolbar("apptoolbar");
-		tb.addButtons([new Action(3, "Quit")]);
+		tb.addButtons([new Action(UIActions.quit, "Quit"d)]);
 		return tbh;
 	}
 
@@ -58,12 +70,14 @@ class UIMain : AppFrame
 		Widget welcomePane = parseML(DML_WELCOME);
 		tabWidget.addTab(welcomePane, "Welcome"d);
 
-		GrtraceScenePanel gsp = new GrtraceScenePanel();
+		gsp = new GrtraceScenePanel();
 		tabWidget.addTab(gsp, "Scene view"d);
+
+		tabWidget.selectTab(1);
 
 		return tabWidget;
 	}
-	
+
 	private static void run()
 	{
 		overrideScreenDPI(cast(int) cfgUiDpi);
@@ -80,7 +94,21 @@ class UIMain : AppFrame
 		window.mainWidget = uiMain;
 
 		window.show();
+		uiMain.gsp.requestFocus();
 		Platform.instance.enterMessageLoop();
+	}
+
+	override bool handleAction(const Action a)
+	{
+		switch (a.id) with (UIActions)
+		{
+		case quit:
+			requestExit();
+			break;
+		default:
+			break;
+		}
+		return true;
 	}
 }
 
@@ -88,7 +116,7 @@ __gshared UIMain uiMain;
 
 void runUI()
 {
-	if(uiMain is null)
+	if (uiMain is null)
 	{
 		UIMain.run();
 	}

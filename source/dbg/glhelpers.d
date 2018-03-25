@@ -64,6 +64,11 @@ struct GFXvector3
 		return "GFXvector3 opBinary(string op)(GFXvector3 o) if(op==\"" ~ op ~ "\")" ~ "{return GFXvector3(x" ~ op ~ "o.x," ~ "y" ~ op ~ "o.y, z" ~ op ~ "o.z);}";
 	}
 
+	private static pure string strOpBinaryScalar(string op)
+	{
+		return "GFXvector3 opBinary(string op)(GFXnum o) if(op==\"" ~ op ~ "\")" ~ "{return GFXvector3(x" ~ op ~ "o," ~ "y" ~ op ~ "o, z" ~ op ~ "o);}";
+	}
+
 	public ref GFXnum opIndex(size_t i)
 	{
 		switch (i)
@@ -83,6 +88,10 @@ struct GFXvector3
 	mixin(strOpBinary("-"));
 	mixin(strOpBinary("*"));
 	mixin(strOpBinary("/"));
+	mixin(strOpBinaryScalar("+"));
+	mixin(strOpBinaryScalar("-"));
+	mixin(strOpBinaryScalar("*"));
+	mixin(strOpBinaryScalar("/"));
 
 }
 
@@ -166,13 +175,13 @@ alias GFXmatrix4 = GFXnum[16];
 // ---------------------------------------------------------
 
 /// Helper for creating new 3d vector
-GFXvector3 gVec3(GFXnum x, GFXnum y, GFXnum z)
+GFXvector3 gVec3(GFXnum x = 0.0f, GFXnum y = 0.0f, GFXnum z = 0.0f)
 {
 	return GFXvector3(x, y, z);
 }
 
 /// Helper for creating new 4d vector
-GFXvector4 gVec4(GFXnum x, GFXnum y, GFXnum z, GFXnum w)
+GFXvector4 gVec4(GFXnum x = 0.0f, GFXnum y = 0.0f, GFXnum z = 0.0f, GFXnum w = 0.0f)
 {
 	return GFXvector4(x, y, z, w);
 }

@@ -13,7 +13,7 @@
 	"targetPath": "bin/",
 	"dependencies": {
 		"tcltk": "~>8.6.5",
-		"dlangui": "~>0.9.173"
+		"dlangui": "~>0.9.177"
 	},
 	"subConfigurations": {
 		"dlangui": "sdl"

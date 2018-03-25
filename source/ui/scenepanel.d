@@ -16,6 +16,7 @@ import scene.objects.interfaces;
 import metric.interfaces;
 import metric.analytic;
 import metric.wrapper;
+import ui.window : uiMain;
 
 static import image.color;
 import image.color;
@@ -25,7 +26,7 @@ import scene.creator;
 alias Color = image.color.Color;
 
 /// The widget displaying a navigatable grtrace scene.
-class GrtraceScenePanel : VerticalLayout
+class GrtraceScenePanel : Widget
 {
 	private static struct DrawnObj
 	{
@@ -373,6 +374,7 @@ class GrtraceScenePanel : VerticalLayout
 		layoutWidth = FILL_PARENT;
 		layoutHeight = FILL_PARENT;
 		alignment = Align.Center;
+		focusable(true);
 		this.backgroundDrawable = DrawableRef(new OpenGLDrawable(&this.render));
 		initVisuals();
 		DebugDispatcher.saver.enable();
@@ -380,6 +382,7 @@ class GrtraceScenePanel : VerticalLayout
 		vbegins.length = sceneObjects.keys.length;
 		vends.length = vbegins.length;
 		rebuildGrid();
+		camera.normalize();
 	}
 
 	private
@@ -395,14 +398,46 @@ class GrtraceScenePanel : VerticalLayout
 	}
 
 	double totalDt = 0.0;
+	private GFXvector3 realvel;
 	override void animate(long interval_hnsecs)
 	{
+		camera.normalize();
 		dt = interval_hnsecs * 1.0e-7;
 		totalDt += dt;
-		invalidate();
+		{
+			float sref = max(abs(mdpitch), abs(mdyaw));
+			float smoother = max(0.01f, min(sref / 1.5f, 1.0f));
+			float dpitch = mdpitch * smoother;
+			if (abs(dpitch) < 0.001f)
+				mdpitch = 0.0f;
+			camera.pitch += dpitch;
+			mdpitch -= dpitch;
+			float dyaw = mdyaw * smoother;
+			if (abs(dyaw) < 0.001f)
+				mdyaw = 0.0f;
+			camera.yaw += dyaw;
+			mdyaw -= dyaw;
+		}
+		{
+			GFXvector3 camvel = GFXvector3();
+			camvel = camvel + camera.dirFwd * GFXnum(camf);
+			camvel = camvel + camera.dirRight * GFXnum(camr);
+			camvel = camvel + camera.dirUp * GFXnum(camu);
+			float adiv = abs(camf) + abs(camr) + abs(camu);
+			if (adiv > 0)
+				camvel = camvel / sqrt(adiv);
+			realvel = (realvel + camvel) / 2.0f;
+			camera.addVec(realvel, cast(float)(camera.speed * dt));
+		}
+	}
+
+	public void requestFocus()
+	{
+		uiMain.window.setFocus(this, FocusReason.Unspecified);
 	}
 
 	private int oldmx, oldmy;
+	private float mdpitch = 0.0f, mdyaw = 0.0f;
 	protected override bool onMouseEvent(MouseEvent me)
 	{
 		int dx = me.x - oldmx;
@@ -410,19 +445,56 @@ class GrtraceScenePanel : VerticalLayout
 		oldmx = me.x;
 		oldmy = me.y;
 
-		if(!mouseLocked && me.lbutton.isDown)
+		if (me.lbutton.isDown)
+		{
+			requestFocus();
+		}
+
+		if (!mouseLocked && me.lbutton.isDown)
 			mouseLocked = true;
-		if(mouseLocked && !me.lbutton.isDown)
+		if (mouseLocked && !me.lbutton.isDown)
 			mouseLocked = false;
-		if(mouseLocked)
+		if (mouseLocked)
 		{
 			double dYaw = dx * M_2_PI / 150.0;
 			double dPitch = dy * PI / 200.0;
-			camera.yaw -= dYaw;
-			camera.pitch = clamp(camera.pitch + dPitch, -PI + 0.001, PI - 0.001);
-			invalidate();
+			mdyaw -= dYaw;
+			mdpitch += dPitch;
 		}
 		return true;
+	}
+
+	private int camf = 0, camr = 0, camu = 0;
+	protected override bool onKeyEvent(KeyEvent ke)
+	{
+		if (ke.action == KeyAction.KeyUp || ke.action == KeyAction.KeyDown)
+		{
+			switch (ke.keyCode) with (KeyCode)
+			{
+			case KEY_W:
+				camf = -int(ke.action != KeyAction.KeyUp);
+				break;
+			case KEY_S:
+				camf = +int(ke.action != KeyAction.KeyUp);
+				break;
+			case KEY_A:
+				camr = -int(ke.action != KeyAction.KeyUp);
+				break;
+			case KEY_D:
+				camr = +int(ke.action != KeyAction.KeyUp);
+				break;
+			case KEY_Q:
+				camu = -int(ke.action != KeyAction.KeyUp);
+				break;
+			case KEY_E:
+				camu = +int(ke.action != KeyAction.KeyUp);
+				break;
+			default:
+				return false;
+			}
+			return true;
+		}
+		return false;
 	}
 
 	private void render(Rect windowRect, Rect rc)
@@ -437,8 +509,9 @@ class GrtraceScenePanel : VerticalLayout
 		//camMover();
 		matProjection = gMatProjection(camera.fov * PI / 180.0,
 				rc.height / cast(double) rc.width, camera.near, camera.far);
-		matProjection = gMat4Mul(matProjection, gMatTranslation(GFXvector3(rc.left / cast(float) -windowRect.width,
-				(windowRect.height - rc.bottom) / cast(float) -windowRect.height)));
+		matProjection = gMat4Mul(matProjection, gMatTranslation(GFXvector3(
+				rc.left / cast(float)-windowRect.width,
+				(windowRect.height - rc.bottom) / cast(float)-windowRect.height)));
 		resetGl(rc);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
