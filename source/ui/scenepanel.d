@@ -26,7 +26,7 @@ import scene.creator;
 alias Color = image.color.Color;
 
 /// The widget displaying a navigatable grtrace scene.
-class GrtraceScenePanel : Widget
+class GrtraceScenePanel : DockHost
 {
 	private static struct DrawnObj
 	{
@@ -51,11 +51,11 @@ class GrtraceScenePanel : Widget
 
 	private static struct TCamera
 	{
-		float x = 0.0f, y = 0.0f, z = 20.0f;
+		float x = 0.0f, y = 0.0f, z = 0.0f;
 		float pitch = 0.0f, yaw = 0.0f;
-		float near = 0.01f, far = 100.0f;
+		float near = 0.01f, far = 1000.0f;
 		float speed = 12.0f;
-		float fov = 80.0f;
+		float fov = 90.0f;
 		GFXvector3 dirFwd, dirRight, dirUp;
 		GFXmatrix4 matrix, rmatrix, rinvmatrix;
 		void normalize()
@@ -63,7 +63,7 @@ class GrtraceScenePanel : Widget
 			pitch = clamp(pitch, -PI / 2.0, PI / 2.0);
 			yaw = fmod(yaw, 2.0 * PI);
 
-			dirFwd = gVecMatTransform(rinvmatrix, gVec4(0, 0, 1, 0)).to3; // gVec3(-sin(yaw),sin(pitch),cos(yaw));
+			dirFwd = gVecMatTransform(rinvmatrix, gVec4(0, 0, -1, 0)).to3; // gVec3(-sin(yaw),sin(pitch),cos(yaw));
 			dirRight = gVecMatTransform(rinvmatrix, gVec4(1, 0, 0, 0)).to3; //dirRight = gVec3(cos(yaw),0,sin(yaw));
 			dirUp = gVecMatTransform(rinvmatrix, gVec4(0, 1, 0, 0)).to3;
 		}
@@ -118,6 +118,13 @@ class GrtraceScenePanel : Widget
 		int sNorm = objSpatial.data.appendType(gDataType.Avector3);
 		objSpatial.data.declarationComplete();
 		objSpatial.data.setLength(3);
+
+		import scene.camera : ICamera;
+
+		ICamera rcam = cast() cfgCamera;
+		camera.x = rcam.origin[0];
+		camera.y = rcam.origin[1];
+		camera.z = rcam.origin[2];
 
 		Vert3D[] v3d = [];
 		uint[] e3d = [];
@@ -279,10 +286,6 @@ class GrtraceScenePanel : Widget
 				continue;
 			}
 		}
-		foreach (ref Vert3D v; v3d)
-		{
-			v.z = -v.z;
-		}
 		sortedObjects.length = sceneObjects.keys.length;
 		int sobji = 0;
 		foreach (string k, TSObject* v; sceneObjects)
@@ -370,7 +373,8 @@ class GrtraceScenePanel : Widget
 
 	this()
 	{
-		super("scenePanel");
+		super();
+		id = "scenePanel";
 		layoutWidth = FILL_PARENT;
 		layoutHeight = FILL_PARENT;
 		alignment = Align.Center;
@@ -383,6 +387,21 @@ class GrtraceScenePanel : Widget
 		vends.length = vbegins.length;
 		rebuildGrid();
 		camera.normalize();
+	}
+
+	alias OnSceneUpdateHandler = void delegate(GrtraceScenePanel);
+	OnSceneUpdateHandler[] sceneUpdateHandlers;
+
+	void addSceneUpdateHandler(OnSceneUpdateHandler h)
+	{
+		sceneUpdateHandlers ~= h;
+	}
+
+	void invokeSceneUpdateHandlers()
+	{
+		foreach (h; sceneUpdateHandlers)
+			if (h !is null)
+				h(this);
 	}
 
 	private
@@ -429,6 +448,7 @@ class GrtraceScenePanel : Widget
 			realvel = (realvel + camvel) / 2.0f;
 			camera.addVec(realvel, cast(float)(camera.speed * dt));
 		}
+		invokeSceneUpdateHandlers();
 	}
 
 	public void requestFocus()
@@ -440,6 +460,8 @@ class GrtraceScenePanel : Widget
 	private float mdpitch = 0.0f, mdyaw = 0.0f;
 	protected override bool onMouseEvent(MouseEvent me)
 	{
+		if (super.onMouseEvent(me))
+			return true;
 		int dx = me.x - oldmx;
 		int dy = me.y - oldmy;
 		oldmx = me.x;
@@ -465,33 +487,39 @@ class GrtraceScenePanel : Widget
 	}
 
 	private int camf = 0, camr = 0, camu = 0;
+	private int kleft, kright, kfwd, kbwd, kup, kdown;
 	protected override bool onKeyEvent(KeyEvent ke)
 	{
+		if (super.onKeyEvent(ke))
+			return true;
 		if (ke.action == KeyAction.KeyUp || ke.action == KeyAction.KeyDown)
 		{
 			switch (ke.keyCode) with (KeyCode)
 			{
 			case KEY_W:
-				camf = -int(ke.action != KeyAction.KeyUp);
+				kfwd = int(ke.action != KeyAction.KeyUp);
 				break;
 			case KEY_S:
-				camf = +int(ke.action != KeyAction.KeyUp);
+				kbwd = int(ke.action != KeyAction.KeyUp);
 				break;
 			case KEY_A:
-				camr = -int(ke.action != KeyAction.KeyUp);
+				kleft = int(ke.action != KeyAction.KeyUp);
 				break;
 			case KEY_D:
-				camr = +int(ke.action != KeyAction.KeyUp);
+				kright = int(ke.action != KeyAction.KeyUp);
 				break;
 			case KEY_Q:
-				camu = -int(ke.action != KeyAction.KeyUp);
+				kdown = int(ke.action != KeyAction.KeyUp);
 				break;
 			case KEY_E:
-				camu = +int(ke.action != KeyAction.KeyUp);
+				kup = int(ke.action != KeyAction.KeyUp);
 				break;
 			default:
 				return false;
 			}
+			camf = kfwd - kbwd;
+			camr = kright - kleft;
+			camu = kup - kdown;
 			return true;
 		}
 		return false;
@@ -503,6 +531,8 @@ class GrtraceScenePanel : Widget
 		glEnable(GL_SCISSOR_TEST);
 		camera.normalize();
 		camera.rmatrix = gMat4Mul(gMatRotX(camera.pitch), gMatRotY(camera.yaw));
+		foreach (i; [2, 6, 10, 14])
+			camera.rmatrix[i] = -camera.rmatrix[i]; // flip Z axis
 		camera.rinvmatrix = gMat4Inverse(camera.rmatrix);
 		camera.matrix = gMat4Mul(camera.rmatrix,
 				gMatTranslation(gVec3(-camera.x, -camera.y, -camera.z)));
@@ -859,5 +889,207 @@ private class VisualPrimitives
 		Erng ~= [cast(uint)(iv0), cast(uint)(iv0 + 1), cast(uint)(iv0 + 2)];
 
 		return 3;
+	}
+}
+
+class GrpanelCamera : DockWindow
+{
+	GrtraceScenePanel gsp;
+
+	TextWidget lblXpos, lblYpos, lblZpos;
+	TextWidget lblPang, lblYang;
+	SliderWidget[3] gotoSlider;
+	EditLine[3] gotoLine;
+	Button gotoButton;
+	Button gotoZero;
+	Button gotoCamera;
+	CheckBox gotoCheck;
+
+	this(GrtraceScenePanel gsp)
+	{
+		super("cameraPanel");
+		this.gsp = gsp;
+		caption.text = "Camera info"d;
+
+		bodyWidget = parseML(q{
+			TableLayout {
+				colCount: 2
+				margins: 10
+
+				TextWidget { text: "Position:" }
+				Widget {}
+
+				TextWidget { text: "X: " }
+				TextWidget { id: "xpos"; text: "+0.0" }
+
+				TextWidget { text: "Y: " }
+				TextWidget { id: "ypos"; text: "+0.0" }
+
+				TextWidget { text: "Z: " }
+				TextWidget { id: "zpos"; text: "+0.0" }
+
+				TextWidget { text: "Pitch:" }
+				TextWidget { id: "pang"; text: "+0.0" }
+
+				TextWidget { text: "Yaw:" }
+				TextWidget { id: "yang"; text: "+0.0" }
+
+				TextWidget { id: "fovtext"; text: "FoV: 9°" }
+				SliderWidget { id: "fovslide"; minValue: 20; maxValue: 171; position: 90; }
+
+				TextWidget { id: "speedtext"; text: "Speed: 9001" }
+				SliderWidget { id: "speedslide"; minValue: 1; maxValue: 91; position: 12; }
+
+				TextWidget { text: "Goto:" }
+				Widget {}
+
+				TextWidget   { text: "X: " }
+				SliderWidget { id: "gotoxslide" }
+				Widget {}
+				EditLine { id: "gotoxline"; text: "+0.0" }
+
+				TextWidget   { text: "Y: " }
+				SliderWidget { id: "gotoyslide" }
+				Widget {}
+				EditLine { id: "gotoyline"; text: "+0.0" }
+
+				TextWidget   { text: "Z: " }
+				SliderWidget { id: "gotozslide" }
+				Widget {}
+				EditLine { id: "gotozline"; text: "+0.0" }
+
+				CheckBox { id: "gotoalways"; text: "Auto" }
+				Button { id: "gotobutton"; text: "Go!" }
+
+				Button { id: "gotozero"; text: "→(0,0,0)" }
+				Button { id: "gotocamera"; text: "→Camera" }
+			}
+		});
+		layoutWidth = FILL_PARENT;
+		layoutHeight = WRAP_CONTENT;
+		alignment = Align.Left;
+		lblXpos = bodyWidget.childById!TextWidget("xpos");
+		lblYpos = bodyWidget.childById!TextWidget("ypos");
+		lblZpos = bodyWidget.childById!TextWidget("zpos");
+		lblPang = bodyWidget.childById!TextWidget("pang");
+		lblYang = bodyWidget.childById!TextWidget("yang");
+		gotoCheck = bodyWidget.childById!CheckBox("gotoalways");
+		gotoButton = bodyWidget.childById!Button("gotobutton");
+		gotoButton.addOnClickListener(delegate(Widget) {
+			triggerGoto();
+			return true;
+		});
+		static foreach (i, c; ["x", "y", "z"])
+		{
+			gotoSlider[i] = bodyWidget.childById!SliderWidget("goto" ~ c ~ "slide");
+			gotoLine[i] = bodyWidget.childById!EditLine("goto" ~ c ~ "line");
+			gotoSlider[i].scrollEvent.connect(delegate(AbstractSlider src, ScrollEvent ev) {
+				if (ev.action == ScrollAction.SliderMoved || ev.action
+					== ScrollAction.SliderReleased)
+				{
+					double pos = cast(double)(ev.position - ev.minValue) / (ev.maxValue - 1);
+					pos = (pos - 0.5) * 2.0 * 10.0;
+					gotoLine[i].content.text = format!"%+.3f"d(pos);
+					if (gotoCheck.checked)
+						triggerGoto();
+				}
+				return true;
+			});
+			gotoLine[i].contentChange.connect(delegate(EditableContent src) {
+				try
+				{
+					double p = to!double(src.text);
+					p = (p / 10.0 / 2.0) + 0.5;
+					p *= gotoSlider[i].maxValue - 1;
+					p += gotoSlider[i].minValue;
+					int pi = cast(int) p;
+					gotoSlider[i].position = clamp(pi, gotoSlider[i].minValue,
+						gotoSlider[i].maxValue);
+					if (gotoCheck.checked)
+						triggerGoto();
+				}
+				catch (Exception e)
+				{
+				}
+			});
+		}
+		gotoZero = bodyWidget.childById!Button("gotozero");
+		gotoCamera = bodyWidget.childById!Button("gotocamera");
+		gotoZero.addOnClickListener(delegate(Widget) {
+			foreach (i; 0 .. 3)
+			{
+				gotoLine[i].content.text = "+0.0";
+				gotoLine[i].contentChange(gotoLine[i].content);
+				triggerGoto();
+			}
+			return true;
+		});
+		gotoCamera.addOnClickListener(delegate(Widget) {
+			foreach (i; 0 .. 3)
+			{
+				gotoLine[i].content.text = format("%+.3f"d, (cast() cfgCamera).origin[i]);
+				gotoLine[i].contentChange(gotoLine[i].content);
+				triggerGoto();
+			}
+			return true;
+		});
+		TextWidget fovText = bodyWidget.childById!TextWidget("fovtext");
+		SliderWidget fovSlide = bodyWidget.childById!SliderWidget("fovslide");
+		fovSlide.scrollEvent.connect(delegate(AbstractSlider src, ScrollEvent ev) {
+			if (ev.action == ScrollAction.SliderMoved || ev.action == ScrollAction.SliderReleased)
+			{
+				float pos = cast(float) ev.position;
+				gsp.camera.fov = pos;
+				fovText.text = format!"FoV: %.0f°"d(pos);
+			}
+			return true;
+		});
+		fovSlide.sendScrollEvent(ScrollAction.SliderReleased);
+		TextWidget speedText = bodyWidget.childById!TextWidget("speedtext");
+		SliderWidget speedSlide = bodyWidget.childById!SliderWidget("speedslide");
+		speedSlide.scrollEvent.connect(delegate(AbstractSlider src, ScrollEvent ev) {
+			if (ev.action == ScrollAction.SliderMoved || ev.action == ScrollAction.SliderReleased)
+			{
+				float pos = cast(float) ev.position;
+				gsp.camera.speed = pos;
+				speedText.text = format!"Speed: %.0f"d(pos);
+			}
+			return true;
+		});
+		speedSlide.sendScrollEvent(ScrollAction.SliderReleased);
+		this.dockAlignment = DockAlignment.Right;
+
+		gsp.addSceneUpdateHandler(&this.sceneUpdate);
+		sceneUpdate(gsp);
+	}
+
+	void sceneUpdate(GrtraceScenePanel)
+	{
+		lblXpos.text = format("%+.2f m"d, gsp.camera.x);
+		lblYpos.text = format("%+.2f m"d, gsp.camera.y);
+		lblZpos.text = format("%+.2f m"d, gsp.camera.z);
+		lblPang.text = format("%+.2f °"d, gsp.camera.pitch * 180.0 / PI);
+		lblYang.text = format("%+.2f °"d, gsp.camera.yaw * 180.0 / PI);
+	}
+
+	void triggerGoto()
+	{
+		double[3] pos;
+		foreach (int i; 0 .. 3)
+		{
+			try
+			{
+				pos[i] = to!double(gotoLine[i].text);
+			}
+			catch (Exception e)
+			{
+				return;
+			}
+		}
+		if (pos[0] is double.nan || pos[1] is double.nan || pos[2] is double.nan)
+			return;
+		gsp.camera.x = pos[0];
+		gsp.camera.y = pos[1];
+		gsp.camera.z = pos[2];
 	}
 }

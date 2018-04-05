@@ -37,7 +37,7 @@ class UIMain : AppFrame
 
 	void requestExit()
 	{
-		this.window.close();
+		Platform.instance.closeWindow(window);
 	}
 
 	override protected MainMenu createMainMenu()
@@ -70,12 +70,20 @@ class UIMain : AppFrame
 		Widget welcomePane = parseML(DML_WELCOME);
 		tabWidget.addTab(welcomePane, "Welcome"d);
 
-		gsp = new GrtraceScenePanel();
-		tabWidget.addTab(gsp, "Scene view"d);
+		tabWidget.addTab(createSceneTab(), "Scene view"d);
 
 		tabWidget.selectTab(1);
 
 		return tabWidget;
+	}
+
+	private Widget createSceneTab()
+	{
+		gsp = new GrtraceScenePanel();
+
+		gsp.addDockedWindow(new GrpanelCamera(gsp));
+
+		return gsp;
 	}
 
 	private static void run()
