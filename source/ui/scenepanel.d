@@ -916,49 +916,58 @@ class GrpanelCamera : DockWindow
 				colCount: 2
 				margins: 10
 
-				TextWidget { text: "Position:" }
-				Widget {}
+				TextWidget { text: "Position:"; alignment: Right }
+				TextWidget { text: "Move around using WASDQE" }
 
-				TextWidget { text: "X: " }
+				TextWidget { text: "X: "; alignment: Right }
 				TextWidget { id: "xpos"; text: "+0.0" }
 
-				TextWidget { text: "Y: " }
+				TextWidget { text: "Y: "; alignment: Right }
 				TextWidget { id: "ypos"; text: "+0.0" }
 
-				TextWidget { text: "Z: " }
+				TextWidget { text: "Z: "; alignment: Right }
 				TextWidget { id: "zpos"; text: "+0.0" }
 
-				TextWidget { text: "Pitch:" }
+				TextWidget { text: "Pitch:"; alignment: Right }
 				TextWidget { id: "pang"; text: "+0.0" }
 
-				TextWidget { text: "Yaw:" }
+				TextWidget { text: "Yaw:"; alignment: Right }
 				TextWidget { id: "yang"; text: "+0.0" }
 
-				TextWidget { id: "fovtext"; text: "FoV: 9°" }
-				SliderWidget { id: "fovslide"; minValue: 20; maxValue: 171; position: 90; }
-
-				TextWidget { id: "speedtext"; text: "Speed: 9001" }
-				SliderWidget { id: "speedslide"; minValue: 1; maxValue: 91; position: 12; }
-
-				TextWidget { text: "Goto:" }
+				Widget { layoutHeight: 10 }
 				Widget {}
 
-				TextWidget   { text: "X: " }
+				TextWidget { id: "fovtext"; text: "FoV: 9°"; alignment: Right }
+				SliderWidget { id: "fovslide"; minValue: 20; maxValue: 171; position: 90; }
+
+				TextWidget { id: "speedtext"; text: "Speed: 9001"; alignment: Right }
+				SliderWidget { id: "speedslide"; minValue: 1; maxValue: 91; position: 12; }
+
+				Widget { layoutHeight: 10 }
+				Widget {}
+
+				TextWidget { text: "Goto:"; alignment: Right }
+				Widget {}
+
+				TextWidget   { text: "X: "; alignment: Right }
 				SliderWidget { id: "gotoxslide" }
 				Widget {}
 				EditLine { id: "gotoxline"; text: "+0.0" }
 
-				TextWidget   { text: "Y: " }
+				TextWidget   { text: "Y: "; alignment: Right }
 				SliderWidget { id: "gotoyslide" }
 				Widget {}
 				EditLine { id: "gotoyline"; text: "+0.0" }
 
-				TextWidget   { text: "Z: " }
+				TextWidget   { text: "Z: "; alignment: Right }
 				SliderWidget { id: "gotozslide" }
 				Widget {}
 				EditLine { id: "gotozline"; text: "+0.0" }
 
-				CheckBox { id: "gotoalways"; text: "Auto" }
+				Widget { layoutHeight: 10 }
+				Widget {}
+
+				CheckBox { id: "gotoalways"; text: "Auto"; alignment: Right }
 				Button { id: "gotobutton"; text: "Go!" }
 
 				Button { id: "gotozero"; text: "→(0,0,0)" }
