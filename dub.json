@@ -13,7 +13,7 @@
 	"targetPath": "bin/",
 	"dependencies": {
 		"tcltk": "~>8.6.5",
-		"derelict-glfw3": "~>4.0.0-alpha.5"
+		"derelict-glfw3": "~>4.0.0-beta.1"
 	},
 	"mainSourceFile": "source/app.d",
 	"lflags-ldc": [
