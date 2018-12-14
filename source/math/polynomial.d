@@ -1,6 +1,6 @@
 module math.polynomial;
 
-import config;
+import grtrace;
 import math.util;
 import std.math;
 import std.string, std.array;

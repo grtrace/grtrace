@@ -407,9 +407,8 @@ bool imguiRenderGLInit(const(char)[] fontpath, const uint fontTextureSize)
 		return false;
 	}
 
-	const result = stbtt_BakeFontBitmap(ttfBuffer, 0, 15.0f, bmap,
-		g_font_texture_size, g_font_texture_size, FIRST_CHARACTER,
-		g_max_character_count, g_cdata.ptr);
+	const result = stbtt_BakeFontBitmap(ttfBuffer, 0, 15.0f, bmap, g_font_texture_size,
+			g_font_texture_size, FIRST_CHARACTER, g_max_character_count, g_cdata.ptr);
 	// If result is negative, we baked less than max characters so update the max 
 	// character count.
 	if (result < 0)
@@ -421,7 +420,7 @@ bool imguiRenderGLInit(const(char)[] fontpath, const uint fontTextureSize)
 	glGenTextures(1, &g_ftex);
 	glBindTexture(GL_TEXTURE_2D, g_ftex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, g_font_texture_size,
-		g_font_texture_size, 0, GL_RED, GL_UNSIGNED_BYTE, bmap);
+			g_font_texture_size, 0, GL_RED, GL_UNSIGNED_BYTE, bmap);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -452,14 +451,22 @@ bool imguiRenderGLInit(const(char)[] fontpath, const uint fontTextureSize)
 	glBufferData(GL_ARRAY_BUFFER, 0, null, GL_STATIC_DRAW);
 	g_program = glCreateProgram();
 
-	string vs = "#version 150\n" ~ "uniform vec2 Viewport;\n" ~ "in vec2 VertexPosition;\n" ~ "in vec2 VertexTexCoord;\n" ~ "in vec4 VertexColor;\n" ~ "out vec2 texCoord;\n" ~ "out vec4 vertexColor;\n" ~ "void main(void)\n" ~ "{\n" ~ "    vertexColor = VertexColor;\n" ~ "    texCoord = VertexTexCoord;\n" ~ "    gl_Position = vec4(VertexPosition * 2.0 / Viewport - 1.0, 0.f, 1.0);\n" ~ "}\n";
+	string vs = "#version 150\n" ~ "uniform vec2 Viewport;\n" ~ "in vec2 VertexPosition;\n"
+		~ "in vec2 VertexTexCoord;\n" ~ "in vec4 VertexColor;\n"
+		~ "out vec2 texCoord;\n" ~ "out vec4 vertexColor;\n" ~ "void main(void)\n" ~ "{\n"
+		~ "    vertexColor = VertexColor;\n"
+		~ "    texCoord = VertexTexCoord;\n"
+		~ "    gl_Position = vec4(VertexPosition * 2.0 / Viewport - 1.0, 0.f, 1.0);\n" ~ "}\n";
 	GLuint vso = glCreateShader(GL_VERTEX_SHADER);
 	auto vsPtr = vs.ptr;
 	glShaderSource(vso, 1, &vsPtr, null);
 	glCompileShader(vso);
 	glAttachShader(g_program, vso);
 
-	string fs = "#version 150\n" ~ "in vec2 texCoord;\n" ~ "in vec4 vertexColor;\n" ~ "uniform sampler2D Texture;\n" ~ "out vec4  Color;\n" ~ "void main(void)\n" ~ "{\n" ~ "    float alpha = texture(Texture, texCoord).r;\n" ~ "    Color = vec4(vertexColor.rgb, vertexColor.a * alpha);\n" ~ "}\n";
+	string fs = "#version 150\n" ~ "in vec2 texCoord;\n" ~ "in vec4 vertexColor;\n"
+		~ "uniform sampler2D Texture;\n" ~ "out vec4  Color;\n" ~ "void main(void)\n"
+		~ "{\n" ~ "    float alpha = texture(Texture, texCoord).r;\n"
+		~ "    Color = vec4(vertexColor.rgb, vertexColor.a * alpha);\n" ~ "}\n";
 	GLuint fso = glCreateShader(GL_FRAGMENT_SHADER);
 
 	auto fsPtr = fs.ptr;
@@ -510,7 +517,7 @@ void imguiRenderGLDestroy()
 }
 
 void getBakedQuad(stbtt_bakedchar* chardata, int pw, int ph, int char_index,
-	float* xpos, float* ypos, stbtt_aligned_quad* q)
+		float* xpos, float* ypos, stbtt_aligned_quad* q)
 {
 	stbtt_bakedchar* b = chardata + char_index;
 	int round_x = STBTT_ifloor(*xpos + b.xoff);
@@ -607,7 +614,7 @@ void drawText(float x, float y, const(char)[] text, int align_, uint col)
 		{
 			stbtt_aligned_quad q;
 			getBakedQuad(g_cdata.ptr, g_font_texture_size, g_font_texture_size,
-				c - FIRST_CHARACTER, &x, &y, &q);
+					c - FIRST_CHARACTER, &x, &y, &q);
 
 			float[12] v = [q.x0, q.y0, q.x1, q.y1, q.x1, q.y0, q.x0, q.y0,
 				q.x0, q.y1, q.x1, q.y1,];
@@ -654,23 +661,22 @@ void imguiRenderGLDraw(int width, int height)
 			if (cmd.rect.r == 0)
 			{
 				drawRect(cast(float) cmd.rect.x * s + 0.5f,
-					cast(float) cmd.rect.y * s + 0.5f,
-					cast(float) cmd.rect.w * s - 1, cast(float) cmd.rect.h * s - 1,
-					1.0f, cmd.col);
+						cast(float) cmd.rect.y * s + 0.5f,
+						cast(float) cmd.rect.w * s - 1, cast(float) cmd.rect.h * s - 1,
+						1.0f, cmd.col);
 			}
 			else
 			{
 				drawRoundedRect(cast(float) cmd.rect.x * s + 0.5f,
-					cast(float) cmd.rect.y * s + 0.5f,
-					cast(float) cmd.rect.w * s - 1,
-					cast(float) cmd.rect.h * s - 1, cast(float) cmd.rect.r * s, 1.0f,
-					cmd.col);
+						cast(float) cmd.rect.y * s + 0.5f,
+						cast(float) cmd.rect.w * s - 1,
+						cast(float) cmd.rect.h * s - 1, cast(float) cmd.rect.r * s, 1.0f, cmd.col);
 			}
 		}
 		else if (cmd.type == IMGUI_GFXCMD_LINE)
 		{
 			drawLine(cmd.line.x0 * s, cmd.line.y0 * s, cmd.line.x1 * s,
-				cmd.line.y1 * s, cmd.line.r * s, 1.0f, cmd.col);
+					cmd.line.y1 * s, cmd.line.r * s, 1.0f, cmd.col);
 		}
 		else if (cmd.type == IMGUI_GFXCMD_TRIANGLE)
 		{

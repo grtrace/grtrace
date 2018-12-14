@@ -1,7 +1,7 @@
 module image.memory;
 
 import std.range, std.array, std.math, std.algorithm;
-import config;
+import grtrace;
 import image.color;
 
 alias Image = MemImage!ubyte;
@@ -92,12 +92,12 @@ class MemImage(T)
 		static if (is(T == ubyte))
 		{
 			return Color(data[(y * width + x) * 3] / 255.0f,
-				data[(y * width + x) * 3 + 1] / 255.0f, data[(y * width + x) * 3 + 2] / 255.0f);
+					data[(y * width + x) * 3 + 1] / 255.0f, data[(y * width + x) * 3 + 2] / 255.0f);
 		}
 		else
 		{
 			return Color(data[(y * width + x) * 3], data[(y * width + x) * 3 + 1],
-				data[(y * width + x) * 3 + 2]);
+					data[(y * width + x) * 3 + 2]);
 		}
 	}
 

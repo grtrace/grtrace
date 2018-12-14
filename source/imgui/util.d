@@ -16,7 +16,7 @@ import std.stdio;
 
 auto ref fieldRange(S, T)(auto ref T sym)
 {
-	static if (is(T == struct) &&  !is(T == S))
+	static if (is(T == struct) && !is(T == S))
 		return fieldRange!S(sym.tupleof);
 	else
 		return only(sym);
@@ -29,7 +29,7 @@ auto ref fieldRange(S, T...)(auto ref T syms) if (T.length > 1)
 
 auto addrFieldRange(S, T)(ref T sym)
 {
-	static if (is(T == struct) &&  !is(T == S))
+	static if (is(T == struct) && !is(T == S))
 		return addrFieldRange!S(sym.tupleof);
 	else
 		return only(&sym);
@@ -49,5 +49,6 @@ auto refFieldRange(S, T)(ref T sym)
 		return *elem;
 	}
 
-	return sym.addrFieldRange!S.map!getRef;
+	return sym.addrFieldRange!S
+		.map!getRef;
 }

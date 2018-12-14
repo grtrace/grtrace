@@ -1,7 +1,7 @@
 module image.color;
 
 import std.math;
-import config;
+import grtrace;
 
 struct Color
 {

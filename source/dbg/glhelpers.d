@@ -63,7 +63,8 @@ struct GFXvector3
 
 	private static pure string strOpBinary(string op)
 	{
-		return "GFXvector3 opBinary(string op)(GFXvector3 o) if(op==\"" ~ op ~ "\")" ~ "{return GFXvector3(x" ~ op ~ "o.x," ~ "y" ~ op ~ "o.y, z" ~ op ~ "o.z);}";
+		return "GFXvector3 opBinary(string op)(GFXvector3 o) if(op==\"" ~ op ~ "\")"
+			~ "{return GFXvector3(x" ~ op ~ "o.x," ~ "y" ~ op ~ "o.y, z" ~ op ~ "o.z);}";
 	}
 
 	public ref GFXnum opIndex(size_t i)
@@ -132,7 +133,9 @@ struct GFXvector4
 
 	private static pure string strOpBinary(string op)
 	{
-		return "GFXvector4 opBinary(string op)(GFXvector4 o) if(op==\"" ~ op ~ "\")" ~ "{return GFXvector4(x" ~ op ~ "o.x," ~ "y" ~ op ~ "o.y, z" ~ op ~ "o.z,w" ~ op ~ "o.w);}";
+		return "GFXvector4 opBinary(string op)(GFXvector4 o) if(op==\"" ~ op ~ "\")"
+			~ "{return GFXvector4(x" ~ op ~ "o.x," ~ "y" ~ op ~ "o.y, z" ~ op
+			~ "o.z,w" ~ op ~ "o.w);}";
 	}
 
 	public ref GFXnum opIndex(size_t i)
@@ -262,9 +265,9 @@ GFXmatrix3 gMat3Mul(GFXmatrix3 A, GFXmatrix3 B)
 GFXvector4 gVecMatTransform(GFXmatrix4 M, GFXvector4 V)
 {
 	return gVec4(M[0] * (V.x) + M[1] * (V.y) + M[2] * V.z + M[3] * V.w,
-		M[4] * (V.x) + M[5] * (V.y) + M[6] * V.z + M[7] * V.w,
-		M[8] * (V.x) + M[9] * (V.y) + M[10] * V.z + M[11] * V.w,
-		M[12] * (V.x) + M[13] * (V.y) + M[14] * V.z + M[15] * V.w);
+			M[4] * (V.x) + M[5] * (V.y) + M[6] * V.z + M[7] * V.w,
+			M[8] * (V.x) + M[9] * (V.y) + M[10] * V.z + M[11] * V.w,
+			M[12] * (V.x) + M[13] * (V.y) + M[14] * V.z + M[15] * V.w);
 }
 
 /// Returns product of 4x4 matrices (A x B)
@@ -344,14 +347,16 @@ GFXnum gMat3Det(GFXmatrix3 A)
 /// Thanks http://stackoverflow.com/questions/2922690/calculating-an-nxn-matrix-determinant-in-c-sharp/2980966#2980966
 GFXnum gMat4Det(GFXmatrix4 A)
 {
-	return A[12] * A[9] * A[6] * A[3] - A[8] * A[13] * A[6] * A[3] - A[12] * A[5] * A[10] * A[3] + A[
-		4] * A[13] * A[10] * A[3] + A[8] * A[5] * A[14] * A[3] - A[4] * A[9] * A[14] * A[3] - A[12] * A[
-		9] * A[2] * A[7] + A[8] * A[13] * A[2] * A[7] + A[12] * A[1] * A[10] * A[7] - A[0] * A[13] * A[
-		10] * A[7] - A[8] * A[1] * A[14] * A[7] + A[0] * A[9] * A[14] * A[7] + A[12] * A[5] * A[2] * A[
-		11] - A[4] * A[13] * A[2] * A[11] - A[12] * A[1] * A[6] * A[11] + A[0] * A[13] * A[6] * A[
-		11] + A[4] * A[1] * A[14] * A[11] - A[0] * A[5] * A[14] * A[11] - A[8] * A[5] * A[2] * A[15] + A[
-		4] * A[9] * A[2] * A[15] + A[8] * A[1] * A[6] * A[15] - A[0] * A[9] * A[6] * A[15] - A[4] * A[
-		1] * A[10] * A[15] + A[0] * A[5] * A[10] * A[15];
+	return A[12] * A[9] * A[6] * A[3] - A[8] * A[13] * A[6] * A[3] - A[12] * A[5]
+		* A[10] * A[3] + A[4] * A[13] * A[10] * A[3] + A[8] * A[5] * A[14] * A[3]
+		- A[4] * A[9] * A[14] * A[3] - A[12] * A[9] * A[2] * A[7] + A[8] * A[13]
+		* A[2] * A[7] + A[12] * A[1] * A[10] * A[7] - A[0] * A[13] * A[10] * A[7]
+		- A[8] * A[1] * A[14] * A[7] + A[0] * A[9] * A[14] * A[7] + A[12] * A[5]
+		* A[2] * A[11] - A[4] * A[13] * A[2] * A[11] - A[12] * A[1] * A[6]
+		* A[11] + A[0] * A[13] * A[6] * A[11] + A[4] * A[1] * A[14] * A[11]
+		- A[0] * A[5] * A[14] * A[11] - A[8] * A[5] * A[2] * A[15] + A[4] * A[9]
+		* A[2] * A[15] + A[8] * A[1] * A[6] * A[15] - A[0] * A[9] * A[6] * A[15]
+		- A[4] * A[1] * A[10] * A[15] + A[0] * A[5] * A[10] * A[15];
 }
 
 /// Calculates the inverse of a 4x4 matrix
@@ -360,52 +365,52 @@ GFXmatrix4 gMat4Inverse(GFXmatrix4 vals)
 	GFXmatrix4 tmp;
 
 	tmp[0] = gMat3Det([vals[5], vals[6], vals[7], vals[9], vals[10], vals[11],
-		vals[13], vals[14], vals[15]]);
+			vals[13], vals[14], vals[15]]);
 
 	tmp[1] = -gMat3Det([vals[4], vals[6], vals[7], vals[8], vals[10], vals[11],
-		vals[12], vals[14], vals[15]]);
+			vals[12], vals[14], vals[15]]);
 
 	tmp[2] = gMat3Det([vals[4], vals[5], vals[7], vals[8], vals[9], vals[11],
-		vals[12], vals[13], vals[15]]);
+			vals[12], vals[13], vals[15]]);
 
 	tmp[3] = -gMat3Det([vals[4], vals[5], vals[6], vals[8], vals[9], vals[10],
-		vals[12], vals[13], vals[14]]);
+			vals[12], vals[13], vals[14]]);
 
 	tmp[4] = -gMat3Det([vals[1], vals[2], vals[3], vals[9], vals[10], vals[11],
-		vals[13], vals[14], vals[15]]);
+			vals[13], vals[14], vals[15]]);
 
 	tmp[5] = gMat3Det([vals[0], vals[2], vals[3], vals[8], vals[10], vals[11],
-		vals[12], vals[14], vals[15]]);
+			vals[12], vals[14], vals[15]]);
 
 	tmp[6] = -gMat3Det([vals[0], vals[1], vals[3], vals[8], vals[9], vals[11],
-		vals[12], vals[13], vals[15]]);
+			vals[12], vals[13], vals[15]]);
 
 	tmp[7] = gMat3Det([vals[0], vals[1], vals[2], vals[8], vals[9], vals[10],
-		vals[12], vals[13], vals[14]]);
+			vals[12], vals[13], vals[14]]);
 
 	tmp[8] = gMat3Det([vals[1], vals[2], vals[3], vals[5], vals[6], vals[7],
-		vals[13], vals[14], vals[15]]);
+			vals[13], vals[14], vals[15]]);
 
 	tmp[9] = -gMat3Det([vals[0], vals[2], vals[3], vals[4], vals[6], vals[7],
-		vals[12], vals[14], vals[15]]);
+			vals[12], vals[14], vals[15]]);
 
 	tmp[10] = gMat3Det([vals[0], vals[1], vals[3], vals[4], vals[5], vals[7],
-		vals[12], vals[13], vals[15]]);
+			vals[12], vals[13], vals[15]]);
 
 	tmp[11] = -gMat3Det([vals[0], vals[1], vals[2], vals[4], vals[5], vals[6],
-		vals[12], vals[13], vals[14]]);
+			vals[12], vals[13], vals[14]]);
 
 	tmp[12] = -gMat3Det([vals[1], vals[2], vals[3], vals[5], vals[6], vals[7],
-		vals[9], vals[10], vals[11]]);
+			vals[9], vals[10], vals[11]]);
 
 	tmp[13] = gMat3Det([vals[0], vals[2], vals[3], vals[4], vals[6], vals[7],
-		vals[8], vals[10], vals[11]]);
+			vals[8], vals[10], vals[11]]);
 
 	tmp[14] = -gMat3Det([vals[0], vals[1], vals[3], vals[4], vals[5], vals[7],
-		vals[8], vals[9], vals[11]]);
+			vals[8], vals[9], vals[11]]);
 
 	tmp[15] = gMat3Det([vals[0], vals[1], vals[2], vals[4], vals[5], vals[6],
-		vals[8], vals[9], vals[10]]);
+			vals[8], vals[9], vals[10]]);
 
 	return gMat4Scale(gMat4Transpose(tmp), 1 / gMat4Det(vals));
 }
@@ -459,8 +464,8 @@ GFXmatrix4 gMatRotZ(float a)
 GFXvector3 gMat3MulVec3(GFXmatrix3 mat, GFXvector3 vec)
 {
 	return gVec3(mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z,
-		mat[3] * vec.x + mat[4] * vec.y + mat[5] * vec.z,
-		mat[6] * vec.x + mat[7] * vec.y + mat[8] * vec.z);
+			mat[3] * vec.x + mat[4] * vec.y + mat[5] * vec.z,
+			mat[6] * vec.x + mat[7] * vec.y + mat[8] * vec.z);
 }
 
 //Based on
@@ -476,8 +481,7 @@ GFXmatrix3 gMat3RotateVectorOntoVector(GFXvector3 vec, GFXvector3 target)
 
 	GFXmatrix3 v_mat = [0, -v.z, v.y, v.z, 0, -v.x, -v.y, v.x, 0];
 
-	GFXmatrix3 res = gIdentity3()[] + v_mat[] + gMat3Scale(gMat3Mul(v_mat, v_mat),
-		(1 - c) / (s * s))[];
+	GFXmatrix3 res = gIdentity3()[] + v_mat[] + gMat3Scale(gMat3Mul(v_mat, v_mat), (1 - c) / (s * s))[];
 
 	return res;
 }
@@ -508,7 +512,7 @@ GFXmatrix4 gMatProjectionInfty(GFXnum fov, GFXnum aspectratio, GFXnum near)
 
 /// Constructs an orthographic projection matrix
 GFXmatrix4 gMatOrthographic(GFXnum Xmin, GFXnum Xmax, GFXnum Ymin, GFXnum Ymax,
-	GFXnum Znear, GFXnum Zfar)
+		GFXnum Znear, GFXnum Zfar)
 {
 	alias left = Xmin;
 	alias right = Xmax;
@@ -1002,7 +1006,7 @@ class GFXdataStruct
 	{
 		if (!_defining)
 			throw new Error(
-				"Trying to use a defining mode function in data mode in a GFXdataStruct");
+					"Trying to use a defining mode function in data mode in a GFXdataStruct");
 		// Setup place for 1 object.
 		data.length = 0;
 		_len = 0;
@@ -1014,7 +1018,7 @@ class GFXdataStruct
 	{
 		if (_defining)
 			throw new Error(
-				"Trying to use a data mode function in defining mode in a GFXdataStruct");
+					"Trying to use a data mode function in defining mode in a GFXdataStruct");
 		data.length = numels * _stride;
 		_len = numels;
 	}
@@ -1024,7 +1028,7 @@ class GFXdataStruct
 	{
 		if (_defining)
 			throw new Error(
-				"Trying to use a data mode function in defining mode in a GFXdataStruct");
+					"Trying to use a data mode function in defining mode in a GFXdataStruct");
 		if (field >= fieldTypes.length)
 			throw new Error("Trying to access a non-existant field of a GFXdataStruct");
 		if (idx >= _len)
@@ -1038,7 +1042,7 @@ class GFXdataStruct
 	{
 		if (_defining)
 			throw new Error(
-				"Trying to use a data mode function in defining mode in a GFXdataStruct");
+					"Trying to use a data mode function in defining mode in a GFXdataStruct");
 		if (field >= fieldTypes.length)
 			throw new Error("Trying to access a non-existant field of a GFXdataStruct");
 		if (idx >= _len)
@@ -1253,7 +1257,7 @@ class GFXbufferObject
 		{
 			_dsz = data.data.length;
 			glBufferData(_bnd, _dsz, cast(const(GLvoid)*)(data.data.ptr),
-				gBufferUsageEnum(_usage));
+					gBufferUsageEnum(_usage));
 		}
 		else
 		{
@@ -1280,7 +1284,7 @@ class GFXbufferObject
 
 	/// Updates a part of buffer data from a GFXdataStruct (requires previous binding)
 	public void updateDataPart(GFXdataStruct data, GFXuint offsetBuffer,
-		GFXuint amount, GFXuint offsetStruct)
+			GFXuint amount, GFXuint offsetStruct)
 	{
 		fenceMe();
 		amount *= data.stride;
@@ -1289,7 +1293,7 @@ class GFXbufferObject
 		GFXuint str2 = offsetStruct + amount;
 		(str2 <= data.data.length) || assert(0);
 		glBufferSubData(_bnd, offsetBuffer, amount,
-			cast(const(GLvoid)*)(data.data[offsetStruct .. $].ptr));
+				cast(const(GLvoid)*)(data.data[offsetStruct .. $].ptr));
 		gAssertGl();
 	}
 
@@ -1368,20 +1372,20 @@ class GFXvertexArrayObject
 		WARNING! 64-bit integers will be cut off to first 32 bits!
 	*/
 	public void configureAttribute(GFXdataStruct str, int fieldIdx,
-		int shaderIndex, bool convToFloat = false, bool normalize = false)
+			int shaderIndex, bool convToFloat = false, bool normalize = false)
 	{
 		fenceMe();
 		glEnableVertexAttribArray(shaderIndex);
 		attribs ~= shaderIndex;
 		gDataTypeField F = str.fieldTypes[fieldIdx];
 		auto ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
-			GLsizei a4, const(GLvoid)* a5) {
+				GLsizei a4, const(GLvoid)* a5) {
 			glVertexAttribPointer(a1, a2, a3, GL_FALSE, a4, a5);
 		};
 		if (GL_ARB_vertex_attrib_64bit)
 		{
 			ffVertexAttribLPointer = function(GLuint a1, GLint a2, GLenum a3,
-				GLsizei a4, const(GLvoid)* a5) {
+					GLsizei a4, const(GLvoid)* a5) {
 				glVertexAttribLPointer(a1, a2, a3, a4, a5);
 			};
 		}
@@ -1389,63 +1393,70 @@ class GFXvertexArrayObject
 		switch (F.type)
 		{
 		case gDataType.Sint8:
-			glVertexAttribIPointer(shaderIndex, 1, GL_BYTE, str.stride(), Z + F.offset);
+			glVertexAttribIPointer(shaderIndex, 1, GL_BYTE,
+					str.stride(), Z + F.offset);
 			break;
 		case gDataType.Sint16:
-			glVertexAttribIPointer(shaderIndex, 1, GL_SHORT, str.stride(), Z + F.offset);
+			glVertexAttribIPointer(shaderIndex, 1, GL_SHORT,
+					str.stride(), Z + F.offset);
 			break;
 		case gDataType.Sint32:
-			glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(), Z + F.offset);
+			glVertexAttribIPointer(shaderIndex, 1, GL_INT,
+					str.stride(), Z + F.offset);
 			break;
 		case gDataType.Sint64:
-			glVertexAttribIPointer(shaderIndex, 1, GL_INT, str.stride(), Z + F.offset + 4);
+			glVertexAttribIPointer(shaderIndex, 1, GL_INT,
+					str.stride(), Z + F.offset + 4);
 			break;
 		case gDataType.Uint8:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_BYTE, str.stride(),
-				Z + F.offset);
+			glVertexAttribIPointer(shaderIndex, 1,
+					GL_UNSIGNED_BYTE, str.stride(), Z + F.offset);
 			break;
 		case gDataType.Uint16:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_SHORT, str.stride(),
-				Z + F.offset);
+			glVertexAttribIPointer(shaderIndex, 1,
+					GL_UNSIGNED_SHORT, str.stride(), Z + F.offset);
 			break;
 		case gDataType.Uint32:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT, str.stride(), Z + F.offset);
+			glVertexAttribIPointer(shaderIndex, 1,
+					GL_UNSIGNED_INT, str.stride(), Z + F.offset);
 			break;
 		case gDataType.Uint64:
-			glVertexAttribIPointer(shaderIndex, 1, GL_UNSIGNED_INT, str.stride(), Z + F.offset + 4);
+			glVertexAttribIPointer(shaderIndex, 1,
+					GL_UNSIGNED_INT, str.stride(), Z + F.offset + 4);
 			break;
 		case gDataType.Sfloat32:
-			glVertexAttribPointer(shaderIndex, 1, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
+			glVertexAttribPointer(shaderIndex, 1,
+					GL_FLOAT, (normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
 			break;
 		case gDataType.Sfloat64:
-			ffVertexAttribLPointer(shaderIndex, 1, GL_DOUBLE, str.stride(), Z + F.offset);
+			ffVertexAttribLPointer(shaderIndex, 1,
+					GL_DOUBLE, str.stride(), Z + F.offset);
 			break;
 		case gDataType.Avector3:
-			glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
+			glVertexAttribPointer(shaderIndex, 3,
+					GL_FLOAT, (normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
 			break;
 		case gDataType.Avector4:
-			glVertexAttribPointer(shaderIndex, 4, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
+			glVertexAttribPointer(shaderIndex, 4,
+					GL_FLOAT, (normalize) ? GL_TRUE : GL_FALSE, str.stride(), Z + F.offset);
 			break;
 		case gDataType.Amatrix3x3:
 			glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, Z + F.offset);
-			glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, Z + F.offset + GFXnum.sizeof);
-			glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, Z + F.offset + GFXnum.sizeof * 2);
+					(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, Z + F.offset);
+			glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT, (normalize)
+					? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, Z + F.offset + GFXnum.sizeof);
+			glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT, (normalize)
+					? GL_TRUE : GL_FALSE, GFXnum.sizeof * 3, Z + F.offset + GFXnum.sizeof * 2);
 			break;
 		case gDataType.Amatrix4x4:
 			glVertexAttribPointer(shaderIndex, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset);
-			glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset + GFXnum.sizeof);
-			glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset + GFXnum.sizeof * 2);
-			glVertexAttribPointer(shaderIndex + 3, 3, GL_FLOAT,
-				(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset + GFXnum.sizeof * 3);
+					(normalize) ? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset);
+			glVertexAttribPointer(shaderIndex + 1, 3, GL_FLOAT, (normalize)
+					? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset + GFXnum.sizeof);
+			glVertexAttribPointer(shaderIndex + 2, 3, GL_FLOAT, (normalize)
+					? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset + GFXnum.sizeof * 2);
+			glVertexAttribPointer(shaderIndex + 3, 3, GL_FLOAT, (normalize)
+					? GL_TRUE : GL_FALSE, GFXnum.sizeof * 4, Z + F.offset + GFXnum.sizeof * 3);
 			break;
 		default:
 			break;
@@ -1809,15 +1820,15 @@ class GFXtexture
 
 		if (GL_EXT_direct_state_access)
 		{
-			glTextureImage2DEXT(_id, GL_TEXTURE_2D, 0,
-				(_monochrome) ? (GL_R8) : (GL_RGB8), _w, _h, 0,
-				(_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
+			glTextureImage2DEXT(_id, GL_TEXTURE_2D, 0, (_monochrome) ? (GL_R8)
+					: (GL_RGB8), _w, _h, 0, (_monochrome) ? (GL_RED) : (GL_RGB),
+					GL_UNSIGNED_BYTE, img.data.ptr);
 		}
 		else
 		{
 			glBindTexture(GL_TEXTURE_2D, _id);
 			glTexImage2D(GL_TEXTURE_2D, 0, (_monochrome) ? (GL_R8) : (GL_RGB8),
-				_w, _h, 0, (_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
+					_w, _h, 0, (_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
 		}
 		gAssertGl();
 	}
@@ -1832,13 +1843,13 @@ class GFXtexture
 		if (GL_EXT_direct_state_access)
 		{
 			glTextureSubImage2DEXT(_id, GL_TEXTURE_2D, 0, 0, 0, _w, _h,
-				(_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
+					(_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
 		}
 		else
 		{
 			glBindTexture(GL_TEXTURE_2D, _id);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _w, _h,
-				(_monochrome) ? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _w, _h, (_monochrome)
+					? (GL_RED) : (GL_RGB), GL_UNSIGNED_BYTE, img.data.ptr);
 		}
 		gAssertGl();
 	}

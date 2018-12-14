@@ -4,7 +4,7 @@ import scene.objects.interfaces;
 import math.geometric;
 import math.vector;
 import scene.materials.material;
-import config;
+import grtrace;
 import scriptconfig;
 import std.math;
 import std.string;
@@ -96,8 +96,7 @@ class Sphere : Renderable
 
 	DebugDraw getDebugDraw()
 	{
-		return DebugDraw(DrawType.Sphere, radius, 0, new Plane(center, vectorf(0, 0,
-			0)), null);
+		return DebugDraw(DrawType.Sphere, radius, 0, new Plane(center, vectorf(0, 0, 0)), null);
 	}
 
 }

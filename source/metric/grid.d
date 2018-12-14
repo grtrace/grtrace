@@ -2,7 +2,7 @@ module metric.grid;
 
 import math;
 import metric.interfaces;
-import config;
+import grtrace;
 import scene;
 
 class Grid : DiscreteMetricContainer
@@ -13,15 +13,17 @@ class Grid : DiscreteMetricContainer
 	private size_t probingParam;
 
 	private Metric4[] storage;
-	
+
 	size_t getRayDataSize()
 	{
 		assert(0);
 	}
+
 	int getStageCount()
 	{
 		assert(0);
 	}
+
 	ComputeStep[RayState.Finished] getComputeStages()
 	{
 		assert(0);
@@ -39,13 +41,15 @@ class Grid : DiscreteMetricContainer
 			for (size_t y = 0; y <= probingParam; y++)
 				for (size_t z = 0; z <= probingParam; z++)
 				{
-					Vectorf pos = vectorf(
-						(cast(fpnum) x / cast(fpnum) probingParam) * (box.max.x - box.max.x) + box.min.x,
-						(cast(fpnum) y / cast(fpnum) probingParam) * (box.max.y - box.max.y) + box.min.y,
-						(cast(fpnum) z / cast(fpnum) probingParam) * (box.max.z - box.max.z) + box.min.z);
+					Vectorf pos = vectorf((cast(fpnum) x / cast(fpnum) probingParam) * (
+							box.max.x - box.max.x) + box.min.x,
+							(cast(fpnum) y / cast(fpnum) probingParam) * (box.max.y - box.max.y) + box.min.y,
+							(cast(fpnum) z / cast(fpnum) probingParam) * (
+								box.max.z - box.max.z) + box.min.z);
 
 					init.prepareForRequest(pos);
-					storage[x + y * probingParam + z * probingParam * probingParam] = init.getMetricAtPoint;
+					storage[x + y * probingParam + z * probingParam * probingParam] = init
+						.getMetricAtPoint;
 
 				}
 	}
@@ -55,15 +59,14 @@ class Grid : DiscreteMetricContainer
 		return init;
 	}
 
-	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint = null,
-		Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
+	fpnum TraceRay(GRTrace* grt, Line ray, bool* didHit, Vectorf* hitpoint = null,
+			Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		assert(0);
 	}
 
-	fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(Line ray,
-		bool* didHit, Vectorf* hitpoint = null, Vectorf* hitnormal = null,
-		Renderable* hit = null, int cnt = 0)
+	fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(GRTrace* grt, Line ray, bool* didHit,
+			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		//TODO:DO NOT USE
 		//find the cube in with the ray origin is contained
@@ -121,7 +124,7 @@ class Grid : DiscreteMetricContainer
 		}
 		return mdist;
 	}
-	
+
 	DebugDraw[string] returnDebugRenderObjects() const
 	{
 		return null;

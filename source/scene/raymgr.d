@@ -1,7 +1,7 @@
 /// Ray compute dispatch management code
 module scene.raymgr;
 
-import config;
+import grtrace;
 import std.container.array;
 import std.math, std.string, std.algorithm, std.array, std.range;
 import core.thread, core.atomic, core.time, core.bitop;
@@ -39,6 +39,7 @@ class Raytracer
 {
 	__gshared
 	{
+		GRTrace* grt;
 		WorldSpace space;
 		RayComputation[raysPerPass] raybuffer;
 		size_t rayCount = 0;
@@ -62,16 +63,15 @@ class Raytracer
 		space = sp;
 	}
 
-	static void prepareSingleTrace(uint x, uint y, uint number = 0, double sx = 0.0,
-		double sy = 0.0)
+	static void prepareSingleTrace(uint x, uint y, uint number = 0, double sx = 0.0, double sy = 0.0)
 	{
 		cleanup();
 		ensureBuffer(10);
 		Line cray;
 		if (space.getCamera().fetchRay(x + sx, y + sy, cray))
 		{
-			raybuffer[0] = RayComputation(cray, RayState.Initialised,
-				RayFlags.None, x, y, number, Color(1.0, 1.0, 1.0), 0, space.allocNewRayData());
+			raybuffer[0] = RayComputation(cray, RayState.Initialised, RayFlags.None,
+					x, y, number, Color(1.0, 1.0, 1.0), 0, space.allocNewRayData());
 			rayCount = 1;
 		}
 		else
@@ -84,24 +84,23 @@ class Raytracer
 	{
 		ensureBuffer(cast(uint)(i1 - i0 + 1));
 		Line cray;
-		fpnum jmpx = 2.0 / cfgResolutionX;
-		fpnum jmpy = 2.0 / cfgResolutionY;
+		fpnum jmpx = 2.0 / grt.config.resolutionX;
+		fpnum jmpy = 2.0 / grt.config.resolutionY;
 		rayCount = 0;
 		foreach (ulong idx; i0 .. i1)
 		{
 			uint cx, cy, smp;
-			smp = cast(uint)(idx % cfgSamples);
-			cx = cast(uint)((idx / cfgSamples) % cfgResolutionY);
-			cy = cast(uint)((idx / (cfgSamples * cfgResolutionY)));
+			smp = cast(uint)(idx % grt.config.samples);
+			cx = cast(uint)((idx / grt.config.samples) % grt.config.resolutionY);
+			cy = cast(uint)((idx / (grt.config.samples * grt.config.resolutionY)));
 			double px, py;
 			getSample(smp, px, py);
 			double X = cx * jmpx - 1.0 + px;
 			double Y = cy * jmpy - 1.0 + py;
 			if (space.getCamera().fetchRay(X, Y, cray))
 			{
-				raybuffer[rayCount++] = RayComputation(cray,
-					RayState.Initialised, RayFlags.None, cx, cy, smp,
-					Color(1.0, 1.0, 1.0), 0, space.allocNewRayData());
+				raybuffer[rayCount++] = RayComputation(cray, RayState.Initialised, RayFlags.None,
+						cx, cy, smp, Color(1.0, 1.0, 1.0), 0, space.allocNewRayData());
 			}
 		}
 	}
@@ -142,7 +141,7 @@ class Raytracer
 					if (rc.state < RayState.Finished)
 					{
 						//stderr.write(tid);
-						rc.state = space.getComputeStages()[rc.state].cpuFun(rc);
+						rc.state = space.getComputeStages()[rc.state].cpuFun(grt, rc);
 						done = false;
 					}
 					else
@@ -166,12 +165,13 @@ class Raytracer
 	/// Computes the whole image in multiple passes in multiple threads
 	static void computeMultiThread()
 	{
-		msimage.length = cfgResolutionX * cfgResolutionY * 3;
+		msimage.length = grt.config.resolutionX * grt.config.resolutionY * 3;
 		msimage[] = 0.0f;
-		threadCount = cast(int)(cfgThreads);
+		threadCount = cast(int)(grt.config.threads);
 		writeln("Rendering using ", threadCount, " threads");
 		bool done = false;
-		size_t totalRays = cast(size_t)(cfgResolutionX * cfgResolutionY * cfgSamples);
+		size_t totalRays = cast(size_t)(
+				grt.config.resolutionX * grt.config.resolutionY * grt.config.samples);
 		size_t doneRays = 0, lastRays = 0;
 		size_t totalDoneRays = 0;
 		size_t pass0 = 0, passN = min(raysPerPass, totalRays);
@@ -227,7 +227,7 @@ class Raytracer
 			}
 			totalDoneRays += doneRays;
 			size_t xstride = 3;
-			size_t ystride = cfgResolutionX * xstride;
+			size_t ystride = grt.config.resolutionX * xstride;
 			for (int i = 0; i < rayCount; i++)
 			{
 				RayComputation* rc = &raybuffer[i];
@@ -261,19 +261,19 @@ class Raytracer
 		import image.imgio : WriteImage;
 
 		size_t xstride = 3;
-		size_t ystride = cfgResolutionX * xstride;
-		if (cfgSamples > 1)
-			msimage[] /= cast(float) cfgSamples;
-		Image im = new Image(cfgResolutionX, cfgResolutionY);
-		foreach (y; 0 .. cfgResolutionY)
+		size_t ystride = grt.config.resolutionX * xstride;
+		if (grt.config.samples > 1)
+			msimage[] /= cast(float) grt.config.samples;
+		Image im = new Image(grt.config.resolutionX, grt.config.resolutionY);
+		foreach (y; 0 .. grt.config.resolutionY)
 		{
-			foreach (x; 0 .. cfgResolutionX)
+			foreach (x; 0 .. grt.config.resolutionX)
 			{
 				size_t i = x * xstride + y * ystride;
 				im.Poke(x, y, Color(msimage[i], msimage[i + 1], msimage[i + 2]));
 			}
 		}
-		WriteImage(im, cfgOutputFile);
+		WriteImage(im, grt.config.outputFile);
 		DebugDispatcher.renderResult = im;
 	}
 

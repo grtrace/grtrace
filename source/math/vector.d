@@ -1,6 +1,6 @@
 module math.vector;
 
-import config;
+import grtrace;
 import std.math;
 import std.traits;
 import std.format, std.string;
@@ -50,7 +50,7 @@ struct Vector(T)
 
 	@property Vector!T normalized()
 	{
-		return this / ( ~this);
+		return this / (~this);
 	}
 
 	Vector!T opOpAssign(string op)(T rhs) if (op == "*")
@@ -117,7 +117,7 @@ struct Vector(T)
 	Vector!T opBinary(string op)(Vector!T rhs) const if (op == "%")
 	{
 		return Vector!T(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z,
-			x * rhs.y - y * rhs.x, max(w, rhs.w));
+				x * rhs.y - y * rhs.x, max(w, rhs.w));
 	}
 
 	Vector!T opOpAssign(string op)(Vector!T rhs) if (op == "+=")
@@ -170,10 +170,10 @@ struct Vector(T)
 	{
 		fpnum mDot(Metric4 m, Vectorf o)
 		{
-			return this.x * o.x * m[1, 1] + this.x * o.y * m[1, 2] + this.x * o.z * m[1,
-				3] + this.y * o.x * m[2, 1] + this.y * o.y * m[2, 2] + this.y * o.z * m[2,
-				3] + this.z * o.x * m[3, 1] + this.z * o.y * m[3, 2] + this.z * o.z * m[3,
-				3];
+			return this.x * o.x * m[1, 1] + this.x * o.y * m[1,
+				2] + this.x * o.z * m[1, 3] + this.y * o.x * m[2,
+				1] + this.y * o.y * m[2, 2] + this.y * o.z * m[2,
+				3] + this.z * o.x * m[3, 1] + this.z * o.y * m[3, 2] + this.z * o.z * m[3, 3];
 		}
 
 		fpnum mLenSq(Metric4 m)

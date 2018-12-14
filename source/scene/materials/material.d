@@ -1,6 +1,6 @@
 module scene.materials.material;
 
-import config;
+import grtrace;
 import image;
 import math.interpolation;
 import math.vector;
@@ -24,10 +24,10 @@ final class FilteringTypes
 		v = V * (im.h - 1).fmod(im.h).round();
 
 		return BilinearInterpolation(im.Peek((cast(size_t) u), (cast(size_t) v)),
-			im.Peek((cast(size_t) u) + 1, (cast(size_t) v)),
-			im.Peek((cast(size_t) u), (cast(size_t) v) + 1),
-			im.Peek((cast(size_t) u) + 1, (cast(size_t) v) + 1),
-			U - (cast(fpnum) u) / (cast(fpnum) im.w), V - (cast(fpnum) v) / (cast(fpnum) im.h));
+				im.Peek((cast(size_t) u) + 1, (cast(size_t) v)),
+				im.Peek((cast(size_t) u), (cast(size_t) v) + 1),
+				im.Peek((cast(size_t) u) + 1, (cast(size_t) v) + 1),
+				U - (cast(fpnum) u) / (cast(fpnum) im.w), V - (cast(fpnum) v) / (cast(fpnum) im.h));
 	}
 }
 

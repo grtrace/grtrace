@@ -3,7 +3,7 @@ module metric.coordinates.radial;
 import metric.interfaces;
 import math;
 import std.math;
-import config;
+import grtrace;
 
 class Radial : CoordinateChanger
 {
@@ -51,8 +51,8 @@ class Radial : CoordinateChanger
 		fpnum cosP = cos(pos[3]);
 
 		return Vectorf(sinT * cosP * d1[1] + pos[1] * (cosT * cosP * d1[2] - sinT * sinP * d1[3]),
-			sinT * sinP * d1[1] + pos[1] * (cosT * sinP * d1[2] + sinT * cosP * d1[3]),
-			cosT * d1[1] - pos[1] * sinT * d1[2]);
+				sinT * sinP * d1[1] + pos[1] * (cosT * sinP * d1[2] + sinT * cosP * d1[3]),
+				cosT * d1[1] - pos[1] * sinT * d1[2]);
 	}
 
 	Vectorf transformBackSpacialSecondDerivatives(fpnum[4] pos, fpnum[4] d1, fpnum[4] d2)
@@ -62,13 +62,15 @@ class Radial : CoordinateChanger
 		fpnum sinP = sin(pos[3]);
 		fpnum cosP = cos(pos[3]);
 
-		return Vectorf(sinT * cosP * d2[1] + 2 * d1[1] * (cosT * cosP * d1[2] - sinT * sinP * d1[3]) + pos[
-			1] * (cosT * (cosP * d2[2] - 2 * sinP * d1[2] * d1[3]) - sinT * (
-			cosP * (d1[2] * d1[2] + d1[3] * d1[3]) + sinP * d2[3])),
-			sinT * sinP * d2[1] + 2 * d1[1] * (cosT * sinP * d1[2] + sinT * cosP * d1[3]) + pos[1] * (
-			sinT * (cosP * d2[3] - sinP * (d1[2] * d1[2] + d1[3] * d1[3])) + cosT * (
-			sinP * d2[2] + 2 * cosP * d1[2] * d1[3])),
-			cosT * (d2[1] - pos[1] * d1[2] * d1[2]) - sinT * (2 * d1[1] * d1[2] + pos[1] * d2[2]));
+		return Vectorf(sinT * cosP * d2[1] + 2 * d1[1] * (
+				cosT * cosP * d1[2] - sinT * sinP * d1[3]) + pos[1] * (
+				cosT * (cosP * d2[2] - 2 * sinP * d1[2] * d1[3]) - sinT * (
+				cosP * (d1[2] * d1[2] + d1[3] * d1[3]) + sinP * d2[3])),
+				sinT * sinP * d2[1] + 2 * d1[1] * (
+				cosT * sinP * d1[2] + sinT * cosP * d1[3]) + pos[1] * (
+				sinT * (cosP * d2[3] - sinP * (d1[2] * d1[2] + d1[3] * d1[3])) + cosT * (
+				sinP * d2[2] + 2 * cosP * d1[2] * d1[3])),
+				cosT * (d2[1] - pos[1] * d1[2] * d1[2]) - sinT * (2 * d1[1] * d1[2] + pos[1] * d2[2]));
 	}
 
 	override string toString()

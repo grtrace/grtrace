@@ -6,10 +6,9 @@ import scene.objects.plane;
 import math.vector;
 import math.geometric;
 import scene.materials.material;
-import config;
+import grtrace;
 import scriptconfig;
-import std.string, std.array, std.range, std.math, std.algorithm,
-	std.uni;
+import std.string, std.array, std.range, std.math, std.algorithm, std.uni;
 
 class AccretionDisc : Renderable
 {
@@ -31,10 +30,10 @@ class AccretionDisc : Renderable
 
 		if (iRadius2 >= oRadius2)
 			throw new Exception(
-				"The accretion disc's inner radius must be smaller than his outer radius!");
+					"The accretion disc's inner radius must be smaller than his outer radius!");
 		if (iRadius2 < 0)
 			throw new Exception(
-				"The accretion disc's inner radius must be greater or equal to zero");
+					"The accretion disc's inner radius must be greater or equal to zero");
 		iRadius2 *= iRadius2;
 		oRadius2 *= oRadius2;
 
@@ -74,8 +73,7 @@ class AccretionDisc : Renderable
 
 	DebugDraw getDebugDraw()
 	{
-		return DebugDraw(DrawType.AccretionDisc, oRadius2, iRadius2, &plane.plane,
-			null);
+		return DebugDraw(DrawType.AccretionDisc, oRadius2, iRadius2, &plane.plane, null);
 	}
 }
 

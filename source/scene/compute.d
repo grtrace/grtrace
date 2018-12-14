@@ -1,7 +1,7 @@
 /// Ray compute structures
 module scene.compute;
 
-import config;
+import grtrace;
 import core.time;
 import std.array;
 import std.string;
@@ -69,10 +69,10 @@ struct RayComputation
 /** Definition of a CPU computation function
 Returns the next state, should not change the state field by itself.
 */
-public alias CpuComputeFunction = RayState function(RayComputation* rc);
+public alias CpuComputeFunction = RayState function(GRTrace* grt, RayComputation* rc);
 
 /// Dummy computation function, always fails the raytrace
-RayState failTrace(RayComputation* rc)
+RayState failTrace(GRTrace* grt, RayComputation* rc)
 {
 	return RayState.Failed;
 }

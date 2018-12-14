@@ -1,6 +1,6 @@
 module dbg.dispatcher;
 
-import config;
+import grtrace;
 import std.stdio, std.math, std.array, std.string, std.format;
 import scene.scenemgr;
 import scene.camera;
@@ -106,8 +106,8 @@ static:
 		if (!saver.enabled)
 			return false;
 		auto sray = SavedRay(ray.origin, end, ray.direction, rdt,
-			cast(int) saver.rays.length, customColor);
+				cast(int) saver.rays.length, customColor);
 		saver.append(sray);
-		return breakFunction?breakFunction(sray):false;
+		return breakFunction ? breakFunction(sray) : false;
 	}
 }

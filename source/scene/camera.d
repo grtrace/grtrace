@@ -1,6 +1,6 @@
 module scene.camera;
 
-import config;
+import grtrace;
 import math.vector;
 import math.geometric;
 import math.matrix;

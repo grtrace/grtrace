@@ -1,6 +1,6 @@
 module math.quaternion;
 
-import config;
+import grtrace;
 import math.util;
 import math.matrix;
 import math.vector;
@@ -75,10 +75,9 @@ class Quaternion
 		ax = axi.x;
 		ay = axi.y;
 		az = axi.z;
-		return Matrix4f(c + ax * ax * t, ax * ay * t - az * s,
-			ax * az * t + ay * s, 0, ay * ax * t + az * s, c + ay * ay * t,
-			ay * az * t - ax * s, 0, az * ax * t - ay * s, az * ay * t + ax * s,
-			c + az * az * t, 0, 0, 0, 0, 1);
+		return Matrix4f(c + ax * ax * t, ax * ay * t - az * s, ax * az * t + ay * s,
+				0, ay * ax * t + az * s, c + ay * ay * t, ay * az * t - ax * s, 0,
+				az * ax * t - ay * s, az * ay * t + ax * s, c + az * az * t, 0, 0, 0, 0, 1);
 	}
 
 	override string toString()
@@ -89,14 +88,14 @@ class Quaternion
 	Quaternion opOpAssign(string op)(Quaternion rhs) if (op == "*")
 	{
 		fpnum A, B, C, D;
-		A = vals[0] * rhs.vals[0] - vals[1] * rhs.vals[1] - vals[2] * rhs.vals[2] - vals[3] * rhs.vals[
-			3];
-		B = vals[0] * rhs.vals[1] + vals[1] * rhs.vals[0] + vals[2] * rhs.vals[3] - vals[3] * rhs.vals[
-			2];
-		C = vals[0] * rhs.vals[2] - vals[1] * rhs.vals[3] + vals[2] * rhs.vals[0] + vals[3] * rhs.vals[
-			1];
-		D = vals[0] * rhs.vals[3] + vals[1] * rhs.vals[2] - vals[2] * rhs.vals[1] + vals[3] * rhs.vals[
-			0];
+		A = vals[0] * rhs.vals[0] - vals[1] * rhs.vals[1] - vals[2] * rhs.vals[2]
+			- vals[3] * rhs.vals[3];
+		B = vals[0] * rhs.vals[1] + vals[1] * rhs.vals[0] + vals[2] * rhs.vals[3]
+			- vals[3] * rhs.vals[2];
+		C = vals[0] * rhs.vals[2] - vals[1] * rhs.vals[3] + vals[2] * rhs.vals[0]
+			+ vals[3] * rhs.vals[1];
+		D = vals[0] * rhs.vals[3] + vals[1] * rhs.vals[2] - vals[2] * rhs.vals[1]
+			+ vals[3] * rhs.vals[0];
 		this.vals[0] = A;
 		this.vals[1] = B;
 		this.vals[2] = C;

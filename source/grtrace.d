@@ -1,4 +1,5 @@
-module config;
+/// The grtrace main interface object.
+module grtrace;
 
 import scene.objects.interfaces;
 import scene.materials.material;
@@ -12,53 +13,50 @@ alias fpnum = double;
 alias inum = long;
 alias unum = ulong;
 fpnum eps = 1e-9;
-alias fpnump = fpnum*;
-alias inump = inum*;
-alias unump = unum*;
 
-/*fpnum fast_atan2(fpnum y, fpnum x)
-{
-	
-}*/
 alias fast_atan2 = atan2;
 
-__gshared
+export struct GRTraceConfig
 {
+	bool verbose = false;
+	bool debugMode = false;
+	bool additionalCalc = false;
+	bool noImage = false;
+	bool gpuAcc = false;
+	bool fastApproximation = false;
+	string script = "raytrace.tcl";
+	inum resolutionX = 320;
+	inum resolutionY = 240;
+	inum threads = 6;
+	inum maxDepth = 5;
+	Integrator integrator = Integrator.RK4;
 
-	bool cfgVerbose = false;
-	bool cfgDebug = false;
-	bool cfgAdditionalCalc = false;
-	bool cfgNoImage = false;
-	bool cfgGpuAcc = false;
-	bool cfgFastApproximation = false;
-	string cfgScript = "raytrace.tcl";
-	inum cfgResolutionX = 320;
-	inum cfgResolutionY = 240;
-	inum cfgThreads = 6;
-	inum cfgMaxDepth = 5;
-	Integrator cfgIntegrator = Integrator.RK4;
+	unum samples = 1;
+	string outputFile = "raytrace.png";
 
-	unum cfgSamples = 1;
-	string cfgOutputFile = "raytrace.png";
+	Renderable[string] objects;
+	string[Renderable] objectsMaterialNames;
 
-	Renderable[string] cfgObjects;
-	string[Renderable] cfgObjectsMaterialNames;
+	Light[string] lights;
+	Image[string] textures;
 
-	Light[string] cfgLights;
-	Image[string] cfgTextures;
+	Material[string] materials;
+	string[Material] materialsTextureNames;
 
-	Material[string] cfgMaterials;
-	string[Material] cfgMaterialsTextureNames;
-
-	Tid renderTid;
+	WorldSpace space;
+	ICamera camera;
+	long traceStart = 0;
+	long traceEnd = 0;
 }
 
-public shared
+/// Contains the state of the entire raytracer.
+export struct GRTrace
 {
-	WorldSpace cfgSpace;
-	ICamera cfgCamera;
-	long cfgTraceStart = 0;
-	long cfgTraceEnd = 0;
+	@disable this(this);
+
+	GRTraceConfig config;
+
+	Tid renderTid;
 }
 
 //debug info

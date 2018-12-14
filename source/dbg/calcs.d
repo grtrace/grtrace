@@ -1,7 +1,7 @@
 /// Additional calculations (available with -c and in the interactive visual helper)
 module dbg.calcs;
 
-import config;
+import grtrace;
 import dbg.dispatcher;
 import scene.objects.interfaces;
 import scene.raymgr;
@@ -16,7 +16,7 @@ import std.algorithm;
 
 struct AdditionalCalculation
 {
-	alias calcFunction = void function();
+	alias calcFunction = void function(GRTrace*);
 	calcFunction func;
 	string description;
 }
@@ -26,7 +26,7 @@ __gshared AdditionalCalculation[2] calculations = [
 	AdditionalCalculation(&calcTotalDistantRayDeflection, "Calculate total ray deflection")
 ];
 
-void askCalculation()
+void askCalculation(GRTrace* grt)
 {
 	writeln("Choose type of additional calculation to perform:");
 	foreach (i, c; calculations)
@@ -49,7 +49,7 @@ void askCalculation()
 		writeln("Wrong type of calculation, exitting");
 		return;
 	}
-	calculations[choice].func();
+	calculations[choice].func(grt);
 }
 
 fpnum readFloat(string prompt)
@@ -70,7 +70,7 @@ int readInt(string prompt)
 	return x;
 }
 
-void calcSchwarzschildStability()
+void calcSchwarzschildStability(GRTrace* grt)
 {
 	import metric.analytic : Analytic;
 	import metric.wrapper : WorldSpaceWrapper;
@@ -159,7 +159,7 @@ void calcSchwarzschildStability()
 			Vectorf p3;
 			Vectorf p4;
 			Renderable p5;
-			anl.TraceRay(ray, &dh, &p3, &p4, &p5);
+			anl.TraceRay(grt, ray, &dh, &p3, &p4, &p5);
 		}
 		catch (Exception e)
 		{
@@ -193,7 +193,7 @@ fpnum ReadBoundedFloat(const string boundaries)(string name)
 	return x;
 }
 
-void calcTotalDistantRayDeflection()
+void calcTotalDistantRayDeflection(GRTrace* grt)
 {
 	import metric.analytic : Analytic;
 	import metric.wrapper : WorldSpaceWrapper;
@@ -232,7 +232,7 @@ void calcTotalDistantRayDeflection()
 		schw.mass = mass;
 		schw.origin = vectorf(0, 0, 0);
 
-		if (cfgVerbose)
+		if (grt.config.verbose)
 			writeln("Detected Schwarzschild metric");
 
 		metric_info = format("Metric: Analitic-Schwarzschild\nMass: %#.16e\n", mass);
@@ -257,7 +257,7 @@ void calcTotalDistantRayDeflection()
 		
 		kerr.r_plus = kerr.Rs/2 + sqrt((kerr.Rs*kerr.Rs)/4 - kerr.a2);
 		
-		if(cfgVerbose) writeln("Detected Kerr metric");
+		if(grt.config.verbose) writeln("Detected Kerr metric");
 	}*/
 	else if (cast(Reissner) init !is null)
 	{
@@ -277,7 +277,7 @@ void calcTotalDistantRayDeflection()
 		reiss.r_ext = (reiss.Rs / 2) + reiss.det;
 		reiss.r_cauchy = (reiss.Rs / 2) - reiss.det;
 
-		if (cfgVerbose)
+		if (grt.config.verbose)
 			writeln("Detected Reissner-Nordstrom metric");
 
 		metric_info = format("Metric: Analitic-Reissner\nMass: %#.16e\tCharge: %#.16e\n",
@@ -285,7 +285,7 @@ void calcTotalDistantRayDeflection()
 	}
 	/*else if(cast(FlatCartesian)init !is null || cast(FlatRadial)init !is null)
 	{
-		if(cfgVerbose) writeln("Detected flat Minkowski metric");
+		if(grt.config.verbose) writeln("Detected flat Minkowski metric");
 		metric_info = "Metric: Analitic-Flat\n";
 	}*/
 	else
@@ -382,7 +382,7 @@ void calcTotalDistantRayDeflection()
 			Vectorf p3;
 			Vectorf p4;
 			Renderable p5;
-			anl.TraceRay(ray, &dh, &p3, &p4, &p5);
+			anl.TraceRay(grt, ray, &dh, &p3, &p4, &p5);
 		}
 		catch (Exception e)
 		{

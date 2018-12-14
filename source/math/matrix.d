@@ -4,7 +4,7 @@ import std.math;
 import math.util;
 import math.vector;
 import math.geometric;
-import config;
+import grtrace;
 import std.format;
 
 align(64) struct Matrix4(T)
@@ -21,15 +21,13 @@ public:
 
 	static @property Matrix4!T Zero()
 	{
-		static Matrix4!T X = Matrix4!T(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0);
+		static Matrix4!T X = Matrix4!T(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 		return X;
 	}
 
 	static @property Matrix4!T Identity()
 	{
-		static Matrix4!T X = Matrix4!T(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-			1);
+		static Matrix4!T X = Matrix4!T(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 		return X;
 	}
 
@@ -46,19 +44,19 @@ public:
 	static Matrix4!T RotateZ(T angle)
 	{
 		return Matrix4!T(fcos!T(angle), -fsin!T(angle), 0, 0, fsin!T(angle),
-			fcos!T(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+				fcos!T(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 	}
 
 	static Matrix4!T RotateX(T angle)
 	{
 		return Matrix4!T(1, 0, 0, 0, 0, fcos!T(angle), -fsin!T(angle), 0, 0,
-			fsin!T(angle), fcos!T(angle), 0, 0, 0, 0, 1);
+				fsin!T(angle), fcos!T(angle), 0, 0, 0, 0, 1);
 	}
 
 	static Matrix4!T RotateY(T angle)
 	{
 		return Matrix4!T(fcos!T(angle), 0, fsin!T(angle), 0, 0, 1, 0, 0,
-			-fsin!T(angle), 0, fcos!T(angle), 0, 0, 0, 0, 1);
+				-fsin!T(angle), 0, fcos!T(angle), 0, 0, 0, 0, 1);
 	}
 
 	static Matrix4!T Rotate(Vector!T axis, T angle)
@@ -67,15 +65,14 @@ public:
 		T ca = fcos!T(angle);
 		T ca1 = cast(T)(1.0 - ca);
 		return Matrix4!T(ca + axis.x * axis.x * ca1,
-			axis.x * axis.y * ca1 - axis.z * sa,
-			axis.x * axis.z * ca1 + axis.y * sa, 0,
+				axis.x * axis.y * ca1 - axis.z * sa,
+				axis.x * axis.z * ca1 + axis.y * sa, 0,
 
-			axis.y * axis.x * ca1 + axis.z * sa, ca + axis.y * axis.y * ca1,
-			axis.y * axis.z * ca1 - axis.x * sa, 0,
+				axis.y * axis.x * ca1 + axis.z * sa, ca + axis.y * axis.y * ca1,
+				axis.y * axis.z * ca1 - axis.x * sa, 0,
 
-			axis.z * axis.x * ca1 - axis.y * sa,
-			axis.z * axis.y * ca1 + axis.x * sa, ca + axis.z * axis.z * ca1, 0, 0,
-			0, 0, 1);
+				axis.z * axis.x * ca1 - axis.y * sa,
+				axis.z * axis.y * ca1 + axis.x * sa, ca + axis.z * axis.z * ca1, 0, 0, 0, 0, 1);
 	}
 
 	static Vector!T RotateV(Vector!T axis, T angle, Vector!T v)
@@ -87,7 +84,7 @@ public:
 	}
 
 	this(T e0, T e1, T e2, T e3, T e4, T e5, T e6, T e7, T e8, T e9, T e10, T e11,
-		T e12, T e13, T e14, T e15)
+			T e12, T e13, T e14, T e15)
 	{
 		vals[0] = e0;
 		vals[1] = e1;
@@ -133,17 +130,22 @@ public:
 
 	@property T determinant() const
 	{
-		return vals[12] * vals[9] * vals[6] * vals[3] - vals[8] * vals[13] * vals[6] * vals[3] - vals[
-			12] * vals[5] * vals[10] * vals[3] + vals[4] * vals[13] * vals[10] * vals[3] + vals[8] * vals[
-			5] * vals[14] * vals[3] - vals[4] * vals[9] * vals[14] * vals[3] - vals[12] * vals[9] * vals[
-			2] * vals[7] + vals[8] * vals[13] * vals[2] * vals[7] + vals[12] * vals[1] * vals[10] * vals[
-			7] - vals[0] * vals[13] * vals[10] * vals[7] - vals[8] * vals[1] * vals[14] * vals[7] + vals[
-			0] * vals[9] * vals[14] * vals[7] + vals[12] * vals[5] * vals[2] * vals[11] - vals[4] * vals[
-			13] * vals[2] * vals[11] - vals[12] * vals[1] * vals[6] * vals[11] + vals[0] * vals[13] * vals[
-			6] * vals[11] + vals[4] * vals[1] * vals[14] * vals[11] - vals[0] * vals[5] * vals[14] * vals[
-			11] - vals[8] * vals[5] * vals[2] * vals[15] + vals[4] * vals[9] * vals[2] * vals[15] + vals[
-			8] * vals[1] * vals[6] * vals[15] - vals[0] * vals[9] * vals[6] * vals[15] - vals[4] * vals[
-			1] * vals[10] * vals[15] + vals[0] * vals[5] * vals[10] * vals[15];
+		return vals[12] * vals[9] * vals[6] * vals[3] - vals[8] * vals[13]
+			* vals[6] * vals[3] - vals[12] * vals[5] * vals[10] * vals[3]
+			+ vals[4] * vals[13] * vals[10] * vals[3] + vals[8] * vals[5]
+			* vals[14] * vals[3] - vals[4] * vals[9] * vals[14] * vals[3]
+			- vals[12] * vals[9] * vals[2] * vals[7] + vals[8] * vals[13]
+			* vals[2] * vals[7] + vals[12] * vals[1] * vals[10] * vals[7]
+			- vals[0] * vals[13] * vals[10] * vals[7] - vals[8] * vals[1]
+			* vals[14] * vals[7] + vals[0] * vals[9] * vals[14] * vals[7]
+			+ vals[12] * vals[5] * vals[2] * vals[11] - vals[4] * vals[13]
+			* vals[2] * vals[11] - vals[12] * vals[1] * vals[6] * vals[11]
+			+ vals[0] * vals[13] * vals[6] * vals[11] + vals[4] * vals[1]
+			* vals[14] * vals[11] - vals[0] * vals[5] * vals[14] * vals[11]
+			- vals[8] * vals[5] * vals[2] * vals[15] + vals[4] * vals[9] * vals[2]
+			* vals[15] + vals[8] * vals[1] * vals[6] * vals[15] - vals[0]
+			* vals[9] * vals[6] * vals[15] - vals[4] * vals[1] * vals[10]
+			* vals[15] + vals[0] * vals[5] * vals[10] * vals[15];
 	}
 
 	@property Matrix4!T inverse() const
@@ -156,52 +158,52 @@ public:
 		Matrix4!T tmp;
 
 		tmp.vals[0] = det3(vals[5], vals[6], vals[7], vals[9], vals[10],
-			vals[11], vals[13], vals[14], vals[15]);
+				vals[11], vals[13], vals[14], vals[15]);
 
 		tmp.vals[1] = -det3(vals[4], vals[6], vals[7], vals[8], vals[10],
-			vals[11], vals[12], vals[14], vals[15]);
+				vals[11], vals[12], vals[14], vals[15]);
 
 		tmp.vals[2] = det3(vals[4], vals[5], vals[7], vals[8], vals[9],
-			vals[11], vals[12], vals[13], vals[15]);
+				vals[11], vals[12], vals[13], vals[15]);
 
 		tmp.vals[3] = -det3(vals[4], vals[5], vals[6], vals[8], vals[9],
-			vals[10], vals[12], vals[13], vals[14]);
+				vals[10], vals[12], vals[13], vals[14]);
 
 		tmp.vals[4] = -det3(vals[1], vals[2], vals[3], vals[9], vals[10],
-			vals[11], vals[13], vals[14], vals[15]);
+				vals[11], vals[13], vals[14], vals[15]);
 
 		tmp.vals[5] = det3(vals[0], vals[2], vals[3], vals[8], vals[10],
-			vals[11], vals[12], vals[14], vals[15]);
+				vals[11], vals[12], vals[14], vals[15]);
 
 		tmp.vals[6] = -det3(vals[0], vals[1], vals[3], vals[8], vals[9],
-			vals[11], vals[12], vals[13], vals[15]);
+				vals[11], vals[12], vals[13], vals[15]);
 
 		tmp.vals[7] = det3(vals[0], vals[1], vals[2], vals[8], vals[9],
-			vals[10], vals[12], vals[13], vals[14]);
+				vals[10], vals[12], vals[13], vals[14]);
 
 		tmp.vals[8] = det3(vals[1], vals[2], vals[3], vals[5], vals[6],
-			vals[7], vals[13], vals[14], vals[15]);
+				vals[7], vals[13], vals[14], vals[15]);
 
 		tmp.vals[9] = -det3(vals[0], vals[2], vals[3], vals[4], vals[6],
-			vals[7], vals[12], vals[14], vals[15]);
+				vals[7], vals[12], vals[14], vals[15]);
 
 		tmp.vals[10] = det3(vals[0], vals[1], vals[3], vals[4], vals[5],
-			vals[7], vals[12], vals[13], vals[15]);
+				vals[7], vals[12], vals[13], vals[15]);
 
 		tmp.vals[11] = -det3(vals[0], vals[1], vals[2], vals[4], vals[5],
-			vals[6], vals[12], vals[13], vals[14]);
+				vals[6], vals[12], vals[13], vals[14]);
 
 		tmp.vals[12] = -det3(vals[1], vals[2], vals[3], vals[5], vals[6],
-			vals[7], vals[9], vals[10], vals[11]);
+				vals[7], vals[9], vals[10], vals[11]);
 
 		tmp.vals[13] = det3(vals[0], vals[2], vals[3], vals[4], vals[6],
-			vals[7], vals[8], vals[10], vals[11]);
+				vals[7], vals[8], vals[10], vals[11]);
 
 		tmp.vals[14] = -det3(vals[0], vals[1], vals[3], vals[4], vals[5],
-			vals[7], vals[8], vals[9], vals[11]);
+				vals[7], vals[8], vals[9], vals[11]);
 
 		tmp.vals[15] = det3(vals[0], vals[1], vals[2], vals[4], vals[5],
-			vals[6], vals[8], vals[9], vals[10]);
+				vals[6], vals[8], vals[9], vals[10]);
 
 		return tmp.transposed * (1 / this.determinant);
 	}
@@ -225,14 +227,15 @@ public:
 	{
 		vals[i] = val;
 	}
-	
+
 	/// Fast compile-time indexing
 	ref T at(size_t i)()
 	{
 		return vals[i];
 	}
 
-	Matrix4!T opBinary(string op)(const Matrix4!T rhs) const if (op == "+" || op == "-" || op == "*")
+	Matrix4!T opBinary(string op)(const Matrix4!T rhs) const 
+			if (op == "+" || op == "-" || op == "*")
 	{
 		Matrix4!T res;
 
@@ -244,41 +247,57 @@ public:
 		}
 		static if (op == "*")
 		{
-			res[0] = vals[0 + 4 * 0] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 0] * rhs.vals[0 + 4 * 1] + vals[2
-				+ 4 * 0] * rhs.vals[0 + 4 * 2] + vals[3 + 4 * 0] * rhs.vals[0 + 4 * 3];
-			res[1] = vals[0 + 4 * 0] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 0] * rhs.vals[1 + 4 * 1] + vals[2
-				+ 4 * 0] * rhs.vals[1 + 4 * 2] + vals[3 + 4 * 0] * rhs.vals[1 + 4 * 3];
-			res[2] = vals[0 + 4 * 0] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 0] * rhs.vals[2 + 4 * 1] + vals[2
-				+ 4 * 0] * rhs.vals[2 + 4 * 2] + vals[3 + 4 * 0] * rhs.vals[2 + 4 * 3];
-			res[3] = vals[0 + 4 * 0] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 0] * rhs.vals[3 + 4 * 1] + vals[2
-				+ 4 * 0] * rhs.vals[3 + 4 * 2] + vals[3 + 4 * 0] * rhs.vals[3 + 4 * 3];
+			res[0] = vals[0 + 4 * 0] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 0]
+				* rhs.vals[0 + 4 * 1] + vals[2 + 4 * 0] * rhs.vals[0 + 4 * 2]
+				+ vals[3 + 4 * 0] * rhs.vals[0 + 4 * 3];
+			res[1] = vals[0 + 4 * 0] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 0]
+				* rhs.vals[1 + 4 * 1] + vals[2 + 4 * 0] * rhs.vals[1 + 4 * 2]
+				+ vals[3 + 4 * 0] * rhs.vals[1 + 4 * 3];
+			res[2] = vals[0 + 4 * 0] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 0]
+				* rhs.vals[2 + 4 * 1] + vals[2 + 4 * 0] * rhs.vals[2 + 4 * 2]
+				+ vals[3 + 4 * 0] * rhs.vals[2 + 4 * 3];
+			res[3] = vals[0 + 4 * 0] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 0]
+				* rhs.vals[3 + 4 * 1] + vals[2 + 4 * 0] * rhs.vals[3 + 4 * 2]
+				+ vals[3 + 4 * 0] * rhs.vals[3 + 4 * 3];
 
-			res[4] = vals[0 + 4 * 1] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 1] * rhs.vals[0 + 4 * 1] + vals[2
-				+ 4 * 1] * rhs.vals[0 + 4 * 2] + vals[3 + 4 * 1] * rhs.vals[0 + 4 * 3];
-			res[5] = vals[0 + 4 * 1] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 1] * rhs.vals[1 + 4 * 1] + vals[2
-				+ 4 * 1] * rhs.vals[1 + 4 * 2] + vals[3 + 4 * 1] * rhs.vals[1 + 4 * 3];
-			res[6] = vals[0 + 4 * 1] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 1] * rhs.vals[2 + 4 * 1] + vals[2
-				+ 4 * 1] * rhs.vals[2 + 4 * 2] + vals[3 + 4 * 1] * rhs.vals[2 + 4 * 3];
-			res[7] = vals[0 + 4 * 1] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 1] * rhs.vals[3 + 4 * 1] + vals[2
-				+ 4 * 1] * rhs.vals[3 + 4 * 2] + vals[3 + 4 * 1] * rhs.vals[3 + 4 * 3];
+			res[4] = vals[0 + 4 * 1] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 1]
+				* rhs.vals[0 + 4 * 1] + vals[2 + 4 * 1] * rhs.vals[0 + 4 * 2]
+				+ vals[3 + 4 * 1] * rhs.vals[0 + 4 * 3];
+			res[5] = vals[0 + 4 * 1] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 1]
+				* rhs.vals[1 + 4 * 1] + vals[2 + 4 * 1] * rhs.vals[1 + 4 * 2]
+				+ vals[3 + 4 * 1] * rhs.vals[1 + 4 * 3];
+			res[6] = vals[0 + 4 * 1] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 1]
+				* rhs.vals[2 + 4 * 1] + vals[2 + 4 * 1] * rhs.vals[2 + 4 * 2]
+				+ vals[3 + 4 * 1] * rhs.vals[2 + 4 * 3];
+			res[7] = vals[0 + 4 * 1] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 1]
+				* rhs.vals[3 + 4 * 1] + vals[2 + 4 * 1] * rhs.vals[3 + 4 * 2]
+				+ vals[3 + 4 * 1] * rhs.vals[3 + 4 * 3];
 
-			res[8] = vals[0 + 4 * 2] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 2] * rhs.vals[0 + 4 * 1] + vals[2
-				+ 4 * 2] * rhs.vals[0 + 4 * 2] + vals[3 + 4 * 2] * rhs.vals[0 + 4 * 3];
-			res[9] = vals[0 + 4 * 2] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 2] * rhs.vals[1 + 4 * 1] + vals[2
-				+ 4 * 2] * rhs.vals[1 + 4 * 2] + vals[3 + 4 * 2] * rhs.vals[1 + 4 * 3];
-			res[10] = vals[0 + 4 * 2] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 2] * rhs.vals[2 + 4 * 1] + vals[2
-				+ 4 * 2] * rhs.vals[2 + 4 * 2] + vals[3 + 4 * 2] * rhs.vals[2 + 4 * 3];
-			res[11] = vals[0 + 4 * 2] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 2] * rhs.vals[3 + 4 * 1] + vals[2
-				+ 4 * 2] * rhs.vals[3 + 4 * 2] + vals[3 + 4 * 2] * rhs.vals[3 + 4 * 3];
+			res[8] = vals[0 + 4 * 2] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 2]
+				* rhs.vals[0 + 4 * 1] + vals[2 + 4 * 2] * rhs.vals[0 + 4 * 2]
+				+ vals[3 + 4 * 2] * rhs.vals[0 + 4 * 3];
+			res[9] = vals[0 + 4 * 2] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 2]
+				* rhs.vals[1 + 4 * 1] + vals[2 + 4 * 2] * rhs.vals[1 + 4 * 2]
+				+ vals[3 + 4 * 2] * rhs.vals[1 + 4 * 3];
+			res[10] = vals[0 + 4 * 2] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 2]
+				* rhs.vals[2 + 4 * 1] + vals[2 + 4 * 2] * rhs.vals[2 + 4 * 2]
+				+ vals[3 + 4 * 2] * rhs.vals[2 + 4 * 3];
+			res[11] = vals[0 + 4 * 2] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 2]
+				* rhs.vals[3 + 4 * 1] + vals[2 + 4 * 2] * rhs.vals[3 + 4 * 2]
+				+ vals[3 + 4 * 2] * rhs.vals[3 + 4 * 3];
 
-			res[12] = vals[0 + 4 * 3] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 3] * rhs.vals[0 + 4 * 1] + vals[2
-				+ 4 * 3] * rhs.vals[0 + 4 * 2] + vals[3 + 4 * 3] * rhs.vals[0 + 4 * 3];
-			res[13] = vals[0 + 4 * 3] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 3] * rhs.vals[1 + 4 * 1] + vals[2
-				+ 4 * 3] * rhs.vals[1 + 4 * 2] + vals[3 + 4 * 3] * rhs.vals[1 + 4 * 3];
-			res[14] = vals[0 + 4 * 3] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 3] * rhs.vals[2 + 4 * 1] + vals[2
-				+ 4 * 3] * rhs.vals[2 + 4 * 2] + vals[3 + 4 * 3] * rhs.vals[2 + 4 * 3];
-			res[15] = vals[0 + 4 * 3] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 3] * rhs.vals[3 + 4 * 1] + vals[2
-				+ 4 * 3] * rhs.vals[3 + 4 * 2] + vals[3 + 4 * 3] * rhs.vals[3 + 4 * 3];
+			res[12] = vals[0 + 4 * 3] * rhs.vals[0 + 4 * 0] + vals[1 + 4 * 3]
+				* rhs.vals[0 + 4 * 1] + vals[2 + 4 * 3] * rhs.vals[0 + 4 * 2]
+				+ vals[3 + 4 * 3] * rhs.vals[0 + 4 * 3];
+			res[13] = vals[0 + 4 * 3] * rhs.vals[1 + 4 * 0] + vals[1 + 4 * 3]
+				* rhs.vals[1 + 4 * 1] + vals[2 + 4 * 3] * rhs.vals[1 + 4 * 2]
+				+ vals[3 + 4 * 3] * rhs.vals[1 + 4 * 3];
+			res[14] = vals[0 + 4 * 3] * rhs.vals[2 + 4 * 0] + vals[1 + 4 * 3]
+				* rhs.vals[2 + 4 * 1] + vals[2 + 4 * 3] * rhs.vals[2 + 4 * 2]
+				+ vals[3 + 4 * 3] * rhs.vals[2 + 4 * 3];
+			res[15] = vals[0 + 4 * 3] * rhs.vals[3 + 4 * 0] + vals[1 + 4 * 3]
+				* rhs.vals[3 + 4 * 1] + vals[2 + 4 * 3] * rhs.vals[3 + 4 * 2]
+				+ vals[3 + 4 * 3] * rhs.vals[3 + 4 * 3];
 
 			return res;
 		}
@@ -286,10 +305,11 @@ public:
 
 	Vector!T opBinary(string op)(const Vector!T rhs) const if (op == "*")
 	{
-		return Vector!T(vals[0 + 4 * 0] * rhs.x + vals[1 + 4 * 0] * rhs.y + vals[2 + 4 * 0] * rhs.z + vals[3
-			+ 4 * 0] * rhs.w, vals[0 + 4 * 1] * rhs.x + vals[1 + 4 * 1] * rhs.y + vals[2 + 4 * 1] * rhs.z + vals[3
-			+ 4 * 1] * rhs.w, vals[0 + 4 * 2] * rhs.x + vals[1 + 4 * 2] * rhs.y + vals[2 + 4 * 2] * rhs.z + vals[3
-			+ 4 * 2] * rhs.w);
+		return Vector!T(vals[0 + 4 * 0] * rhs.x + vals[1 + 4 * 0] * rhs.y
+				+ vals[2 + 4 * 0] * rhs.z + vals[3 + 4 * 0] * rhs.w,
+				vals[0 + 4 * 1] * rhs.x + vals[1 + 4 * 1] * rhs.y + vals[2 + 4 * 1] * rhs.z + vals[3 + 4 * 1] * rhs.w,
+				vals[0 + 4 * 2] * rhs.x + vals[1 + 4 * 2] * rhs.y
+				+ vals[2 + 4 * 2] * rhs.z + vals[3 + 4 * 2] * rhs.w);
 	}
 
 	Line opBinary(string op)(const Line line) const if (op == "*")

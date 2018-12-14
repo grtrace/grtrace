@@ -1,6 +1,6 @@
 module math.geometric;
 
-import config;
+import grtrace;
 import math.util;
 import math.vector;
 import math.matrix;

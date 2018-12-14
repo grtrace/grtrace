@@ -1,6 +1,6 @@
 module scene.materials.blackbody;
 
-import config;
+import grtrace;
 import math.interpolation;
 import scene.materials.material;
 import image.color;
@@ -8,7 +8,10 @@ import image.memory;
 import std.string, std.algorithm, std.array, std.range, std.conv, std.math;
 
 enum string[][] blackBodyDataRaw = splitLines(import("blackbody.txt"), KeepTerminator.no).map!(
-			a => strip(a)).filter!(a => !startsWith(a, "#")).map!(a => a.split()).array;
+			a => strip(a))
+		.filter!(a => !startsWith(a, "#"))
+		.map!(a => a.split())
+		.array;
 
 __gshared Color[391] lookupTable = initLookupTable(); // range [1000;40000;d=100]
 

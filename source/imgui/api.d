@@ -48,28 +48,28 @@ struct ColorScheme
 	auto walkColors()
 	{
 		return chain((&generic.text).only, (&generic.line).only,
-			(&generic.rect).only, (&generic.roundRect).only,
-			(&scroll.area.back).only, (&scroll.area.text).only,
-			(&scroll.bar.back).only, (&scroll.bar.thumb).only,
-			(&scroll.bar.thumbHover).only, (&scroll.bar.thumbPress).only,
-			(&button.text).only, (&button.textHover).only,
-			(&button.textDisabled).only, (&button.back).only,
-			(&button.backPress).only, (&checkbox.back).only,
-			(&checkbox.press).only, (&checkbox.checked).only,
-			(&checkbox.doUncheck).only, (&checkbox.disabledChecked).only,
-			(&checkbox.text).only, (&checkbox.textHover).only,
-			(&checkbox.textDisabled).only, (&item.hover).only,
-			(&item.press).only, (&item.text).only, (&item.textDisabled).only,
-			(&collapse.shown).only, (&collapse.hidden).only,
-			(&collapse.doShow).only, (&collapse.doHide).only,
-			(&collapse.textHover).only, (&collapse.text).only,
-			(&collapse.textDisabled).only, (&collapse.subtext).only,
-			(&label.text).only, (&value.text).only, (&slider.back).only,
-			(&slider.thumb).only, (&slider.thumbHover).only,
-			(&slider.thumbPress).only, (&slider.text).only,
-			(&slider.textHover).only, (&slider.textDisabled).only,
-			(&slider.value).only, (&slider.valueHover).only,
-			(&slider.valueDisabled).only, (&separator).only);
+				(&generic.rect).only, (&generic.roundRect).only,
+				(&scroll.area.back).only, (&scroll.area.text).only,
+				(&scroll.bar.back).only, (&scroll.bar.thumb).only,
+				(&scroll.bar.thumbHover).only, (&scroll.bar.thumbPress).only,
+				(&button.text).only, (&button.textHover).only,
+				(&button.textDisabled).only, (&button.back).only,
+				(&button.backPress).only, (&checkbox.back).only,
+				(&checkbox.press).only, (&checkbox.checked).only,
+				(&checkbox.doUncheck).only, (&checkbox.disabledChecked).only,
+				(&checkbox.text).only, (&checkbox.textHover).only,
+				(&checkbox.textDisabled).only, (&item.hover).only,
+				(&item.press).only, (&item.text).only, (&item.textDisabled)
+				.only, (&collapse.shown).only, (&collapse.hidden).only,
+				(&collapse.doShow).only, (&collapse.doHide).only,
+				(&collapse.textHover).only, (&collapse.text).only,
+				(&collapse.textDisabled).only, (&collapse.subtext).only,
+				(&label.text).only, (&value.text).only, (&slider.back).only,
+				(&slider.thumb).only, (&slider.thumbHover).only,
+				(&slider.thumbPress).only, (&slider.text).only,
+				(&slider.textHover).only, (&slider.textDisabled).only,
+				(&slider.value).only, (&slider.valueHover).only,
+				(&slider.valueDisabled).only, (&separator).only);
 	}
 
 	///
@@ -357,7 +357,7 @@ void imguiDestroy()
                   input functionality (e.g. GLFW's getUnicode() does not do this).
 */
 void imguiBeginFrame(int cursorX, int cursorY, ubyte mouseButtons,
-	int mouseScroll, dchar unicodeChar = 0)
+		int mouseScroll, dchar unicodeChar = 0)
 {
 	updateInput(cursorX, cursorY, mouseButtons, mouseScroll, unicodeChar);
 
@@ -411,7 +411,7 @@ void imguiRender(int width, int height)
     $(D true) if the mouse was located inside the scrollable area.
 */
 bool imguiBeginScrollArea(const(char)[] title, int xPos, int yPos, int width,
-	int height, int* scroll, const ref ColorScheme colorScheme = defaultColorScheme)
+		int height, int* scroll, const ref ColorScheme colorScheme = defaultColorScheme)
 {
 	g_state.areaId++;
 	g_state.widgetId = 0;
@@ -434,16 +434,15 @@ bool imguiBeginScrollArea(const(char)[] title, int xPos, int yPos, int width,
 	g_state.insideCurrentScroll = g_insideScrollArea;
 
 	addGfxCmdRoundedRect(cast(float) xPos, cast(float) yPos, cast(float) width,
-		cast(float) height, 6, colorScheme.scroll.area.back);
+			cast(float) height, 6, colorScheme.scroll.area.back);
 
-	addGfxCmdText(xPos + AREA_HEADER / 2,
-		yPos + height - AREA_HEADER / 2 - TEXT_HEIGHT / 2, TextAlign.left,
-		title, colorScheme.scroll.area.text);
+	addGfxCmdText(xPos + AREA_HEADER / 2, yPos + height - AREA_HEADER / 2 - TEXT_HEIGHT / 2,
+			TextAlign.left, title, colorScheme.scroll.area.text);
 
 	// The max() ensures we never have zero- or negative-sized scissor rectangle when the window is very small,
 	// avoiding a segfault.
-	addGfxCmdScissor(xPos + SCROLL_AREA_PADDING, yPos + SCROLL_AREA_PADDING,
-		max(1, width - SCROLL_AREA_PADDING * 4), max(1, height - AREA_HEADER - SCROLL_AREA_PADDING));
+	addGfxCmdScissor(xPos + SCROLL_AREA_PADDING, yPos + SCROLL_AREA_PADDING, max(1,
+			width - SCROLL_AREA_PADDING * 4), max(1, height - AREA_HEADER - SCROLL_AREA_PADDING));
 
 	return g_insideScrollArea;
 }
@@ -518,16 +517,16 @@ void imguiEndScrollArea(const ref ColorScheme colorScheme = defaultColorScheme)
 
 		// BG
 		addGfxCmdRoundedRect(cast(float) x, cast(float) y, cast(float) w,
-			cast(float) h, cast(float) w / 2 - 1, colorScheme.scroll.bar.back);
+				cast(float) h, cast(float) w / 2 - 1, colorScheme.scroll.bar.back);
 
 		// Bar
 		if (isActive(hid))
 			addGfxCmdRoundedRect(cast(float) hx, cast(float) hy, cast(float) hw,
-				cast(float) hh, cast(float) w / 2 - 1, colorScheme.scroll.bar.thumbPress);
+					cast(float) hh, cast(float) w / 2 - 1, colorScheme.scroll.bar.thumbPress);
 		else
 			addGfxCmdRoundedRect(cast(float) hx, cast(float) hy, cast(float) hw,
-				cast(float) hh, cast(float) w / 2 - 1,
-				isHot(hid) ? colorScheme.scroll.bar.thumbHover : colorScheme.scroll.bar.thumb);
+					cast(float) hh, cast(float) w / 2 - 1, isHot(hid)
+					? colorScheme.scroll.bar.thumbHover : colorScheme.scroll.bar.thumb);
 
 		// Handle mouse scrolling.
 		if (g_insideScrollArea) // && !anyActive())
@@ -570,7 +569,7 @@ void imguiEndScrollArea(const ref ColorScheme colorScheme = defaultColorScheme)
     -----
 */
 bool imguiButton(const(char)[] label, Enabled enabled = Enabled.yes,
-	const ref ColorScheme colorScheme = defaultColorScheme)
+		const ref ColorScheme colorScheme = defaultColorScheme)
 {
 	g_state.widgetId++;
 	uint id = (g_state.areaId << 16) | g_state.widgetId;
@@ -585,19 +584,19 @@ bool imguiButton(const(char)[] label, Enabled enabled = Enabled.yes,
 	bool res = buttonLogic(id, over);
 
 	addGfxCmdRoundedRect(cast(float) x, cast(float) y, cast(float) w,
-		cast(float) h, cast(float) BUTTON_HEIGHT / 2 - 1,
-		isActive(id) ? colorScheme.button.backPress : colorScheme.button.back);
+			cast(float) h, cast(float) BUTTON_HEIGHT / 2 - 1, isActive(id)
+			? colorScheme.button.backPress : colorScheme.button.back);
 
 	if (enabled)
 	{
 		addGfxCmdText(x + BUTTON_HEIGHT / 2, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label,
-			isHot(id) ? colorScheme.button.textHover : colorScheme.button.text);
+				TextAlign.left, label, isHot(id) ? colorScheme.button.textHover
+				: colorScheme.button.text);
 	}
 	else
 	{
 		addGfxCmdText(x + BUTTON_HEIGHT / 2, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label, colorScheme.button.textDisabled);
+				TextAlign.left, label, colorScheme.button.textDisabled);
 	}
 
 	return res;
@@ -626,8 +625,8 @@ bool imguiButton(const(char)[] label, Enabled enabled = Enabled.yes,
         writeln(checkState);  // check the current state
     -----
 */
-bool imguiCheck(const(char)[] label, bool* checkState,
-	Enabled enabled = Enabled.yes, const ref ColorScheme colorScheme = defaultColorScheme)
+bool imguiCheck(const(char)[] label, bool* checkState, Enabled enabled = Enabled.yes,
+		const ref ColorScheme colorScheme = defaultColorScheme)
 {
 	g_state.widgetId++;
 	uint id = (g_state.areaId << 16) | g_state.widgetId;
@@ -648,29 +647,28 @@ bool imguiCheck(const(char)[] label, bool* checkState,
 	const int cy = y + BUTTON_HEIGHT / 2 - CHECK_SIZE / 2;
 
 	addGfxCmdRoundedRect(cast(float) cx - 3, cast(float) cy - 3,
-		cast(float) CHECK_SIZE + 6, cast(float) CHECK_SIZE + 6, 4,
-		isActive(id) ? colorScheme.checkbox.press : colorScheme.checkbox.back);
+			cast(float) CHECK_SIZE + 6, cast(float) CHECK_SIZE + 6, 4, isActive(id)
+			? colorScheme.checkbox.press : colorScheme.checkbox.back);
 
 	if (*checkState)
 	{
 		if (enabled)
-			addGfxCmdRoundedRect(cast(float) cx, cast(float) cy,
-				cast(float) CHECK_SIZE, cast(float) CHECK_SIZE,
-				cast(float) CHECK_SIZE / 2 - 1,
-				isActive(id) ? colorScheme.checkbox.checked : colorScheme.checkbox.doUncheck);
+			addGfxCmdRoundedRect(cast(float) cx, cast(float) cy, cast(float) CHECK_SIZE,
+					cast(float) CHECK_SIZE, cast(float) CHECK_SIZE / 2 - 1, isActive(id)
+					? colorScheme.checkbox.checked : colorScheme.checkbox.doUncheck);
 		else
-			addGfxCmdRoundedRect(cast(float) cx, cast(float) cy,
-				cast(float) CHECK_SIZE, cast(float) CHECK_SIZE,
-				cast(float) CHECK_SIZE / 2 - 1, colorScheme.checkbox.disabledChecked);
+			addGfxCmdRoundedRect(cast(float) cx, cast(float) cy, cast(float) CHECK_SIZE,
+					cast(float) CHECK_SIZE, cast(float) CHECK_SIZE / 2 - 1,
+					colorScheme.checkbox.disabledChecked);
 	}
 
 	if (enabled)
 		addGfxCmdText(x + BUTTON_HEIGHT, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label,
-			isHot(id) ? colorScheme.checkbox.textHover : colorScheme.checkbox.text);
+				TextAlign.left, label, isHot(id)
+				? colorScheme.checkbox.textHover : colorScheme.checkbox.text);
 	else
 		addGfxCmdText(x + BUTTON_HEIGHT, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label, colorScheme.checkbox.textDisabled);
+				TextAlign.left, label, colorScheme.checkbox.textDisabled);
 
 	return res;
 }
@@ -691,7 +689,7 @@ bool imguiCheck(const(char)[] label, bool* checkState,
     left mouse button while over the item.
 */
 bool imguiItem(const(char)[] label, Enabled enabled = Enabled.yes,
-	const ref ColorScheme colorScheme = defaultColorScheme)
+		const ref ColorScheme colorScheme = defaultColorScheme)
 {
 	g_state.widgetId++;
 	uint id = (g_state.areaId << 16) | g_state.widgetId;
@@ -707,14 +705,14 @@ bool imguiItem(const(char)[] label, Enabled enabled = Enabled.yes,
 
 	if (isHot(id))
 		addGfxCmdRoundedRect(cast(float) x, cast(float) y, cast(float) w,
-			cast(float) h, 2.0f, isActive(id) ? colorScheme.item.press : colorScheme.item.hover);
+				cast(float) h, 2.0f, isActive(id) ? colorScheme.item.press : colorScheme.item.hover);
 
 	if (enabled)
 		addGfxCmdText(x + BUTTON_HEIGHT / 2, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label, colorScheme.item.text);
+				TextAlign.left, label, colorScheme.item.text);
 	else
 		addGfxCmdText(x + BUTTON_HEIGHT / 2, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label, colorScheme.item.textDisabled);
+				TextAlign.left, label, colorScheme.item.textDisabled);
 
 	return res;
 }
@@ -737,7 +735,7 @@ bool imguiItem(const(char)[] label, Enabled enabled = Enabled.yes,
     left mouse button while over the collapsable element.
 */
 bool imguiCollapse(const(char)[] label, const(char)[] subtext, bool* checkState,
-	Enabled enabled = Enabled.yes, const ref ColorScheme colorScheme = defaultColorScheme)
+		Enabled enabled = Enabled.yes, const ref ColorScheme colorScheme = defaultColorScheme)
 {
 	g_state.widgetId++;
 	uint id = (g_state.areaId << 16) | g_state.widgetId;
@@ -758,24 +756,23 @@ bool imguiCollapse(const(char)[] label, const(char)[] subtext, bool* checkState,
 		*checkState ^= 1;
 
 	if (*checkState)
-		addGfxCmdTriangle(cx, cy, CHECK_SIZE, CHECK_SIZE, 2,
-			isActive(id) ? colorScheme.collapse.doHide : colorScheme.collapse.shown);
+		addGfxCmdTriangle(cx, cy, CHECK_SIZE, CHECK_SIZE, 2, isActive(id)
+				? colorScheme.collapse.doHide : colorScheme.collapse.shown);
 	else
-		addGfxCmdTriangle(cx, cy, CHECK_SIZE, CHECK_SIZE, 1,
-			isActive(id) ? colorScheme.collapse.doShow : colorScheme.collapse.hidden);
+		addGfxCmdTriangle(cx, cy, CHECK_SIZE, CHECK_SIZE, 1, isActive(id)
+				? colorScheme.collapse.doShow : colorScheme.collapse.hidden);
 
 	if (enabled)
 		addGfxCmdText(x + BUTTON_HEIGHT, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label,
-			isHot(id) ? colorScheme.collapse.textHover : colorScheme.collapse.text);
+				TextAlign.left, label, isHot(id)
+				? colorScheme.collapse.textHover : colorScheme.collapse.text);
 	else
 		addGfxCmdText(x + BUTTON_HEIGHT, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label, colorScheme.collapse.textDisabled);
+				TextAlign.left, label, colorScheme.collapse.textDisabled);
 
 	if (subtext)
-		addGfxCmdText(x + w - BUTTON_HEIGHT / 2,
-			y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2, TextAlign.right, subtext,
-			colorScheme.collapse.subtext);
+		addGfxCmdText(x + w - BUTTON_HEIGHT / 2, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
+				TextAlign.right, subtext, colorScheme.collapse.subtext);
 
 	return res;
 }
@@ -794,7 +791,7 @@ void imguiLabel(const(char)[] label, const ref ColorScheme colorScheme = default
 	int y = g_state.widgetY - BUTTON_HEIGHT;
 	g_state.widgetY -= BUTTON_HEIGHT;
 	addGfxCmdText(x, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2, TextAlign.left,
-		label, colorScheme.label.text);
+			label, colorScheme.label.text);
 }
 
 /**
@@ -813,7 +810,7 @@ void imguiValue(const(char)[] label, const ref ColorScheme colorScheme = default
 	g_state.widgetY -= BUTTON_HEIGHT;
 
 	addGfxCmdText(x + w - BUTTON_HEIGHT / 2, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-		TextAlign.right, label, colorScheme.value.text);
+			TextAlign.right, label, colorScheme.value.text);
 }
 
 /**
@@ -836,8 +833,8 @@ void imguiValue(const(char)[] label, const ref ColorScheme colorScheme = default
     left mouse button while over the slider.
 */
 bool imguiSlider(const(char)[] label, float* sliderState, float minValue,
-	float maxValue, float stepValue, Enabled enabled = Enabled.yes,
-	const ref ColorScheme colorScheme = defaultColorScheme)
+		float maxValue, float stepValue, Enabled enabled = Enabled.yes,
+		const ref ColorScheme colorScheme = defaultColorScheme)
 {
 	g_state.widgetId++;
 	uint id = (g_state.areaId << 16) | g_state.widgetId;
@@ -849,7 +846,7 @@ bool imguiSlider(const(char)[] label, float* sliderState, float minValue,
 	g_state.widgetY -= SLIDER_HEIGHT + DEFAULT_SPACING;
 
 	addGfxCmdRoundedRect(cast(float) x, cast(float) y, cast(float) w,
-		cast(float) h, 4.0f, colorScheme.slider.back);
+			cast(float) h, 4.0f, colorScheme.slider.back);
 
 	const int range = w - SLIDER_MARKER_WIDTH;
 
@@ -892,12 +889,12 @@ bool imguiSlider(const(char)[] label, float* sliderState, float minValue,
 
 	if (isActive(id))
 		addGfxCmdRoundedRect(cast(float)(x + m), cast(float) y,
-			cast(float) SLIDER_MARKER_WIDTH, cast(float) SLIDER_HEIGHT, 4.0f,
-			colorScheme.slider.thumbPress);
+				cast(float) SLIDER_MARKER_WIDTH, cast(float) SLIDER_HEIGHT,
+				4.0f, colorScheme.slider.thumbPress);
 	else
 		addGfxCmdRoundedRect(cast(float)(x + m), cast(float) y,
-			cast(float) SLIDER_MARKER_WIDTH, cast(float) SLIDER_HEIGHT, 4.0f,
-			isHot(id) ? colorScheme.slider.thumbHover : colorScheme.slider.thumb);
+				cast(float) SLIDER_MARKER_WIDTH, cast(float) SLIDER_HEIGHT, 4.0f,
+				isHot(id) ? colorScheme.slider.thumbHover : colorScheme.slider.thumb);
 
 	// TODO: fix this, take a look at 'nicenum'.
 	// todo: this should display sub 0.1 if the step is low enough.
@@ -910,19 +907,18 @@ bool imguiSlider(const(char)[] label, float* sliderState, float minValue,
 	if (enabled)
 	{
 		addGfxCmdText(x + SLIDER_HEIGHT / 2, y + SLIDER_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label,
-			isHot(id) ? colorScheme.slider.textHover : colorScheme.slider.text);
-		addGfxCmdText(x + w - SLIDER_HEIGHT / 2,
-			y + SLIDER_HEIGHT / 2 - TEXT_HEIGHT / 2, TextAlign.right, msg,
-			isHot(id) ? colorScheme.slider.valueHover : colorScheme.slider.value);
+				TextAlign.left, label, isHot(id) ? colorScheme.slider.textHover
+				: colorScheme.slider.text);
+		addGfxCmdText(x + w - SLIDER_HEIGHT / 2, y + SLIDER_HEIGHT / 2 - TEXT_HEIGHT / 2,
+				TextAlign.right, msg, isHot(id) ? colorScheme.slider.valueHover
+				: colorScheme.slider.value);
 	}
 	else
 	{
 		addGfxCmdText(x + SLIDER_HEIGHT / 2, y + SLIDER_HEIGHT / 2 - TEXT_HEIGHT / 2,
-			TextAlign.left, label, colorScheme.slider.textDisabled);
-		addGfxCmdText(x + w - SLIDER_HEIGHT / 2,
-			y + SLIDER_HEIGHT / 2 - TEXT_HEIGHT / 2, TextAlign.right, msg,
-			colorScheme.slider.valueDisabled);
+				TextAlign.left, label, colorScheme.slider.textDisabled);
+		addGfxCmdText(x + w - SLIDER_HEIGHT / 2, y + SLIDER_HEIGHT / 2 - TEXT_HEIGHT / 2,
+				TextAlign.right, msg, colorScheme.slider.valueDisabled);
 	}
 
 	return res || valChanged;
@@ -1002,10 +998,10 @@ bool imguiSlider(const(char)[] label, float* sliderState, float minValue,
  * --------------------
  */
 bool imguiTextInput(const(char)[] label, char[] buffer, ref char[] usedSlice,
-	bool forceInputable = false, const ref ColorScheme colorScheme = defaultColorScheme)
+		bool forceInputable = false, const ref ColorScheme colorScheme = defaultColorScheme)
 {
 	assert(buffer.ptr == usedSlice.ptr && buffer.length >= usedSlice.length,
-		"The usedSlice parameter on imguiTextInput must be a slice to the buffer " ~ "parameter");
+			"The usedSlice parameter on imguiTextInput must be a slice to the buffer " ~ "parameter");
 
 	// Label
 	g_state.widgetId++;
@@ -1013,7 +1009,7 @@ bool imguiTextInput(const(char)[] label, char[] buffer, ref char[] usedSlice,
 	int x = g_state.widgetX;
 	int y = g_state.widgetY - BUTTON_HEIGHT;
 	addGfxCmdText(x, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2, TextAlign.left,
-		label, colorScheme.textInput.label);
+			label, colorScheme.textInput.label);
 
 	bool res = false;
 	// Handle control input if any (Backspace to erase characters, Enter to confirm).
@@ -1051,11 +1047,11 @@ bool imguiTextInput(const(char)[] label, char[] buffer, ref char[] usedSlice,
 	bool over = inRect(x, y, w, h);
 	textInputLogic(id, over, forceInputable);
 	addGfxCmdRoundedRect(cast(float)(x + DEFAULT_SPACING), cast(float) y,
-		cast(float) w, cast(float) h, cast(float) BUTTON_HEIGHT / 2 - 1,
-		isInputable(id) ? colorScheme.textInput.back : colorScheme.textInput.backDisabled);
+			cast(float) w, cast(float) h, cast(float) BUTTON_HEIGHT / 2 - 1,
+			isInputable(id) ? colorScheme.textInput.back : colorScheme.textInput.backDisabled);
 	addGfxCmdText(x + DEFAULT_SPACING * 2, y + BUTTON_HEIGHT / 2 - TEXT_HEIGHT / 2,
-		TextAlign.left, usedSlice,
-		isInputable(id) ? colorScheme.textInput.text : colorScheme.textInput.textDisabled);
+			TextAlign.left, usedSlice, isInputable(id)
+			? colorScheme.textInput.text : colorScheme.textInput.textDisabled);
 
 	g_state.widgetY -= BUTTON_HEIGHT + DEFAULT_SPACING;
 	return res;
@@ -1096,7 +1092,7 @@ void imguiSeparatorLine(const ref ColorScheme colorScheme = defaultColorScheme)
 	g_state.widgetY -= DEFAULT_SPACING * 4;
 
 	addGfxCmdRect(cast(float) x, cast(float) y, cast(float) w, cast(float) h,
-		colorScheme.separator);
+			colorScheme.separator);
 }
 
 /**
@@ -1106,7 +1102,7 @@ void imguiSeparatorLine(const ref ColorScheme colorScheme = defaultColorScheme)
     color = Optionally override the current default text color when creating this element.
 */
 void imguiDrawText(int xPos, int yPos, TextAlign textAlign, const(char)[] text,
-	RGBA color = defaultColorScheme.generic.text)
+		RGBA color = defaultColorScheme.generic.text)
 {
 	addGfxCmdText(xPos, yPos, textAlign, text, color);
 }
@@ -1118,7 +1114,7 @@ void imguiDrawText(int xPos, int yPos, TextAlign textAlign, const(char)[] text,
     colorScheme = Optionally override the current default color scheme when creating this element.
 */
 void imguiDrawLine(float x0, float y0, float x1, float y1, float r,
-	RGBA color = defaultColorScheme.generic.line)
+		RGBA color = defaultColorScheme.generic.line)
 {
 	addGfxCmdLine(x0, y0, x1, y1, r, color);
 }
@@ -1130,7 +1126,7 @@ void imguiDrawLine(float x0, float y0, float x1, float y1, float r,
     colorScheme = Optionally override the current default color scheme when creating this element.
 */
 void imguiDrawRect(float xPos, float yPos, float width, float height,
-	RGBA color = defaultColorScheme.generic.rect)
+		RGBA color = defaultColorScheme.generic.rect)
 {
 	addGfxCmdRect(xPos, yPos, width, height, color);
 }
@@ -1142,7 +1138,7 @@ void imguiDrawRect(float xPos, float yPos, float width, float height,
     colorScheme = Optionally override the current default color scheme when creating this element.
 */
 void imguiDrawRoundedRect(float xPos, float yPos, float width, float height,
-	float r, RGBA color = defaultColorScheme.generic.roundRect)
+		float r, RGBA color = defaultColorScheme.generic.roundRect)
 {
 	addGfxCmdRoundedRect(xPos, yPos, width, height, r, color);
 }

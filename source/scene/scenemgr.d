@@ -1,6 +1,6 @@
 module scene.scenemgr;
 
-import config;
+import grtrace;
 import core.time;
 import std.concurrency;
 import std.getopt;
@@ -80,7 +80,7 @@ abstract class WorldSpace
 	}
 
 	//public void DoRay(Tid owner, Line ray, unum x, unum y, int tnum);
-	alias RayFunc = Color function(Tid owner, Line ray, unum x, unum y, int tnum);
+	alias RayFunc = Color function(GRTrace* grt, Tid owner, Line ray, unum x, unum y, int tnum);
 	public RayFunc GetRayFunc();
 
 	public void AddObject(Renderable obj)
@@ -93,13 +93,13 @@ abstract class WorldSpace
 		WorldSpace.lights ~= [cast(shared(Light))(obj)];
 	}
 
-	public void StartTracing(string outfile)
+	public void StartTracing(GRTrace* grt, string outfile)
 	{
 		auto cam = cast(ICamera)(camera);
 		//DebugDispatcher.space = this;
 		ambientLight = cast(shared(Color))(Colors.White);
-		pixelsx = cfgResolutionX;
-		pixelsy = cfgResolutionY;
+		pixelsx = grt.config.resolutionX;
+		pixelsy = grt.config.resolutionY;
 		Image im = new Image(pixelsx, pixelsy);
 		WorldSpace.fullray = cast(shared(Image))(im);
 		__gshared unum todo, done = 0, prostep, dstep = 0;
@@ -109,26 +109,27 @@ abstract class WorldSpace
 		todo = pixelsx * pixelsy / 100;
 		prostep = todo / prosteps;
 		writeln("Starting raytrace...");
-		writefln(
-			"Camera position: %s\nCamera forward: %s\n Camera right: %s\n Camera up: %s",
-			cam.origin, cam.lookdir, cam.rightdir, cam.updir);
-		auto tdg = function(Tid owner, unum y0, unum y1, int tnum, RayFunc DoRay) {
+		writefln("Camera position: %s\nCamera forward: %s\n Camera right: %s\n Camera up: %s",
+				cam.origin, cam.lookdir, cam.rightdir, cam.updir);
+		auto tdg = function(shared(GRTrace)* grt_shared, Tid owner, unum y0,
+				unum y1, int tnum, RayFunc DoRay) {
 			try
 			{
+				GRTrace* grt = cast(GRTrace*) grt_shared;
 				Xorshift192 rnd = Xorshift192(1);
 				rnd.seed(unpredictableSeed());
 				Image im = cast(Image)(WorldSpace.fullray);
 				auto cam = cast(ICamera)(camera);
-				unum samples = cfgSamples;
+				unum samples = grt.config.samples;
 				fpnum jmpx = 2.0 / pixelsx;
 				fpnum jmpy = 2.0 / pixelsy;
-				fpnum smpx = jmpx / cfgSamples;
-				fpnum smpy = jmpy / cfgSamples;
+				fpnum smpx = jmpx / grt.config.samples;
+				fpnum smpy = jmpy / grt.config.samples;
 				fpnum smpd = cast(fpnum)(samples * samples);
 				int cc = 0;
 				Line cray;
 				double jitx = 0.0, jity = 0.0;
-				if (cfgFastApproximation)
+				if (grt.config.fastApproximation)
 				{
 					for (unum y = y0; y < y1; y++)
 					{
@@ -139,7 +140,7 @@ abstract class WorldSpace
 								Color col = Colors.Black;
 								if (cam.fetchRay(x * jmpx - 1.0, y * jmpy - 1.0, cray))
 								{
-									col = DoRay(owner, cray, x, y, tnum);
+									col = DoRay(grt, owner, cray, x, y, tnum);
 								}
 								im.Poke(x, y, col);
 							}
@@ -180,10 +181,9 @@ abstract class WorldSpace
 										jity = uniform01!double(rnd) * 2.0 - 1.0;
 									}
 									if (cam.fetchRay(x * jmpx - 1.0 + sx * smpx + jitx * smpx,
-											y * jmpy - 1.0 + sy * smpy + jity * smpy,
-											cray))
+											y * jmpy - 1.0 + sy * smpy + jity * smpy, cray))
 									{
-										col += DoRay(owner, cray, x, y, tnum);
+										col += DoRay(grt, owner, cray, x, y, tnum);
 									}
 								}
 							}
@@ -205,9 +205,9 @@ abstract class WorldSpace
 				owner.send(e);
 			}
 		};
-		if (!cfgNoImage)
+		if (!grt.config.noImage)
 		{
-			int threads = cast(int)(cfgThreads);
+			int threads = cast(int)(grt.config.threads);
 			writeln("Rendering using ", threads, " CPU threads");
 			int perthr = cast(int) pixelsy / threads;
 			Tid[] tasks;
@@ -215,12 +215,12 @@ abstract class WorldSpace
 			int lasty = 0;
 			for (int i = 0; i < threads - 1; i++)
 			{
-				tasks[i] = spawnLinked(tdg, thisTid, cast(unum) lasty,
-					cast(unum)(lasty + perthr), i + 1, GetRayFunc());
+				tasks[i] = spawnLinked(tdg, cast(shared) grt, thisTid,
+						cast(unum) lasty, cast(unum)(lasty + perthr), i + 1, GetRayFunc());
 				lasty += perthr;
 			}
-			tasks[$ - 1] = spawnLinked(tdg, thisTid, cast(unum) lasty,
-				cast(unum) pixelsy, threads, GetRayFunc());
+			tasks[$ - 1] = spawnLinked(tdg, cast(shared) grt, thisTid,
+					cast(unum) lasty, cast(unum) pixelsy, threads, GetRayFunc());
 			//tdg(thisTid, cast(unum)lasty, cast(unum)pixelsy, threads, GetRayFunc());
 			int running = threads;
 			done = 0;
@@ -287,9 +287,9 @@ class EuclideanSpace : WorldSpace
 	this()
 	{
 		steps[RayState.Initialised] = ComputeStep(RayState.Initialised,
-			RayState.InComputation1, &computeRay1, false, "");
+				RayState.InComputation1, &computeRay1, false, "");
 		steps[RayState.InComputation1] = ComputeStep(RayState.InComputation1,
-			RayState.Finished, &computeRayLight, false, "");
+				RayState.Finished, &computeRayLight, false, "");
 	}
 
 	override public size_t getRayDataSize()
@@ -321,13 +321,13 @@ class EuclideanSpace : WorldSpace
 		return steps;
 	}
 
-	private static RayState computeRay1(RayComputation* rc)
+	private static RayState computeRay1(GRTrace* grt, RayComputation* rc)
 	{
 		Vectorf rayhit;
 		Vectorf normal;
 		Renderable closest;
 		bool hit = false;
-		Raytrace!(true, true, true)(rc.curRay, &hit, &rayhit, &normal, &closest);
+		Raytrace!(true, true, true)(grt, rc.curRay, &hit, &rayhit, &normal, &closest);
 		if (!hit)
 		{
 			rc.color = Colors.Black;
@@ -349,7 +349,7 @@ class EuclideanSpace : WorldSpace
 		return RayState.InComputation1;
 	}
 
-	private static RayState computeRayLight(RayComputation* rc)
+	private static RayState computeRayLight(GRTrace* grt, RayComputation* rc)
 	{
 		RayData* rd = cast(RayData*)(Raytracer.computebuffer + rc.dataIdx);
 		if (rd.slights < WorldSpace.lights.length)
@@ -358,7 +358,7 @@ class EuclideanSpace : WorldSpace
 			Line hitRay = LinePoints(rc.curRay.origin, L.getPosition());
 			hitRay.ray = true;
 			bool unlit = false;
-			fpnum dst = Raytrace!(false, false, false)(hitRay, &unlit);
+			fpnum dst = Raytrace!(false, false, false)(grt, hitRay, &unlit);
 			if (unlit)
 			{
 				fpnum dLO = *(L.getPosition() - rc.curRay.origin);
@@ -370,7 +370,7 @@ class EuclideanSpace : WorldSpace
 			if (!unlit)
 			{
 				rd.lights[rd.nlights] = Material.LightHit(L.getPosition(),
-					hitRay.direction, L.getColor());
+						hitRay.direction, L.getColor());
 				rd.nlights++;
 			}
 			rd.slights++;
@@ -378,7 +378,7 @@ class EuclideanSpace : WorldSpace
 		else
 		{
 			rc.color = rd.material.calculateColor(rd.u, rd.v, rd.normal,
-				rd.lights[0 .. rd.nlights]);
+					rd.lights[0 .. rd.nlights]);
 			return RayState.Finished;
 		}
 		return RayState.InComputation1;
@@ -394,8 +394,8 @@ class EuclideanSpace : WorldSpace
 		return Color((N.x + 1.0f) / 2.0f, (N.y + 1.0f) / 2.0f, (N.z + 1.0f) / 2.0f);
 	}
 
-	protected static fpnum Raytrace(bool doP, bool doN, bool doO)(Line ray,
-		bool* didHit, Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null)
+	protected static fpnum Raytrace(bool doP, bool doN, bool doO)(GRTrace* grt, Line ray, bool* didHit,
+			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null)
 	{
 		static if (doP)
 		{
@@ -449,9 +449,9 @@ class EuclideanSpace : WorldSpace
 		return mdist;
 	}
 
-	protected static Color Rayer(Line ray, int recnum, Color lastcol)
+	protected static Color Rayer(GRTrace* grt, Line ray, int recnum, Color lastcol)
 	{
-		if (recnum > cfgMaxDepth)
+		if (recnum > grt.config.maxDepth)
 		{
 			return lastcol;
 		}
@@ -460,7 +460,7 @@ class EuclideanSpace : WorldSpace
 		Vectorf normal;
 		Renderable closest;
 		bool hit = false;
-		Raytrace!(true, true, true)(ray, &hit, &rayhit, &normal, &closest);
+		Raytrace!(true, true, true)(grt, ray, &hit, &rayhit, &normal, &closest);
 		if (hit)
 		{
 			if (closest.material)
@@ -485,7 +485,7 @@ class EuclideanSpace : WorldSpace
 						Line hitRay = LinePoints(rayhit, l.getPosition());
 						hitRay.ray = true;
 						bool unlit = false;
-						fpnum dst = Raytrace!(false, false, false)(hitRay, &unlit);
+						fpnum dst = Raytrace!(false, false, false)(grt, hitRay, &unlit);
 						if (unlit)
 						{
 							fpnum dLO = *(l.getPosition() - rayhit);
@@ -513,9 +513,9 @@ class EuclideanSpace : WorldSpace
 		return tmpc;
 	}
 
-	public static Color DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
+	public static Color DoRay(GRTrace* grt, Tid owner, Line ray, unum x, unum y, int tnum)
 	{
-		Color outc = Rayer(ray, 0, Colors.Black);
+		Color outc = Rayer(grt, ray, 0, Colors.Black);
 		float mx = max(outc.r, outc.g, outc.b);
 		if (mx > 1.0f)
 		{

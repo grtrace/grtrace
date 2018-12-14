@@ -1,6 +1,6 @@
 module image.spectrum;
 
-import config;
+import grtrace;
 import std.traits;
 import std.math;
 import image.color;
@@ -13,7 +13,7 @@ Color GetSpectrumColor(fpnum WaveLength)
 {
 	if ((!WaveLength.isFinite) || (WaveLength <= 400.0) || (WaveLength >= 700.0))
 	{
-		if(WaveLength <= 400.0)
+		if (WaveLength <= 400.0)
 		{
 			return Color(0.7, 0.7, 0.7);
 		}

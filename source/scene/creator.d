@@ -1,7 +1,7 @@
 /// Scene creation&loading functions
 module scene.creator;
 
-import config;
+import grtrace;
 import scene.raymgr;
 import scene.scenemgr;
 import std.typecons;
@@ -45,7 +45,7 @@ struct SceneDescription
 	Populate the space with objects loaded from a script.
 	Format: See docs/scenecommands.txt for specs
 	**/
-	void loadFromScript(string script, bool hasHeader = true)
+	void loadFromScript(GRTrace* grt, string script, bool hasHeader = true)
 	{
 		size_t offset = 0;
 		if (hasHeader)
@@ -61,7 +61,7 @@ struct SceneDescription
 			offset = scriptHeader.length;
 		}
 		string sNoComs = split(script[offset .. $], '\n').filter!(a => !startsWith(a,
-			"#")).join(" ");
+				"#")).join(" ");
 		auto tokStream = splitter(sNoComs);
 		string fetchToken()
 		{
@@ -189,7 +189,7 @@ struct SceneDescription
 					if (arg.peek!(STexture) !is null)
 					{
 						string tid = cast(string)(*(arg.peek!(STexture)));
-						m.texture = cfgTextures[tid];
+						m.texture = grt.config.textures[tid];
 					}
 					break;
 				case "EMIT":
@@ -242,7 +242,7 @@ struct SceneDescription
 			if (!skipId)
 			{
 				id = fetchToken();
-				if (id in cfgObjects)
+				if (id in grt.config.objects)
 				{
 					throw new SceneException("Object " ~ id ~ " already defined!");
 				}
@@ -260,12 +260,12 @@ struct SceneDescription
 				else
 				{
 					throw new SceneException(
-						"Transformed objects must have the first argument of type MAT4.");
+							"Transformed objects must have the first argument of type MAT4.");
 				}
 				Renderable internal = parseObject(fetchToken(), true);
 				obj = new Transformed(internal, tform);
 				obj.setName(id);
-				cfgObjects[id] = obj;
+				grt.config.objects[id] = obj;
 				return obj;
 			case "SPHERE":
 				obj = new Sphere();
@@ -296,12 +296,12 @@ struct SceneDescription
 			{
 				throw new SceneException("Object must have defined material: " ~ id);
 			}
-			obj.material = cfgMaterials[cast(string) optMap["MATERIAL"].get!SString];
+			obj.material = grt.config.materials[cast(string) optMap["MATERIAL"].get!SString];
 			obj.setupFromOptions(optMap);
 			obj.setName(id);
 			if (!skipId)
 			{
-				cfgObjects[id] = obj;
+				grt.config.objects[id] = obj;
 			}
 			return obj;
 		}
@@ -309,7 +309,7 @@ struct SceneDescription
 		void parseLight(string type)
 		{
 			string id = fetchToken();
-			if (id in cfgLights)
+			if (id in grt.config.lights)
 			{
 				throw new SceneException("Light " ~ id ~ " already defined!");
 			}
@@ -325,7 +325,7 @@ struct SceneDescription
 			SValue[string] optMap = fetchOptmap();
 			obj.setName(id);
 			obj.setupFromOptions(optMap);
-			cfgLights[id] = obj;
+			grt.config.lights[id] = obj;
 		}
 
 		void parseToken()
@@ -364,29 +364,29 @@ struct SceneDescription
 			case "TEXTURE":
 				string id = fetchToken();
 				string path = fetchToken();
-				if (id in cfgTextures)
+				if (id in grt.config.textures)
 				{
 					throw new SceneException("Texture " ~ id ~ " already loaded!");
 				}
-				cfgTextures[id] = ReadImage(path);
+				grt.config.textures[id] = ReadImage(path);
 				defines[id] = SValue(STexture(id));
 				fetchEnd();
 				break;
 			case "MATERIAL":
 				string id = fetchToken();
-				if (id in cfgMaterials)
+				if (id in grt.config.materials)
 				{
 					throw new SceneException("Material " ~ id ~ " already defined!");
 				}
 				Material mat = new Material();
 				parseMaterial(mat);
-				cfgMaterials[id] = mat;
+				grt.config.materials[id] = mat;
 				defines[id] = SValue(cast(SString)(id));
 				break;
 			case "SETSPACE":
 				string type = fetchToken();
 				WorldSpace space;
-				if (cfgSpace !is null)
+				if (grt.config.space !is null)
 				{
 					throw new SceneException("Space was already created!");
 				}
@@ -422,8 +422,8 @@ struct SceneDescription
 					switch (subtype)
 					{
 					case "SCHWARZSCHILD":
-						A.initiator = new Schwarzschild(optFloat(optMap,
-							"MASS"), optVec3(optMap, "ORIGIN"));
+						A.initiator = new Schwarzschild(optFloat(optMap, "MASS"),
+								optVec3(optMap, "ORIGIN"));
 						dbgMetricType = MetricType.Schwarzchild;
 						break;
 					case "FLAT.CARTESIAN":
@@ -436,12 +436,12 @@ struct SceneDescription
 						break;
 					case "KERR":
 						A.initiator = new Kerr(optFloat(optMap, "MASS"),
-							optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
+								optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
 						dbgMetricType = MetricType.Kerr;
 						break;
 					case "REISSNER":
 						A.initiator = new Reissner(optFloat(optMap, "MASS"),
-							optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
+								optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
 						dbgMetricType = MetricType.Reisnerr;
 						break;
 					default:
@@ -471,8 +471,8 @@ struct SceneDescription
 					switch (subtype)
 					{
 					case "SCHWARZSCHILD":
-						A.initiator = new Schwarzschild(optFloat(optMap,
-							"MASS"), optVec3(optMap, "ORIGIN"));
+						A.initiator = new Schwarzschild(optFloat(optMap, "MASS"),
+								optVec3(optMap, "ORIGIN"));
 						dbgMetricType = MetricType.Schwarzchild;
 						break;
 					case "FLAT.CARTESIAN":
@@ -485,12 +485,12 @@ struct SceneDescription
 						break;
 					case "KERR":
 						A.initiator = new Kerr(optFloat(optMap, "MASS"),
-							optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
+								optFloat(optMap, "ANGMOMENTUM"), optVec3(optMap, "ORIGIN"));
 						dbgMetricType = MetricType.Kerr;
 						break;
 					case "REISSNER":
 						A.initiator = new Reissner(optFloat(optMap, "MASS"),
-							optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
+								optFloat(optMap, "CHARGE"), optVec3(optMap, "ORIGIN"));
 						dbgMetricType = MetricType.Reisnerr;
 						break;
 					default:
@@ -501,12 +501,12 @@ struct SceneDescription
 				default:
 					throw new SceneException("Unknown space type: " ~ type);
 				}
-				foreach (obj; cfgObjects)
+				foreach (obj; grt.config.objects)
 					space.AddObject(obj);
-				foreach (lit; cfgLights)
+				foreach (lit; grt.config.lights)
 					space.AddLight(lit);
-				space.camera = cast(shared) cfgCamera;
-				cfgSpace = cast(shared) space;
+				space.camera = cast(shared) grt.config.camera;
+				grt.config.space = space;
 				Raytracer.setSpace(space);
 				break;
 			case "SETCAMERA":
@@ -525,35 +525,36 @@ struct SceneDescription
 					throw new SceneException("Unsupported camera type: " ~ type);
 				}
 				camera.origin = optVec3(opts, "ORIGIN");
-				camera.yxratio = cast(fpnum)(cfgResolutionY) / cast(fpnum)(cfgResolutionX);
+				camera.yxratio = cast(fpnum)(grt.config.resolutionY) / cast(
+						fpnum)(grt.config.resolutionX);
 				Vectorf angs = optVec3(opts, "ANGLES");
 				SetCameraAngles(camera, angs.x, angs.y, angs.z);
 				camera.options = opts;
-				cfgCamera = cast(shared) camera;
-				if (cfgSpace !is null)
+				grt.config.camera = camera;
+				if (grt.config.space !is null)
 				{
-					cfgSpace.camera = cast(shared) camera;
+					grt.config.space.camera = cast(shared) camera;
 				}
 				break;
 			case "ZEROSPACE":
 				fetchEnd();
-				cfgSpace = null;
+				grt.config.space = null;
 				Raytracer.setSpace(null);
 				break;
 			case "ZEROCAMERA":
 				fetchEnd();
-				cfgCamera = null;
-				if (cfgSpace !is null)
-					cfgSpace.camera = null;
+				grt.config.camera = null;
+				if (grt.config.space !is null)
+					grt.config.space.camera = null;
 				break;
 			case "MODIFYOBJ":
 				string id = fetchToken();
-				if (id !in cfgObjects)
+				if (id !in grt.config.objects)
 				{
 					throw new SceneException("Invalid object id " ~ id);
 				}
 				SValue[string] opts = fetchOptmap();
-				Renderable obj = cfgObjects[id];
+				Renderable obj = grt.config.objects[id];
 				obj.setupFromOptions(opts);
 				break;
 			default:
@@ -580,7 +581,7 @@ struct SceneDescription
 	}
 
 	/// Load the scene description from file
-	void loadFromFile(string path)
+	void loadFromFile(GRTrace* grt, string path)
 	{
 		import std.file : exists, readText;
 
@@ -588,6 +589,6 @@ struct SceneDescription
 		{
 			throw new SceneException("Scene description file doesn't exist: " ~ path);
 		}
-		loadFromScript(readText!string(path));
+		loadFromScript(grt, readText!string(path));
 	}
 }

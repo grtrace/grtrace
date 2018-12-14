@@ -3,7 +3,7 @@ module metric.analytic;
 import metric.interfaces;
 import metric.util;
 import math;
-import config;
+import grtrace;
 import image;
 import scene;
 import std.concurrency;
@@ -48,7 +48,7 @@ class Analytic : AnalyticMetricContainer
 		return steps;
 	}
 
-	private static RayState computeRay1(RayComputation* rc)
+	private static RayState computeRay1(GRTrace* grt, RayComputation* rc)
 	{
 		Vectorf rayhit;
 		Vectorf normal;
@@ -57,7 +57,7 @@ class Analytic : AnalyticMetricContainer
 		Vectorf origin = rc.curRay.origin;
 		ubyte* initiatorCache = (Raytracer.computebuffer + rc.dataIdx + RayData.sizeof);
 		RayData* rayD = cast(RayData*)(Raytracer.computebuffer + rc.dataIdx);
-		RaytraceIRayMgr!(true, true, true)(rc.curRay, &hit, &rayhit,
+		RaytraceIRayMgr!(true, true, true)(grt, rc.curRay, &hit, &rayhit,
 				&normal, &closest, 0, initiatorCache, rayD);
 		rayD.geodesic_iteration = 0;
 		if (!hit)
@@ -110,7 +110,7 @@ class Analytic : AnalyticMetricContainer
 		return RayState.Finished;
 	}
 
-	private static fpnum RaytraceIRayMgr(bool doP, bool doN, bool doO)(Line ray, bool* didHit,
+	private static fpnum RaytraceIRayMgr(bool doP, bool doN, bool doO)(GRTrace* grt, Line ray, bool* didHit,
 			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null,
 			int cnt = 0, ubyte* initiatorCache = null, RayData* rayDat = null)
 	{
@@ -121,9 +121,9 @@ class Analytic : AnalyticMetricContainer
 		for (; rayDat.geodesic_iteration < max_number_of_steps; rayDat.geodesic_iteration++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
-			Line newRay = integrateStep(cfgIntegrator, ray, param_step, init);
+			Line newRay = integrateStep(grt.config.integrator, ray, param_step, init);
 
-			fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin,
+			fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(grt, ray.origin,
 					newRay.origin, didHit, hitpoint, hitnormal, hit);
 
 			totalDist += m_dist;
@@ -156,14 +156,15 @@ class Analytic : AnalyticMetricContainer
 		init = cast(shared Initiator) inx;
 	}
 
-	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint = null,
+	fpnum TraceRay(GRTrace* grt, Line ray, bool* didHit, Vectorf* hitpoint = null,
 			Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		//ray.data = 1;
-		return RaytraceI!(true, true, true)(ray, didHit, hitpoint, hitnormal, hit, cnt);
+		return RaytraceI!(true, true, true)(grt, ray, didHit, hitpoint, hitnormal, hit, cnt);
 	}
 
-	private static fpnum TraceBetweenPoints(bool doP, bool doN, bool doO)(Vectorf from, Vectorf to, bool* didHit,
+	private static fpnum TraceBetweenPoints(bool doP, bool doN, bool doO)(GRTrace* grt,
+			Vectorf from, Vectorf to, bool* didHit,
 			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null)
 	{
 		static if (doP)
@@ -232,14 +233,14 @@ class Analytic : AnalyticMetricContainer
 	}
 
 	//Recursive version
-	private fpnum RaytraceR(bool doP, bool doN, bool doO)(Line ray, bool* didHit,
+	private fpnum RaytraceR(bool doP, bool doN, bool doO)(GRTrace* grt, Line ray, bool* didHit,
 			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		if (cnt == max_number_of_steps)
 			return fpnum.infinity;
 
 		//calculate deflected ray
-		Line newRay = integrateStep(cfgIntegrator, ray, param_step, initiator);
+		Line newRay = integrateStep(grt.config.integrator, ray, param_step, initiator);
 
 		fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin,
 				newRay.origin, didHit, hitpoint, hitnormal, hit);
@@ -249,7 +250,7 @@ class Analytic : AnalyticMetricContainer
 	}
 
 	//Iterative version
-	private fpnum RaytraceI(bool doP, bool doN, bool doO)(Line ray, bool* didHit,
+	private fpnum RaytraceI(bool doP, bool doN, bool doO)(GRTrace* grt, Line ray, bool* didHit,
 			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		auto init = (cast(Initiator)(this.init)).clone();
@@ -258,9 +259,9 @@ class Analytic : AnalyticMetricContainer
 		for (size_t i = 0; i < max_number_of_steps; i++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
-			Line newRay = integrateStep(cfgIntegrator, ray, param_step, init);
+			Line newRay = integrateStep(grt.config.integrator, ray, param_step, init);
 
-			fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(ray.origin,
+			fpnum m_dist = TraceBetweenPoints!(doP, doN, doO)(grt, ray.origin,
 					newRay.origin, didHit, hitpoint, hitnormal, hit);
 
 			totalDist += m_dist;
@@ -282,14 +283,14 @@ class Analytic : AnalyticMetricContainer
 
 class AnalyticSkyBox : Analytic
 {
-	override fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint = null,
-			Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
+	override fpnum TraceRay(GRTrace* grt, Line ray, bool* didHit,
+			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		//ray.data = 1;
-		return RaytraceI!(true, true, true)(ray, didHit, hitpoint, hitnormal, hit, cnt);
+		return RaytraceI!(true, true, true)(grt, ray, didHit, hitpoint, hitnormal, hit, cnt);
 	}
 
-	fpnum RaytraceI(bool doP, bool doN, bool doO)(Line ray, bool* didHit,
+	fpnum RaytraceI(bool doP, bool doN, bool doO)(GRTrace* grt, Line ray, bool* didHit,
 			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		auto init = (cast(Initiator)(this.init)).clone();
@@ -298,10 +299,10 @@ class AnalyticSkyBox : Analytic
 		for (size_t i = 0; i < max_number_of_steps; i++) //TODO: ray hit not correct
 		{
 			//calculate deflected ray
-			Line newRay = integrateStep(cfgIntegrator, ray, param_step, init);
+			Line newRay = integrateStep(grt.config.integrator, ray, param_step, init);
 
-			fpnum m_dist = super.TraceBetweenPoints!(doP, doN, doO)(ray.origin,
-					newRay.origin, didHit, hitpoint, hitnormal, hit);
+			fpnum m_dist = super.TraceBetweenPoints!(doP, doN, doO)(grt,
+					ray.origin, newRay.origin, didHit, hitpoint, hitnormal, hit);
 
 			totalDist += m_dist;
 
@@ -311,7 +312,7 @@ class AnalyticSkyBox : Analytic
 			ray = newRay;
 		}
 		//max iterations exceded - time to shot the skybox :)
-		fpnum m_dist = super.TraceBetweenPoints!(doP, doN, doO)(ray.origin,
+		fpnum m_dist = super.TraceBetweenPoints!(doP, doN, doO)(grt, ray.origin,
 				ray.origin + ray.direction * 1e9, didHit, hitpoint, hitnormal, hit);
 
 		return m_dist;

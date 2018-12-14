@@ -4,7 +4,7 @@ import scene.objects.interfaces;
 import math.geometric;
 import math.vector;
 import scene.materials.material;
-import config;
+import grtrace;
 import scriptconfig;
 import std.string, std.array, std.range, std.math, std.algorithm, std.uni;
 
@@ -132,8 +132,7 @@ class TexturablePlane : Plane
 	{
 	}
 
-	this(Material m, math.Plane p, Vectorf a, Vectorf b, fpnum a_u, fpnum a_v, fpnum d_u,
-		fpnum d_v)
+	this(Material m, math.Plane p, Vectorf a, Vectorf b, fpnum a_u, fpnum a_v, fpnum d_u, fpnum d_v)
 	in
 	{
 		assert(a_u < d_u);
@@ -215,8 +214,7 @@ class TexturablePlane : Plane
 
 	override string toString()
 	{
-		return super.toString() ~ format(
-			" TO:%s TA:%s TB:%s TAU: %f TAV %f TBU: %f TBV %f", origin, A, B,
-			tex_a_u, tex_a_v, tex_d_u, tex_d_v);
+		return super.toString() ~ format(" TO:%s TA:%s TB:%s TAU: %f TAV %f TBU: %f TBV %f",
+				origin, A, B, tex_a_u, tex_a_v, tex_d_u, tex_d_v);
 	}
 }

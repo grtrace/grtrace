@@ -1,6 +1,6 @@
 module metric.integrators;
 
-import config;
+import grtrace;
 import std.meta;
 import math.vector;
 import math.geometric;

@@ -5,7 +5,7 @@ import metric.interfaces;
 import scene;
 import math;
 import std.concurrency;
-import config;
+import grtrace;
 import image;
 import std.algorithm;
 import dbg.debugger;
@@ -27,7 +27,7 @@ class WorldSpaceWrapper : WorldSpace
 
 	override public size_t getRayDataSize()
 	{
-		return (cast(MetricContainer)smetric).getRayDataSize();
+		return (cast(MetricContainer) smetric).getRayDataSize();
 	}
 
 	override public int allocNewRayData()
@@ -46,12 +46,12 @@ class WorldSpaceWrapper : WorldSpace
 
 	override public int getStageCount()
 	{
-		return (cast(MetricContainer)smetric).getStageCount();
+		return (cast(MetricContainer) smetric).getStageCount();
 	}
 
 	override public ComputeStep[RayState.Finished] getComputeStages()
 	{
-		return (cast(MetricContainer)smetric).getComputeStages();
+		return (cast(MetricContainer) smetric).getComputeStages();
 	}
 
 	override protected RayFunc GetRayFunc()
@@ -59,9 +59,9 @@ class WorldSpaceWrapper : WorldSpace
 		return &DoRay;
 	}
 
-	public static Color DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
+	public static Color DoRay(GRTrace* grt, Tid owner, Line ray, unum x, unum y, int tnum)
 	{
-		Color outc = Rayer(ray, 0, Colors.Black);
+		Color outc = Rayer(grt, ray, 0, Colors.Black);
 		float mx = max(outc.r, outc.g, outc.b);
 		if (mx > 1.0f)
 		{
@@ -70,9 +70,9 @@ class WorldSpaceWrapper : WorldSpace
 		return outc;
 	}
 
-	protected static Color Rayer(Line ray, int recnum, Color lastcol)
+	protected static Color Rayer(GRTrace* grt, Line ray, int recnum, Color lastcol)
 	{
-		if (recnum > cfgMaxDepth)
+		if (recnum > grt.config.maxDepth)
 		{
 			return lastcol;
 		}
@@ -83,7 +83,7 @@ class WorldSpaceWrapper : WorldSpace
 		Renderable closest;
 		bool hit = false;
 
-		metric.TraceRay(ray, &hit, &rayhit, &normal, &closest, 0);
+		metric.TraceRay(grt, ray, &hit, &rayhit, &normal, &closest, 0);
 
 		if (hit)
 		{
@@ -137,7 +137,7 @@ class WorldSpaceWrapper : WorldSpace
 				if (isFinite(closest.material.emission_wave_length))
 				{
 					tlsInitiator = init.initiator.clone;
-					
+
 					fpnum est_lamda_src = closest.material.emission_wave_length;
 
 					tlsInitiator.prepareForRequest(rayhit);
@@ -164,10 +164,10 @@ class WorldSpaceWrapper : WorldSpace
 		}
 		return tmpc;
 	}
-	
+
 	override public DebugDraw[string] returnDebugRenderObjects() const
-	{	
-		 return (cast(MetricContainer)smetric).returnDebugRenderObjects();
+	{
+		return (cast(MetricContainer) smetric).returnDebugRenderObjects();
 	}
 
 }

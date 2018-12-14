@@ -4,8 +4,9 @@ import std.stdio;
 import std.getopt;
 import std.math;
 import scriptconfig;
-import config;
+import grtrace;
 import scene.scenemgr;
+import scene.raymgr : Raytracer;
 import math.vector;
 import metric;
 import std.concurrency;
@@ -31,15 +32,16 @@ Options:
 --fastapprox|-f  - Calculate 25x less pixels for visual approximation of the result
 `;
 
-void RenderSpawner(Tid owner)
+void RenderSpawner(Tid owner, shared(GRTrace)* grtShared)
 {
+	GRTrace* grt = cast(GRTrace*) grtShared;
 	while (true)
 	{
 		if (receiveOnly!bool())
 		{
-			WorldSpace sp = cast(WorldSpace)(cfgSpace);
-			sp.StartTracing(cfgOutputFile);
-			cfgTraceEnd = cfgTraceStart;
+			WorldSpace sp = cast(WorldSpace)(grt.config.space);
+			sp.StartTracing(grt, grt.config.outputFile);
+			grt.config.traceEnd = grt.config.traceStart;
 		}
 		else
 		{
@@ -50,38 +52,19 @@ void RenderSpawner(Tid owner)
 
 void main(string[] args)
 {
-	/*auto A = new Radial();
-
-	writeln(A.transformForwardSpacialFirstDerivatives(vectorf(1,0,0), vectorf(0,1,0)));
-
-	auto D2 = [0,1,0,0];
-	auto D = A.transformForwardSpacialFirstDerivatives(vectorf(1,0,0), vectorf(0,1,0));
-	//0,1,0,0
-	D[] = (D[]+D2[]*0.01)*0.01 + A.transformForwardPosition(vectorf(1,0,0))[];
-
-	writeln(A.transformBackSpacialFirstDerivatives(D, [0,0.01,0,1]));
-	writeln(A.transformBackSpacialSecondDerivatives(A.transformForwardPosition(vectorf(1,0,0)),[0,0,0,1],[0,1,0,0]));
-
-	return;*/
-
-	/*auto B = A.getCoordinatesFromCartesian(vectorf(-100,200,300));
-
-	auto C = A.getSpacialDerivativesFromCartesianVector(vectorf(-100,200,300), vectorf(1,-2,-3));
-
-	auto D = A.getSpacialCartesianVectorFromDerivatives(B, C);
-
-	writeln("POS-RADIAL:",B,"DIR-RADIAL",C,"DIR-CARTESIAN",D);*/
-
 	//FloatingPointControl fpc;fpc.enableExceptions(fpc.severeExceptions);
 	string arg0 = args[0].idup; //asds
-	InitGPU();
-	InitScripting(arg0);
+	GRTrace* grt = new GRTrace();
+	Raytracer.grt = grt;
+	InitGPU(grt);
+	InitScripting(grt, arg0);
 	bool doHelp;
-	getopt(args, "verbose|v", &cfgVerbose, "script|s", &cfgScript, "help|h",
-		&doHelp, "threads|t", &cfgThreads, "debug|d", &cfgDebug, "noimage|n",
-		&cfgNoImage, "nogpu|g", &cfgGpuAcc, "addcalc|c", &cfgAdditionalCalc,
-		"fastapprox|f", &cfgFastApproximation);
-	cfgGpuAcc = !cfgGpuAcc;
+	getopt(args, "verbose|v", &grt.config.verbose, "script|s",
+			&grt.config.script, "help|h", &doHelp, "threads|t", &grt.config.threads,
+			"debug|d", &grt.config.debugMode, "noimage|n", &grt.config.noImage,
+			"nogpu|g", &grt.config.gpuAcc, "addcalc|c", &grt.config.additionalCalc,
+			"fastapprox|f", &grt.config.fastApproximation);
+	grt.config.gpuAcc = !grt.config.gpuAcc;
 	if (doHelp)
 	{
 		writefln(HelpStr, arg0);
@@ -89,17 +72,19 @@ void main(string[] args)
 	}
 	VisualHelper.instance.initialize();
 	MonoTime startTime = MonoTime.currTime;
-	renderTid = spawn(&RenderSpawner, thisTid);
-	DoScript(cfgScript);
-	renderTid.send(false);
+	grt.renderTid = spawn(&RenderSpawner, thisTid, cast(shared) grt);
+	DoScript(grt.config.script);
+	grt.renderTid.send(false);
 	Thread.sleep(dur!"msecs"(50));
 	Duration duration = (MonoTime.currTime - startTime);
 	writefln("Total rendering time: %s", duration);
-	if (cfgDebug)
+	VisualHelper.instance.grt = grt;
+	if (grt.config.debugMode)
 		VisualHelper.instance.runGraphics();
-	if (cfgAdditionalCalc && (!cfgDebug))
+	if (grt.config.additionalCalc && (!grt.config.debugMode))
 	{
-		askCalculation();
+		askCalculation(grt);
 	}
+
 	FinalizeGPU();
 }

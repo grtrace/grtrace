@@ -1,7 +1,7 @@
 module math.interpolation;
 
 import image.color;
-import config;
+import grtrace;
 import math.polynomial;
 
 fpnum LinearInterpolation(fpnum a, fpnum b, fpnum weight)
@@ -12,7 +12,7 @@ fpnum LinearInterpolation(fpnum a, fpnum b, fpnum weight)
 Color LinearInterpolation(Color a, Color b, fpnum weight)
 {
 	return Color(LinearInterpolation(a.r, b.r, weight),
-		LinearInterpolation(a.g, a.g, weight), LinearInterpolation(a.b, a.b, weight));
+			LinearInterpolation(a.g, a.g, weight), LinearInterpolation(a.b, a.b, weight));
 }
 
 fpnum BilinearInterpolation(fpnum a, fpnum b, fpnum c, fpnum d, fpnum U, fpnum V)
@@ -23,15 +23,15 @@ fpnum BilinearInterpolation(fpnum a, fpnum b, fpnum c, fpnum d, fpnum U, fpnum V
 Color BilinearInterpolation(Color a, Color b, Color c, Color d, fpnum U, fpnum V)
 {
 	return Color(BilinearInterpolation(a.r, b.r, c.r, d.r, U, V),
-		BilinearInterpolation(a.g, b.g, c.g, d.g, U, V),
-		BilinearInterpolation(a.b, b.b, c.b, d.b, U, V));
+			BilinearInterpolation(a.g, b.g, c.g, d.g, U, V),
+			BilinearInterpolation(a.b, b.b, c.b, d.b, U, V));
 }
 
 fpnum TrilinearInterpolation(fpnum C000, fpnum C010, fpnum C100, fpnum C110,
-	fpnum C001, fpnum C011, fpnum C101, fpnum C111, fpnum X, fpnum Y, fpnum Z)
+		fpnum C001, fpnum C011, fpnum C101, fpnum C111, fpnum X, fpnum Y, fpnum Z)
 {
 	return LinearInterpolation(BilinearInterpolation(C000, C010, C100, C110, X,
-		Y), BilinearInterpolation(C001, C011, C101, C111, X, Y), Z);
+			Y), BilinearInterpolation(C001, C011, C101, C111, X, Y), Z);
 }
 
 //multiply polynomial by x-a

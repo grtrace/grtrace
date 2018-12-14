@@ -2,7 +2,7 @@ module metric.coordinates.cartesian;
 
 import metric.interfaces;
 import math;
-import config;
+import grtrace;
 
 class Cartesian : CoordinateChanger
 {

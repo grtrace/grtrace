@@ -1,6 +1,6 @@
 module math.metric;
 
-import config;
+import grtrace;
 import math.matrix;
 import std.range, std.traits;
 
@@ -37,7 +37,7 @@ struct Metric4
 	}
 
 	this(fpnum e0, fpnum e1, fpnum e2, fpnum e3, fpnum e4, fpnum e5, fpnum e6,
-		fpnum e7, fpnum e8, fpnum e9)
+			fpnum e7, fpnum e8, fpnum e9)
 	{
 		vals[0] = e0;
 		vals[1] = e1;
@@ -54,8 +54,8 @@ struct Metric4
 	Matrix4f opCast(U)() const if (is(U == Matrix4f))
 	{
 		return Matrix4f(vals[0], vals[1], vals[2], vals[3], vals[1], vals[4],
-			vals[5], vals[6], vals[2], vals[5], vals[7], vals[8], vals[3],
-			vals[6], vals[8], vals[9]);
+				vals[5], vals[6], vals[2], vals[5], vals[7], vals[8], vals[3],
+				vals[6], vals[8], vals[9]);
 	}
 
 	Matrix4f opCall() const
@@ -67,7 +67,7 @@ struct Metric4
 	{
 		return vals[rcmap[row][col]];
 	}
-	
+
 	/// Fast compile-time indexed fetch
 	ref fpnum at(int row, int col)()
 	{

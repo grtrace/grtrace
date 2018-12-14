@@ -2,7 +2,7 @@ module metric.interfaces;
 
 import math;
 import scene;
-import config;
+import grtrace;
 import dbg.draws;
 
 import metric.coordinates;
@@ -11,7 +11,7 @@ interface Initiator
 {
 	@nogc nothrow size_t getCacheSize() const;
 	@nogc nothrow void setCacheBuffer(ubyte* prt);
-	
+
 	@property Initiator clone() const;
 	@property Initiator cloneParams() const;
 	void prepareForRequest(Vectorf point);
@@ -25,10 +25,11 @@ interface Initiator
 
 	@property CoordinateChanger coordinate_system() const;
 	@property bool isInForbidenZone() const;
-	
+
 	import dbg.draws;
+
 	DebugDraw[string] returnDebugRenderObjects() const;
-	
+
 	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir);
 }
 
@@ -45,10 +46,10 @@ interface MetricContainer
 	size_t getRayDataSize();
 	int getStageCount();
 	ComputeStep[RayState.Finished] getComputeStages();
-	
-	fpnum TraceRay(Line ray, bool* didHit, Vectorf* hitpoint = null,
-		Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0);
-	
+
+	fpnum TraceRay(GRTrace* grt, Line ray, bool* didHit, Vectorf* hitpoint = null,
+			Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0);
+
 	DebugDraw[string] returnDebugRenderObjects();
 }
 

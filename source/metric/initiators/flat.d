@@ -7,7 +7,7 @@ import math.metric;
 import math.matrix;
 import math.vector;
 import std.math;
-import config;
+import grtrace;
 import dbg.draws;
 
 class FlatCartesian : Initiator
@@ -22,16 +22,17 @@ class FlatCartesian : Initiator
 	{
 		return new FlatCartesian();
 	}
-	
+
 	@property Initiator cloneParams() const
 	{
 		return new FlatCartesian();
 	}
-	
+
 	@nogc nothrow size_t getCacheSize() const
 	{
 		return 0;
 	}
+
 	@nogc nothrow void setCacheBuffer(ubyte* prt)
 	{
 		return;
@@ -76,10 +77,10 @@ class FlatCartesian : Initiator
 		static auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 		return tmp;
 	}
-	
+
 	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
 	{
-		auto null_mat = Matrix4f(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0);
+		auto null_mat = Matrix4f(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 		return [null_mat, null_mat, null_mat, null_mat];
 	}
 
@@ -87,17 +88,17 @@ class FlatCartesian : Initiator
 	{
 		return cast(CoordinateChanger) cord;
 	}
-	
+
 	@property bool isInForbidenZone() const
 	{
 		return false;
 	}
-	
+
 	DebugDraw[string] returnDebugRenderObjects() const
 	{
 		return null;
 	}
-	
+
 	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir) //TODO: implement
 	{
 		fpnum[string] res;
@@ -118,7 +119,7 @@ class FlatRadial : Initiator
 		fpnum theta;
 		fpnum sin_theta;
 	}
-	
+
 	private CachedData* cache = null;
 
 	this()
@@ -135,16 +136,17 @@ class FlatRadial : Initiator
 		cloned.cache = new CachedData;
 		return cloned;
 	}
-	
+
 	@property Initiator cloneParams() const
 	{
 		return new FlatRadial(this);
 	}
-	
+
 	@nogc nothrow size_t getCacheSize() const
 	{
 		return CachedData.sizeof;
 	}
+
 	@nogc nothrow void setCacheBuffer(ubyte* prt)
 	{
 		cache = cast(CachedData*) prt;
@@ -152,7 +154,7 @@ class FlatRadial : Initiator
 
 	void prepareForRequest(Vectorf point)
 	{
-		with(cache)
+		with (cache)
 		{
 			r2 = (*point);
 			r = sqrt(r2);
@@ -165,7 +167,7 @@ class FlatRadial : Initiator
 
 	@property Metric4 getMetricAtPoint() const
 	{
-		with(cache)
+		with (cache)
 		{
 			return Metric4(-1, 0, 0, 0, 1, 0, 0, r2, 0, r2 * sin_theta * sin_theta);
 		}
@@ -183,16 +185,16 @@ class FlatRadial : Initiator
 
 	@property Metric4[4] getChristoffelSymbolsAtPoint() const
 	{
-		with(cache)
+		with (cache)
 		{
 			static auto a = Metric4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-	
+
 			auto b = Metric4(0, 0, 0, 0, 0, 0, 0, -r, 0, -r * sin_theta * sin_theta);
-	
+
 			auto c = Metric4(0, 0, 0, 0, 0, inv_r, 0, 0, 0, -sin_theta * cos(theta));
-	
+
 			auto d = Metric4(0, 0, 0, 0, 0, 0, inv_r, 0, 1. / tan(theta), 0);
-	
+
 			return [a, b, c, d];
 		}
 	}
@@ -208,10 +210,10 @@ class FlatRadial : Initiator
 		auto tmp = Matrix4f(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 		return tmp;
 	}
-	
+
 	@property Matrix4f[4] getDerivativesOfInverseTetradsElementsAtPoint() const
 	{
-		auto null_mat = Matrix4f(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0);
+		auto null_mat = Matrix4f(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 		return [null_mat, null_mat, null_mat, null_mat];
 	}
 
@@ -219,17 +221,17 @@ class FlatRadial : Initiator
 	{
 		return cast(CoordinateChanger) cord;
 	}
-	
+
 	@property bool isInForbidenZone() const
 	{
 		return false;
 	}
-	
+
 	DebugDraw[string] returnDebugRenderObjects() const
 	{
 		return null;
 	}
-	
+
 	fpnum[string] returnConstantsOfMotion(Vectorf point, Vectorf dir) //TODO: Implement
 	{
 		fpnum[string] res;

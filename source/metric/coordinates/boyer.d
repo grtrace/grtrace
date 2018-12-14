@@ -2,7 +2,7 @@ module metric.coordinates.boyer;
 
 import std.math;
 import math;
-import config;
+import grtrace;
 import metric.interfaces;
 
 class BoyerLinguist : CoordinateChanger
@@ -97,17 +97,17 @@ class BoyerLinguist : CoordinateChanger
 		fpnum a2ra3 = a2 / (r2a2 * ra);
 
 		fpnum d2x = a2ra3 * sinT * cosP * d1[1] * d1[1] + rra * (
-			sinT * cosP * d2[1] + 2 * d1[1] * (cosT * cosP * d1[2] - sinT * sinP * d1[3])) - ra * (
-			sinT * cosP * (d1[2] * d1[2] + d1[3] * d1[3]) + 2 * cosT * sinP * d1[2] * d1[3] + sinT * sinP * d2[
-			3] - cosT * cosP * d2[2]);
+				sinT * cosP * d2[1] + 2 * d1[1] * (cosT * cosP * d1[2] - sinT * sinP * d1[3])) - ra * (
+				sinT * cosP * (d1[2] * d1[2] + d1[3] * d1[3]) + 2 * cosT * sinP
+				* d1[2] * d1[3] + sinT * sinP * d2[3] - cosT * cosP * d2[2]);
 
 		fpnum d2y = a2ra3 * sinT * sinP * d1[1] * d1[1] + rra * (
-			sinT * sinP * d2[1] + 2 * d1[1] * (cosT * sinP * d1[2] + sinT * cosP * d1[3])) - ra * (
-			sinT * sinP * (d1[2] * d1[2] + d1[3] * d1[3]) - 2 * cosT * cosP * d1[2] * d1[3] - cosT * sinP * d2[
-			2] - sinT * cosP * d2[3]);
+				sinT * sinP * d2[1] + 2 * d1[1] * (cosT * sinP * d1[2] + sinT * cosP * d1[3])) - ra * (
+				sinT * sinP * (d1[2] * d1[2] + d1[3] * d1[3]) - 2 * cosT * cosP
+				* d1[2] * d1[3] - cosT * sinP * d2[2] - sinT * cosP * d2[3]);
 
 		fpnum d2z = cosT * (d2[1] - pos[1] * d1[2] * d1[2]) - sinT * (
-			2 * d1[1] * d1[2] + pos[1] * d2[2]);
+				2 * d1[1] * d1[2] + pos[1] * d2[2]);
 
 		return Vectorf(d2x, d2y, d2z);
 	}

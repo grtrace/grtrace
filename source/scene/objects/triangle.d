@@ -4,7 +4,7 @@ import scene.objects.interfaces;
 import math.geometric;
 import math.vector;
 import scene.materials.material;
-import config;
+import grtrace;
 import scriptconfig;
 import std.math;
 
@@ -103,7 +103,7 @@ class Triangle : Renderable
 	override string toString()
 	{
 		return format("A:%s B:%s C:%s N:%s M:%s", triangle.plane.origin,
-			triangle.b, triangle.c, triangle.plane.normal, mat);
+				triangle.b, triangle.c, triangle.plane.normal, mat);
 	}
 
 	DebugDraw getDebugDraw()
@@ -136,7 +136,7 @@ class TexturableTriangle : Triangle
 	}
 
 	this(Material m, math.Triangle tr, fpnum U_a, fpnum V_a, fpnum U_b,
-		fpnum V_b, fpnum U_c, fpnum V_c)
+			fpnum V_b, fpnum U_c, fpnum V_c)
 	{
 		super(m, tr);
 
@@ -178,8 +178,8 @@ class TexturableTriangle : Triangle
 	{
 		// Compute barycentric coordinates (u, v, w) for
 		// point p with respect to triangle (a, b, c)
-		Vectorf v0 = triangle.b;// - triangle.plane.origin;
-		Vectorf v1 = triangle.c;// - triangle.plane.origin;
+		Vectorf v0 = triangle.b; // - triangle.plane.origin;
+		Vectorf v1 = triangle.c; // - triangle.plane.origin;
 		Vectorf v2 = point - triangle.plane.origin;
 
 		fpnum d20 = v2 * v0;
@@ -196,8 +196,7 @@ class TexturableTriangle : Triangle
 
 	override string toString()
 	{
-		return super.toString() ~ format(
-			"TAU: %f TAV: %f TBU: %f TBV: %f TCU: %f TCV: %f", tex_u_a,
-			tex_v_a, tex_u_b, tex_v_b, tex_u_c, tex_v_c);
+		return super.toString() ~ format("TAU: %f TAV: %f TBU: %f TBV: %f TCU: %f TCV: %f",
+				tex_u_a, tex_v_a, tex_u_b, tex_v_b, tex_u_c, tex_v_c);
 	}
 }

@@ -4,7 +4,7 @@ import math.geometric;
 import math.matrix;
 import math.vector;
 import scene.materials.material;
-import config;
+import grtrace;
 import std.math;
 import image.color;
 import scriptconfig;
@@ -27,11 +27,9 @@ public
 	alias SColor = Color;
 	alias SString = string;
 	alias STexture = Typedef!(string, "", "texture");
-	alias SValue = Algebraic!(SFloat, SWave, SVec2, SVec3, SMat4, SColor, SString,
-		STexture);
+	alias SValue = Algebraic!(SFloat, SWave, SVec2, SVec3, SMat4, SColor, SString, STexture);
 
-	Vectorf optVec3(SValue[string] map, string key, lazy Vectorf def = Vectorf(0, 0,
-		0))
+	Vectorf optVec3(SValue[string] map, string key, lazy Vectorf def = Vectorf(0, 0, 0))
 	{
 		if (key in map)
 		{

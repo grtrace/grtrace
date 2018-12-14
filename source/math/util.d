@@ -1,6 +1,6 @@
 module math.util;
 
-import config;
+import grtrace;
 import std.math;
 import std.functional;
 

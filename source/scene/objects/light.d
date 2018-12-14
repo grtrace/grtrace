@@ -5,7 +5,7 @@ import std.string;
 import image.color;
 import math.vector;
 import scriptconfig;
-import config;
+import grtrace;
 
 class PointLight : Light
 {

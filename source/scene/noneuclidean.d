@@ -1,6 +1,6 @@
 module scene.noneuclidean;
 
-import config;
+import grtrace;
 import core.time;
 import std.concurrency;
 import std.stdio, std.math;
@@ -31,7 +31,7 @@ class PlaneDeflectSpace : WorldSpace
 	this()
 	{
 		pln = cast(shared(RPlane))(new RPlane(null, math.Plane(vectorf(0, 0, 0),
-			vectorf(0, 0, -1))));
+				vectorf(0, 0, -1))));
 	}
 
 	override protected RayFunc GetRayFunc()
@@ -44,9 +44,8 @@ class PlaneDeflectSpace : WorldSpace
 		return Color((N.x + 1.0f) / 2.0f, (N.y + 1.0f) / 2.0f, (N.z + 1.0f) / 2.0f);
 	}
 
-	protected static fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(Line ray,
-		bool* didHit, Vectorf* hitpoint = null, Vectorf* hitnormal = null,
-		Renderable* hit = null, int cnt = 0)
+	protected static fpnum Raytrace(bool doP, bool doN, bool doO, bool doD)(GRTrace* grt, Line ray, bool* didHit,
+			Vectorf* hitpoint = null, Vectorf* hitnormal = null, Renderable* hit = null, int cnt = 0)
 	{
 		static if (doP)
 		{
@@ -99,8 +98,8 @@ class PlaneDeflectSpace : WorldSpace
 				newPos = ray.origin + ray.direction * mdist;
 
 				//the distance from the point of closest aproach and the center of the black hole
-				R = sqrt((*(ray.origin - def.plane.origin)) * (*(newPos - def.plane.origin)) / (
-					*(ray.origin - newPos)));
+				R = sqrt((*(ray.origin - def.plane.origin)) * (
+						*(newPos - def.plane.origin)) / (*(ray.origin - newPos)));
 
 				enum Mass = 1;
 
@@ -152,10 +151,10 @@ class PlaneDeflectSpace : WorldSpace
 				//cast deflected ray
 				DebugDispatcher.saveRay(ray, mdist, RayDebugType.Default);
 				DebugDispatcher.saveRay(Line(ray.origin + ray.direction * mdist,
-					(newPos - ray.origin - ray.direction * mdist).normalized, true),
-					newPos, RayDebugType.Default);
-				return Raytrace!(doP, doN, doO, false)(Line(newPos, newDir,
-					true), didHit, hitpoint, hitnormal, hit, cnt + 1);
+						(newPos - ray.origin - ray.direction * mdist).normalized, true),
+						newPos, RayDebugType.Default);
+				return Raytrace!(doP, doN, doO, false)(grt, Line(newPos,
+						newDir, true), didHit, hitpoint, hitnormal, hit, cnt + 1);
 			}
 		}
 		DebugDispatcher.saveRay(ray, mdist, RayDebugType.Default);
@@ -179,9 +178,9 @@ class PlaneDeflectSpace : WorldSpace
 		return mdist;
 	}
 
-	protected static Color Rayer(Line ray, int recnum, Color lastcol)
+	protected static Color Rayer(GRTrace* grt, Line ray, int recnum, Color lastcol)
 	{
-		if (recnum > cfgMaxDepth)
+		if (recnum > grt.config.maxDepth)
 		{
 			return lastcol;
 		}
@@ -190,7 +189,7 @@ class PlaneDeflectSpace : WorldSpace
 		Vectorf normal;
 		Renderable closest;
 		bool hit = false;
-		Raytrace!(true, true, true, true)(ray, &hit, &rayhit, &normal, &closest);
+		Raytrace!(true, true, true, true)(grt, ray, &hit, &rayhit, &normal, &closest);
 		if (hit)
 		{
 			tmpc = closest.material.emission_color;
@@ -213,7 +212,7 @@ class PlaneDeflectSpace : WorldSpace
 					Line hitRay = LinePoints(rayhit, l.getPosition());
 					hitRay.ray = true;
 					bool unlit = false;
-					fpnum dst = Raytrace!(false, false, false, false)(hitRay, &unlit);
+					fpnum dst = Raytrace!(false, false, false, false)(grt, hitRay, &unlit);
 					if (unlit)
 					{
 						fpnum dLO = *(l.getPosition() - rayhit);
@@ -236,9 +235,9 @@ class PlaneDeflectSpace : WorldSpace
 		return tmpc;
 	}
 
-	public static Color DoRay(Tid owner, Line ray, unum x, unum y, int tnum)
+	public static Color DoRay(GRTrace* grt, Tid owner, Line ray, unum x, unum y, int tnum)
 	{
-		Color outc = Rayer(ray, 0, Colors.Black);
+		Color outc = Rayer(grt, ray, 0, Colors.Black);
 		float mx = max(outc.r, outc.g, outc.b);
 		if (mx > 1.0f)
 		{
@@ -246,7 +245,7 @@ class PlaneDeflectSpace : WorldSpace
 		}
 		return outc;
 	}
-	
+
 	override public DebugDraw[string] returnDebugRenderObjects() const
 	{
 		DebugDraw[string] res;

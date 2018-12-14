@@ -1,8 +1,8 @@
 module scriptconfig;
 
-import std.string, std.array, std.stdio, std.variant, std.conv, std.getopt;
+import std.string, std.array, std.stdio, std.variant, std.conv, std.getopt, std.uni, std.utf;
 import tcltk.tcl;
-import config;
+import grtrace;
 import scene.objects;
 import scene.materials.material;
 import image.memory;
@@ -19,9 +19,10 @@ import core.time : dur;
 import core.atomic;
 import metric;
 
-alias ConfigValue = Algebraic!(inump, unump, fpnump, string*, Integrator*);
+alias ConfigValue = Algebraic!(inum*, unum*, fpnum*, string*, Integrator*);
 private ConfigValue[string] cfgOptions;
 public __gshared Tcl_Interp* tcl;
+private __gshared GRTrace* grt;
 
 private string tclToStr(const(Tcl_Obj*) o) nothrow
 {
@@ -31,8 +32,9 @@ private string tclToStr(const(Tcl_Obj*) o) nothrow
 	return cstr[0 .. len].idup;
 }
 
-void InitScripting(string arg0)
+void InitScripting(GRTrace* grt, string arg0)
 {
+	.grt = grt;
 	Tcl_FindExecutable(arg0.toStringz());
 	tcl = Tcl_CreateInterp();
 	Tcl_Init(tcl);
@@ -96,7 +98,7 @@ extern (C) int tclLoadScene(ClientData clientData, Tcl_Interp* interp, int objc,
 			return TCL_ERROR;
 		}
 		string path = tclToStr(objv[1]);
-		sceneParser.loadFromFile(path);
+		sceneParser.loadFromFile(grt, path);
 	}
 	catch (Exception e)
 	{
@@ -119,7 +121,7 @@ extern (C) int tclSceneCmd(ClientData clientData, Tcl_Interp* interp, int objc,
 			return TCL_ERROR;
 		}
 		string cmd = tclToStr(objv[1]);
-		sceneParser.loadFromScript(cmd, false);
+		sceneParser.loadFromScript(grt, cmd, false);
 	}
 	catch (Exception e)
 	{
@@ -153,10 +155,10 @@ extern (C) int tclDoTrace(ClientData clientData, Tcl_Interp* interp, int objc,
 {
 	try
 	{
-		if (cfgTraceStart == cfgTraceEnd)
+		if (grt.config.traceStart == grt.config.traceEnd)
 		{
-			atomicOp!"+="(cfgTraceStart, 1);
-			send(renderTid, true);
+			atomicOp!"+="((cast(shared) grt).config.traceStart, 1);
+			send(grt.renderTid, true);
 		}
 	}
 	catch (Exception e)
@@ -170,7 +172,7 @@ extern (C) int tclDoTrace(ClientData clientData, Tcl_Interp* interp, int objc,
 extern (C) int tclFinishTrace(ClientData clientData, Tcl_Interp* interp,
 		int objc, const(Tcl_Obj*)* objv) nothrow
 {
-	while (cfgTraceStart > cfgTraceEnd)
+	while (grt.config.traceStart > grt.config.traceEnd)
 	{
 		Thread.sleep(dur!"msecs"(90));
 	}
@@ -205,14 +207,14 @@ extern (C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc,
 			string V = tclToStr(objv[2]);
 			*(cv.get!(Integrator*)) = to!Integrator(V);
 		}
-		else if (cv.peek!(fpnump)() !is null)
+		else if (cv.peek!(fpnum*)() !is null)
 		{
 			double v;
 			if (Tcl_GetDoubleFromObj(interp, cast(Tcl_Obj*) objv[2], &v) == TCL_ERROR)
 			{
 				return TCL_ERROR;
 			}
-			*(cv.get!(fpnump)) = cast(fpnum) v;
+			*(cv.get!(fpnum*)) = cast(fpnum) v;
 		}
 		else
 		{
@@ -221,13 +223,13 @@ extern (C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc,
 			{
 				return TCL_ERROR;
 			}
-			if (cv.peek!(inump)() !is null)
+			if (cv.peek!(inum*)() !is null)
 			{
-				*(cv.get!(inump)) = cast(inum) v;
+				*(cv.get!(inum*)) = cast(inum) v;
 			}
 			else
 			{
-				*(cv.get!(unump)) = cast(unum) v;
+				*(cv.get!(unum*)) = cast(unum) v;
 			}
 		}
 	}
@@ -240,15 +242,16 @@ extern (C) int tclConfigSet(ClientData clientData, Tcl_Interp* interp, int objc,
 }
 
 void AddConfig(T)(string name, T val)
-		if (is(T == unump) || is(T == inump) || is(T == string*)
-			|| is(T == fpnump) || is(T == Integrator*))
+		if (is(T == unum*) || is(T == inum*) || is(T == string*)
+			|| is(T == fpnum*) || is(T == Integrator*))
 {
 	cfgOptions[name] = val;
 }
 
 string ConfigMixin(string name)
 {
-	return `AddConfig("` ~ name ~ `",&cfg` ~ name ~ `);`;
+	return `AddConfig("` ~ name ~ `",&grt.config.`
+		~ [toLower(cast(dchar) name[0])].toUTF8 ~ name[1 .. $] ~ `);`;
 }
 
 Color colorString(string str)

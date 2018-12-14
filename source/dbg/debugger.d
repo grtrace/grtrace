@@ -1,5 +1,6 @@
 module dbg.debugger;
 
+import grtrace;
 import glad.gl.all;
 import glad.gl.loader;
 import derelict.glfw3.glfw3;
@@ -9,7 +10,7 @@ import dbg.dispatcher;
 import dbg.draws;
 import std.stdio, std.string, std.file, std.math, std.exception;
 import std.string, std.format, std.algorithm, std.array, std.range;
-import config, scene.camera, scene.scenemgr, math;
+import scene.camera, scene.scenemgr, math;
 import scene.objects.interfaces;
 import metric.interfaces;
 import metric.analytic;
@@ -209,6 +210,7 @@ class VisualHelper
 
 	}
 
+	public GRTrace* grt;
 	private GLFWwindow* rwin;
 	private int winx, winy;
 	private int mousex, mousey, mousescroll, keychar;
@@ -340,11 +342,11 @@ class VisualHelper
 
 			DebugDispatcher.renderResult = new Image(8, 8);
 		}
-		if (cfgNoImage && exists(cfgOutputFile))
+		if (grt.config.noImage && exists(grt.config.outputFile))
 		{
 			import image.imgio : ReadImage;
 
-			texRendered.recreateTexture(ReadImage(cfgOutputFile));
+			texRendered.recreateTexture(ReadImage(grt.config.outputFile));
 		}
 		else
 		{
@@ -604,7 +606,7 @@ class VisualHelper
 			sobji++;
 		}
 		sort!("a.id < b.id")(sortedObjects);
-		if (cfgVerbose)
+		if (grt.config.verbose)
 		{
 			writeln("[VDBG] Number of evertices registered: ", numverts);
 			writeln("[VDBG] Number of elements total: ", e3d.length);
@@ -825,7 +827,7 @@ class VisualHelper
 				{
 					import dbg.calcs : askCalculation;
 
-					askCalculation();
+					askCalculation(grt);
 				}
 				if (imguiButton("Single trace"))
 				{
@@ -844,8 +846,8 @@ class VisualHelper
 					fpnum param_step;
 					size_t max_number_of_steps;
 					bool dirty_history = false;
-					MetricContainer wrp = cast(MetricContainer)(cast(WorldSpaceWrapper) cfgSpace)
-						.smetric;
+					MetricContainer wrp = cast(MetricContainer)(
+							cast(WorldSpaceWrapper) grt.config.space).smetric;
 
 					final switch (dbgWorldType) with (WorldType)
 					{
@@ -1147,8 +1149,8 @@ class VisualHelper
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 		glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
-		int W = cast(int) cfgResolutionX;
-		int H = cast(int) cfgResolutionY;
+		int W = cast(int) grt.config.resolutionX;
+		int H = cast(int) grt.config.resolutionY;
 		winx = W;
 		winy = H;
 		rwin = glfwCreateWindow(W, H, "GrTrace Visual Helper", null, null);
@@ -1206,7 +1208,7 @@ class VisualHelper
 		}
 
 		WorldSpace.RayFunc rf = DebugDispatcher.space.GetRayFunc();
-		lastRayColor = rf(thisTid, Line(origin, direction, true), 0, 0, 0);
+		lastRayColor = rf(grt, thisTid, Line(origin, direction, true), 0, 0, 0);
 
 		if (doRedshift)
 		{
@@ -1287,10 +1289,10 @@ class VisualHelper
 				static if (memb[0] >= 'A' && memb[0] <= 'Z')
 				{
 					enum val = mixin("Integrator." ~ memb);
-					integr = (cfgIntegrator == val);
+					integr = (grt.config.integrator == val);
 					if (imguiCheck(memb, &integr))
 					{
-						cfgIntegrator = val;
+						grt.config.integrator = val;
 					}
 				}
 			}
@@ -1321,18 +1323,18 @@ class VisualHelper
 				nextRayConf.Y += 0.1;
 				mod = true;
 			}
-			if ((imguiSlider("X", &nextRayConf.X, 0.0, cfgResolutionX, 1.0f) && Cont) || mod)
+			if ((imguiSlider("X", &nextRayConf.X, 0.0, grt.config.resolutionX, 1.0f) && Cont) || mod)
 			{
-				float cx = (nextRayConf.X / cfgResolutionX) * 2.0 - 1.0;
-				float cy = (nextRayConf.Y / cfgResolutionY) * 2.0 - 1.0;
+				float cx = (nextRayConf.X / grt.config.resolutionX) * 2.0 - 1.0;
+				float cy = (nextRayConf.Y / grt.config.resolutionY) * 2.0 - 1.0;
 				Line ray;
 				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
 			}
-			if ((imguiSlider("Y", &nextRayConf.Y, 0.0, cfgResolutionY, 1.0f) && Cont) || mod)
+			if ((imguiSlider("Y", &nextRayConf.Y, 0.0, grt.config.resolutionY, 1.0f) && Cont) || mod)
 			{
-				float cx = (nextRayConf.X / cfgResolutionX) * 2.0 - 1.0;
-				float cy = (nextRayConf.Y / cfgResolutionY) * 2.0 - 1.0;
+				float cx = (nextRayConf.X / grt.config.resolutionX) * 2.0 - 1.0;
+				float cy = (nextRayConf.Y / grt.config.resolutionY) * 2.0 - 1.0;
 				Line ray;
 				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
@@ -1340,8 +1342,8 @@ class VisualHelper
 			imguiCheck("Continuous", &Cont);
 			if (imguiButton("Trace"))
 			{
-				float cx = (nextRayConf.X / cfgResolutionX) * 2.0 - 1.0;
-				float cy = (nextRayConf.Y / cfgResolutionY) * 2.0 - 1.0;
+				float cx = (nextRayConf.X / grt.config.resolutionX) * 2.0 - 1.0;
+				float cy = (nextRayConf.Y / grt.config.resolutionY) * 2.0 - 1.0;
 				Line ray;
 				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
@@ -1602,8 +1604,8 @@ class VisualHelper
 					auto min_res = min(winx, winy);
 					xd = (cast(double)(x - winx / 2) / (min_res / 2.0));
 					yd = (cast(double)(y - winy / 2) / ((min_res * tex_aspect) / 2.0));
-					nextRayConf.X = ((xd + 1.0) / 2.0) * cfgResolutionX;
-					nextRayConf.Y = ((yd + 1.0) / 2.0) * cfgResolutionY;
+					nextRayConf.X = ((xd + 1.0) / 2.0) * grt.config.resolutionX;
+					nextRayConf.Y = ((yd + 1.0) / 2.0) * grt.config.resolutionY;
 					Line ray;
 					DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
 					traceSingleRay(ray.origin, ray.direction);
@@ -1629,8 +1631,8 @@ class VisualHelper
 					xd = (xd / 50.0) - 1.0;
 					yd = (yd / 50.0) - 1.0;
 					miniatureCamera.getNormalizedRayCoordinates(xd, yd, xd, yd);
-					nextRayConf.X = ((xd + 1.0) / 2.0) * cfgResolutionX;
-					nextRayConf.Y = ((yd + 1.0) / 2.0) * cfgResolutionY;
+					nextRayConf.X = ((xd + 1.0) / 2.0) * grt.config.resolutionX;
+					nextRayConf.Y = ((yd + 1.0) / 2.0) * grt.config.resolutionY;
 					Line ray;
 					DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
 					traceSingleRay(ray.origin, ray.direction);
@@ -1694,7 +1696,7 @@ class VisualHelper
 			}
 			else if (state == GLFW_RELEASE)
 			{
-				mousebtns &= ~MouseButton.left;
+				mousebtns &= ~cast(int)(MouseButton.left);
 			}
 		}
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
@@ -1705,7 +1707,7 @@ class VisualHelper
 			}
 			else if (state == GLFW_RELEASE)
 			{
-				mousebtns &= ~MouseButton.right;
+				mousebtns &= ~cast(int)(MouseButton.right);
 			}
 		}
 	}
@@ -1729,8 +1731,8 @@ class VisualHelper
 			xd = (xd / 50.0) - 1.0;
 			yd = (yd / 50.0) - 1.0;
 			miniatureCamera.getNormalizedRayCoordinates(xd, yd, xd, yd);
-			nextRayConf.X = ((xd + 1.0) / 2.0) * cfgResolutionX;
-			nextRayConf.Y = ((yd + 1.0) / 2.0) * cfgResolutionY;
+			nextRayConf.X = ((xd + 1.0) / 2.0) * grt.config.resolutionX;
+			nextRayConf.Y = ((yd + 1.0) / 2.0) * grt.config.resolutionY;
 			Line ray;
 			DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
 			traceSingleRay(ray.origin, ray.direction);
