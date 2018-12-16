@@ -2,7 +2,6 @@
 module dbg.calcs;
 
 import grtrace;
-import dbg.dispatcher;
 import scene.objects.interfaces;
 import scene.raymgr;
 import scene.scenemgr;
@@ -132,8 +131,8 @@ void calcSchwarzschildStability(GRTrace* grt)
 	f.flush();
 	int stepi = 0;
 	int numsteps = cast(int)((max_timestep - min_timestep) / step_timestep);
-	DebugDispatcher.saver.enable();
-	DebugDispatcher.breakFunction = function(SavedRay sray) {
+	grtSetRaySavingEnabled(grt, true);
+	grt.cancelRayCallback = function(void*, SavedRay* sray) {
 		fpnum R = *((sray.start + sray.end) / 2.0);
 		fpnum eps = fabs(R - Rsphere);
 		if (eps > 0.1) // dtradius > 0.01
@@ -151,7 +150,7 @@ void calcSchwarzschildStability(GRTrace* grt)
 		anl.paramStep = timestep;
 		int maxasteps = cast(int)(6 * PI * mass * numOfCircles / timestep);
 		anl.maxNumberOfSteps = maxasteps;
-		DebugDispatcher.saver.clear();
+		grtClearSavedRays(grt);
 
 		try
 		{
@@ -166,7 +165,7 @@ void calcSchwarzschildStability(GRTrace* grt)
 			//
 		}
 		int stable = 0;
-		foreach (ref SavedRay sray; DebugDispatcher.saver.rays)
+		foreach (ref SavedRay sray; grt.savedRays.data)
 		{
 			stable++;
 		}
@@ -178,8 +177,7 @@ void calcSchwarzschildStability(GRTrace* grt)
 	f.close();
 	writeln();
 	writeln("Finished");
-	DebugDispatcher.saver.dirty = true;
-	DebugDispatcher.breakFunction = null;
+	grt.cancelRayCallback = null;
 }
 
 fpnum ReadBoundedFloat(const string boundaries)(string name)
@@ -204,13 +202,13 @@ void calcTotalDistantRayDeflection(GRTrace* grt)
 	WorldSpaceWrapper wsw = cast(WorldSpaceWrapper) Raytracer.space;
 	if (wsw is null)
 	{
-		writeln("World space is not Analitic!");
+		writeln("World space is not Analytic!");
 		return;
 	}
 	Analytic anl = cast(Analytic) wsw.smetric;
 	if (anl is null)
 	{
-		writeln("World space is not Analitic!");
+		writeln("World space is not Analytic!");
 		return;
 	}
 	Initiator init = anl.initiator; //.clone();
@@ -235,7 +233,7 @@ void calcTotalDistantRayDeflection(GRTrace* grt)
 		if (grt.config.verbose)
 			writeln("Detected Schwarzschild metric");
 
-		metric_info = format("Metric: Analitic-Schwarzschild\nMass: %#.16e\n", mass);
+		metric_info = format("Metric: Analytic-Schwarzschild\nMass: %#.16e\n", mass);
 	}
 	/*else if(cast(Kerr)init !is null)
 	{
@@ -280,13 +278,13 @@ void calcTotalDistantRayDeflection(GRTrace* grt)
 		if (grt.config.verbose)
 			writeln("Detected Reissner-Nordstrom metric");
 
-		metric_info = format("Metric: Analitic-Reissner\nMass: %#.16e\tCharge: %#.16e\n",
+		metric_info = format("Metric: Analytic-Reissner\nMass: %#.16e\tCharge: %#.16e\n",
 				mass, charge);
 	}
 	/*else if(cast(FlatCartesian)init !is null || cast(FlatRadial)init !is null)
 	{
 		if(grt.config.verbose) writeln("Detected flat Minkowski metric");
-		metric_info = "Metric: Analitic-Flat\n";
+		metric_info = "Metric: Analytic-Flat\n";
 	}*/
 	else
 	{
@@ -339,8 +337,8 @@ void calcTotalDistantRayDeflection(GRTrace* grt)
 
 	static fpnum minDistToHole2 = fpnum.infinity;
 
-	DebugDispatcher.saver.enable();
-	DebugDispatcher.breakFunction = function(SavedRay sray) {
+	grtSetRaySavingEnabled(grt, true);
+	grt.cancelRayCallback = function(void*, SavedRay* sray) {
 		fpnum curDist2 = *sray.start;
 		if (curDist2 <= (minDistToHole2 + eps))
 		{
@@ -358,12 +356,12 @@ void calcTotalDistantRayDeflection(GRTrace* grt)
 	anl.paramStep = timestep;
 	anl.maxNumberOfSteps = max_num_of_steps;
 
-	DebugDispatcher.saver.clear();
+	grtClearSavedRays(grt);
 
 	for (fpnum curCastingDist = castingDistFromHoleMax; curCastingDist >= castingDistFromHoleMin;
 			curCastingDist -= castingDistFromHoleStep)
 	{
-		size_t first_id = DebugDispatcher.saver.rays.length;
+		size_t first_id = grt.savedRays.data.length;
 
 		writef("\r%60c\rProgress: %d/%d", ' ', ++stepi, numsteps);
 		stdout.flush();
@@ -389,8 +387,8 @@ void calcTotalDistantRayDeflection(GRTrace* grt)
 			//
 		}
 		fpnum totalDeflection = 2 * acos(
-				DebugDispatcher.saver.rays[$ - 1].dir.normalized
-				* DebugDispatcher.saver.rays[first_id].dir.normalized);
+				grt.savedRays.data[$ - 1].dir.normalized
+				* grt.savedRays.data[first_id].dir.normalized);
 		fpnum minDistToHole = sqrt(minDistToHole2);
 
 		f.writef("%#.16e\t%#.16e\t%#.16e\t%#.16e\n", minDistToHole,
@@ -398,12 +396,11 @@ void calcTotalDistantRayDeflection(GRTrace* grt)
 		f.flush();
 
 		if (!display)
-			DebugDispatcher.saver.clear();
+			grtClearSavedRays(grt);
 	}
 
 	f.close();
 	writeln();
 	writeln("Finished");
-	DebugDispatcher.saver.dirty = true;
-	DebugDispatcher.breakFunction = null;
+	grt.cancelRayCallback = null;
 }

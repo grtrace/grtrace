@@ -25,7 +25,6 @@ import core.cpuid;
 import std.algorithm;
 import std.random;
 import dbg.debugger;
-import dbg.dispatcher;
 import scene.raymgr;
 import metric;
 
@@ -96,7 +95,6 @@ abstract class WorldSpace
 	public void StartTracing(GRTrace* grt, string outfile)
 	{
 		auto cam = cast(ICamera)(camera);
-		//DebugDispatcher.space = this;
 		ambientLight = cast(shared(Color))(Colors.White);
 		pixelsx = grt.config.resolutionX;
 		pixelsy = grt.config.resolutionY;
@@ -258,7 +256,7 @@ abstract class WorldSpace
 			writeln();
 			writeln("Finished!");
 			im.WriteImage(outfile);
-			DebugDispatcher.renderResult = im;
+			grt.targetImage = im;
 		}
 	}
 
@@ -428,7 +426,7 @@ class EuclideanSpace : WorldSpace
 				}
 			}
 		}
-		DebugDispatcher.saveRay(ray, mdist, RayDebugType.Default);
+		grt.saveRay(ray, mdist);
 		if (dh)
 		{
 			*didHit = true;

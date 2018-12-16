@@ -8,7 +8,6 @@ import image;
 import scene;
 import std.concurrency;
 import std.math;
-import dbg.dispatcher;
 import scene.compute, scene.raymgr;
 import metric.integrators;
 
@@ -221,10 +220,10 @@ class Analytic : AnalyticMetricContainer
 		if (dh && mdist <= travel_dist)
 		{
 			*didHit = true;
-			DebugDispatcher.saveRay(ray, *hitpoint, RayDebugType.Default);
+			grt.saveRay(ray, *hitpoint);
 			return mdist;
 		}
-		if (DebugDispatcher.saveRay(ray, to, RayDebugType.Default))
+		if (grt.saveRay(ray, to))
 		{
 			*didHit = true;
 			return travel_dist;

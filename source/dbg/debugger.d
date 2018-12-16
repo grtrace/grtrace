@@ -6,7 +6,6 @@ import glad.gl.loader;
 import derelict.glfw3.glfw3;
 import imgui.api;
 import dbg.glhelpers;
-import dbg.dispatcher;
 import dbg.draws;
 import std.stdio, std.string, std.file, std.math, std.exception;
 import std.string, std.format, std.algorithm, std.array, std.range;
@@ -336,11 +335,11 @@ class VisualHelper
 		texRendered = new GFXtexture();
 		import std.file : exists;
 
-		if (DebugDispatcher.renderResult is null)
+		if (grt.targetImage is null)
 		{
 			import image.memory : Image;
 
-			DebugDispatcher.renderResult = new Image(8, 8);
+			grt.targetImage = new Image(8, 8);
 		}
 		if (grt.config.noImage && exists(grt.config.outputFile))
 		{
@@ -350,7 +349,7 @@ class VisualHelper
 		}
 		else
 		{
-			texRendered.recreateTexture(DebugDispatcher.renderResult);
+			texRendered.recreateTexture(grt.targetImage);
 		}
 		texRendered.bind();
 		texRendered.generateMipmaps();
@@ -438,7 +437,7 @@ class VisualHelper
 		uint[] e3d = [];
 		numverts = 0;
 		{
-			ICamera cam = DebugDispatcher.space.getCamera();
+			ICamera cam = grt.config.space.getCamera();
 			TSObject* tso = new TSObject();
 			tso.id = "@camera";
 			tso.obj = null;
@@ -483,7 +482,7 @@ class VisualHelper
 			sceneObjects[tso.id] = tso;
 		}
 		{
-			DebugDraw[string] space_info = DebugDispatcher.space.returnDebugRenderObjects();
+			DebugDraw[string] space_info = grt.config.space.returnDebugRenderObjects();
 
 			foreach (string obj_name, DebugDraw obj; space_info)
 			{
@@ -530,7 +529,7 @@ class VisualHelper
 				}
 			}
 		}
-		foreach (shared Renderable obj; DebugDispatcher.space.objects)
+		foreach (shared Renderable obj; grt.config.space.objects)
 		{
 			auto OBJ = cast(Renderable) obj;
 			if (OBJ is null)
@@ -668,7 +667,7 @@ class VisualHelper
 	private void rebuildRays()
 	{
 		Vert3D[] v3d = [];
-		foreach (SavedRay ray; DebugDispatcher.saver.rays)
+		foreach (SavedRay ray; grt.savedRays.data)
 		{
 			v3d ~= Vert3D(ray.start.x, ray.start.y, -ray.start.z, 0.0f, 0.0f,
 					0.0f, ray.color.r, ray.color.g, ray.color.b, 1.0f, 0.0f, 1.0f, 0.0f);
@@ -682,7 +681,7 @@ class VisualHelper
 		numRays = cast(int) v3d.length;
 		if (numRays > 0)
 			objRays.vbo.updateData(cast(ubyte[]) v3d);
-		DebugDispatcher.saver.dirty = false;
+		grt.savedRaysDirty = false;
 	}
 
 	private double dt;
@@ -703,8 +702,8 @@ class VisualHelper
 		glfwInit();
 		setupWindow();
 		initVisuals();
-		DebugDispatcher.saver.enable();
-		DebugDispatcher.saver.clear();
+		grtSetRaySavingEnabled(grt, true);
+		grtClearSavedRays(grt);
 		enforce(imguiInit("firasans-medium.ttf", 1024));
 		int scroll_d = 0;
 		glfwSetTime(0.0);
@@ -756,7 +755,7 @@ class VisualHelper
 
 			objRays.bind();
 			objRays.vao.enableAttribs();
-			if (DebugDispatcher.saver.dirty)
+			if (grt.savedRaysDirty)
 				rebuildRays();
 			glDrawArrays(GL_LINES, 0, numRays);
 
@@ -1207,18 +1206,18 @@ class VisualHelper
 			TraceHistory ~= TraceHistoryEntry(origin, direction, doRedshift);
 		}
 
-		WorldSpace.RayFunc rf = DebugDispatcher.space.GetRayFunc();
+		WorldSpace.RayFunc rf = grt.config.space.GetRayFunc();
 		lastRayColor = rf(grt, thisTid, Line(origin, direction, true), 0, 0, 0);
 
 		if (doRedshift)
 		{
-			WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(DebugDispatcher.space);
+			WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(grt.config.space);
 			auto mc = cast(AnalyticMetricContainer)(wsw.smetric);
 			auto met = mc.initiator.clone;
-			auto first = DebugDispatcher.saver.rays[0];
+			auto first = grt.savedRays.data[0];
 			met.prepareForRequest(first.start);
 			auto met_src = met.getMetricAtPoint()[0, 0];
-			foreach (ref ray; DebugDispatcher.saver.rays)
+			foreach (ref ray; grt.savedRays.data)
 			{
 				met.prepareForRequest(ray.end);
 				auto met_rec = met.getMetricAtPoint()[0, 0];
@@ -1231,7 +1230,7 @@ class VisualHelper
 	private void RetraceTraceHistory()
 	{
 		bool saved_doRedshift = doRedshift;
-		DebugDispatcher.saver.clear();
+		grtClearSavedRays(grt);
 
 		foreach (TraceHistoryEntry ent; TraceHistory)
 		{
@@ -1244,7 +1243,7 @@ class VisualHelper
 
 	private void ClearTraceHistory()
 	{
-		DebugDispatcher.saver.clear();
+		grtClearSavedRays(grt);
 		TraceHistory = [];
 	}
 
@@ -1274,7 +1273,7 @@ class VisualHelper
 		static bool fromImage = false;
 		static bool predef = false, predefD = false;
 		static SVec3 predefV;
-		if (WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(DebugDispatcher.space))
+		if (WorldSpaceWrapper wsw = cast(WorldSpaceWrapper)(grt.config.space))
 		{
 			imguiCheck("Visualise redshift", &doRedshift);
 			if (doRedshift)
@@ -1328,7 +1327,7 @@ class VisualHelper
 				float cx = (nextRayConf.X / grt.config.resolutionX) * 2.0 - 1.0;
 				float cy = (nextRayConf.Y / grt.config.resolutionY) * 2.0 - 1.0;
 				Line ray;
-				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+				grt.config.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
 			}
 			if ((imguiSlider("Y", &nextRayConf.Y, 0.0, grt.config.resolutionY, 1.0f) && Cont) || mod)
@@ -1336,7 +1335,7 @@ class VisualHelper
 				float cx = (nextRayConf.X / grt.config.resolutionX) * 2.0 - 1.0;
 				float cy = (nextRayConf.Y / grt.config.resolutionY) * 2.0 - 1.0;
 				Line ray;
-				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+				grt.config.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
 			}
 			imguiCheck("Continuous", &Cont);
@@ -1345,7 +1344,7 @@ class VisualHelper
 				float cx = (nextRayConf.X / grt.config.resolutionX) * 2.0 - 1.0;
 				float cy = (nextRayConf.Y / grt.config.resolutionY) * 2.0 - 1.0;
 				Line ray;
-				DebugDispatcher.space.getCamera.fetchRay(cx, cy, ray);
+				grt.config.space.getCamera.fetchRay(cx, cy, ray);
 				traceSingleRay(ray.origin, ray.direction);
 			}
 		}
@@ -1607,7 +1606,7 @@ class VisualHelper
 					nextRayConf.X = ((xd + 1.0) / 2.0) * grt.config.resolutionX;
 					nextRayConf.Y = ((yd + 1.0) / 2.0) * grt.config.resolutionY;
 					Line ray;
-					DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+					grt.config.space.getCamera.fetchRay(xd, yd, ray);
 					traceSingleRay(ray.origin, ray.direction);
 				}
 			}
@@ -1634,7 +1633,7 @@ class VisualHelper
 					nextRayConf.X = ((xd + 1.0) / 2.0) * grt.config.resolutionX;
 					nextRayConf.Y = ((yd + 1.0) / 2.0) * grt.config.resolutionY;
 					Line ray;
-					DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+					grt.config.space.getCamera.fetchRay(xd, yd, ray);
 					traceSingleRay(ray.origin, ray.direction);
 					mouseInMiniature = false;
 				}
@@ -1734,7 +1733,7 @@ class VisualHelper
 			nextRayConf.X = ((xd + 1.0) / 2.0) * grt.config.resolutionX;
 			nextRayConf.Y = ((yd + 1.0) / 2.0) * grt.config.resolutionY;
 			Line ray;
-			DebugDispatcher.space.getCamera.fetchRay(xd, yd, ray);
+			grt.config.space.getCamera.fetchRay(xd, yd, ray);
 			traceSingleRay(ray.origin, ray.direction);
 		}
 		else if (miniatureMove)
@@ -1833,7 +1832,7 @@ class VisualHelper
 					}
 					else
 					{
-						auto rcam = DebugDispatcher.space.getCamera();
+						auto rcam = grt.config.space.getCamera();
 						camera.x = rcam.origin.x;
 						camera.y = rcam.origin.y;
 						camera.z = -rcam.origin.z;

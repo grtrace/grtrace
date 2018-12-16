@@ -6,8 +6,11 @@ import scene.materials.material;
 import scene.scenemgr, scene.camera;
 import image.memory;
 import std.math, std.functional;
+import std.array;
 import std.concurrency;
 public import metric.integrators : Integrator;
+import math;
+import image.color;
 
 alias fpnum = double;
 alias inum = long;
@@ -49,6 +52,20 @@ export struct GRTraceConfig
 	long traceEnd = 0;
 }
 
+private immutable Color[7] savedRayColors = [
+	Colors.Red, Colors.Green, Colors.Blue, Colors.Magenta, Colors.Yellow,
+	Colors.Cyan, Colors.White
+];
+
+export struct SavedRay
+{
+	Vectorf start;
+	Vectorf end;
+	Vectorf dir;
+	int index;
+	Color color;
+}
+
 /// Contains the state of the entire raytracer.
 export struct GRTrace
 {
@@ -57,6 +74,103 @@ export struct GRTrace
 	GRTraceConfig config;
 
 	Tid renderTid;
+
+	Image targetImage;
+
+	bool shouldSaveRays;
+	Appender!(SavedRay[]) savedRays;
+	bool savedRaysDirty;
+	void* cancelRayCallbackUdata;
+	bool function(void* udata, SavedRay* ray) cancelRayCallback;
+
+	void* progressCallbackUdata;
+	void function(void* udata, ulong progress, ulong maxProgress) progressCallback;
+	ulong progress, maxProgress;
+
+	void setProgress(ulong prog, ulong maxProg)
+	{
+		progress = prog;
+		maxProgress = maxProg;
+		if (progressCallback)
+		{
+			progressCallback(progressCallbackUdata, prog, maxProg);
+		}
+	}
+
+	/// Save a ray if saving is enabled, and return if computation should be terminated as signified by a custom callback.
+	bool saveRay(Line ray, Vectorf end)
+	{
+		return saveRay(ray, end, savedRayColors[savedRays.data.length % savedRayColors.length]);
+	}
+
+	/// Ditto
+	bool saveRay(Line ray, Vectorf end, Color customColor)
+	{
+		if (shouldSaveRays)
+		{
+			savedRays ~= SavedRay(ray.origin, end, ray.direction,
+					cast(int) savedRays.data.length, customColor);
+			savedRaysDirty = true;
+		}
+		return cancelRayCallback ? cancelRayCallback(cancelRayCallbackUdata, &savedRays.data.back)
+			: false;
+	}
+
+	/// Ditto
+	bool saveRay(Line ray, fpnum dist, Color customColor)
+	{
+		return saveRay(ray, ray.origin + ray.direction * dist, customColor);
+	}
+
+	/// Ditto
+	bool saveRay(Line ray, fpnum dist)
+	{
+		return saveRay(ray, ray.origin + ray.direction * dist);
+	}
+}
+
+extern (C)
+{
+	import core.runtime : Runtime;
+	import core.memory : GC;
+
+export:
+
+	void grtInitialize()
+	{
+		Runtime.initialize();
+	}
+
+	void grtTerminate()
+	{
+		Runtime.terminate();
+	}
+
+	GRTrace* grtNewGRTrace()
+	{
+		GRTrace* inst = new GRTrace();
+		GC.addRoot(inst);
+		return inst;
+	}
+
+	void grtDeleteGRTrace(GRTrace* grt)
+	{
+		GC.removeRoot(grt);
+		grt = null;
+		GC.collect();
+	}
+
+	void grtSetRaySavingEnabled(GRTrace* grt, bool enabled)
+	{
+		grt.shouldSaveRays = enabled;
+	}
+
+	void grtClearSavedRays(GRTrace* grt)
+	{
+		grt.savedRays.clear();
+		grt.savedRaysDirty = true;
+	}
+
 }
 
 //debug info

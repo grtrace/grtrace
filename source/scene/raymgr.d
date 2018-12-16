@@ -9,7 +9,6 @@ import math.geometric;
 import image.color;
 import scene.scenemgr;
 import scene.compute;
-import dbg.dispatcher;
 import std.stdio;
 import core.stdc.stdlib;
 
@@ -215,7 +214,7 @@ class Raytracer
 					if (doneRays > lastRays + 512)
 					{
 						lastRays = doneRays;
-						DebugDispatcher.progress(totalDoneRays + doneRays, totalRays);
+						grt.setProgress(totalDoneRays + doneRays, totalRays);
 					}
 				}
 			}
@@ -223,7 +222,7 @@ class Raytracer
 			{
 				threadComputer!false(0);
 				doneRays = threadDoneRays[0];
-				DebugDispatcher.progress(totalDoneRays + doneRays, totalRays);
+				grt.setProgress(totalDoneRays + doneRays, totalRays);
 			}
 			totalDoneRays += doneRays;
 			size_t xstride = 3;
@@ -274,7 +273,7 @@ class Raytracer
 			}
 		}
 		WriteImage(im, grt.config.outputFile);
-		DebugDispatcher.renderResult = im;
+		grt.targetImage = im;
 	}
 
 	static void cleanup()

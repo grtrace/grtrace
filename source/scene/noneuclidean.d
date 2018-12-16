@@ -20,7 +20,6 @@ import core.cpuid;
 import std.algorithm, std.array, std.string;
 import std.random, std.getopt;
 import scene.scenemgr;
-import dbg.dispatcher;
 
 private alias RPlane = scene.objects.plane.Plane;
 
@@ -106,7 +105,7 @@ class PlaneDeflectSpace : WorldSpace
 				//check if we had hit the event horizont
 				if (R <= 2 * Mass)
 				{
-					DebugDispatcher.saveRay(ray, newPos, RayDebugType.Default);
+					grt.saveRay(ray, newPos);
 					*didHit = false;
 					return float.infinity;
 				}
@@ -149,15 +148,15 @@ class PlaneDeflectSpace : WorldSpace
 				}
 
 				//cast deflected ray
-				DebugDispatcher.saveRay(ray, mdist, RayDebugType.Default);
-				DebugDispatcher.saveRay(Line(ray.origin + ray.direction * mdist,
+				grt.saveRay(ray, mdist);
+				grt.saveRay(Line(ray.origin + ray.direction * mdist,
 						(newPos - ray.origin - ray.direction * mdist).normalized, true),
-						newPos, RayDebugType.Default);
+						newPos);
 				return Raytrace!(doP, doN, doO, false)(grt, Line(newPos,
 						newDir, true), didHit, hitpoint, hitnormal, hit, cnt + 1);
 			}
 		}
-		DebugDispatcher.saveRay(ray, mdist, RayDebugType.Default);
+		grt.saveRay(ray, mdist);
 		if (dh)
 		{
 			*didHit = true;
