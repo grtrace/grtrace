@@ -3,7 +3,7 @@ module dbg.debugger;
 import grtrace;
 import glad.gl.all;
 import glad.gl.loader;
-import derelict.glfw3.glfw3;
+import bindbc.glfw;
 import imgui.api;
 import dbg.glhelpers;
 import dbg.dispatcher;
@@ -72,12 +72,14 @@ private class VisualPrimitives
 		foreach (v; iso.vertices[])
 		{
 			Verng ~= Vert3D(radius * v.x + origin.x, radius * v.y + origin.y,
-					radius * v.z + origin.z, 0, 0, 0, oColor.r, oColor.g,
-					oColor.b, 1.0, v.x, v.y, v.z);
+				radius * v.z + origin.z, 0, 0, 0, oColor.r, oColor.g,
+				oColor.b, 1.0, v.x, v.y, v.z);
 		}
 		foreach (t; iso.triangles[])
 		{
-			Eerng ~= [cast(uint)(iv0 + t.a), cast(uint)(iv0 + t.b), cast(uint)(iv0 + t.c)];
+			Eerng ~= [
+				cast(uint)(iv0 + t.a), cast(uint)(iv0 + t.b), cast(uint)(iv0 + t.c)
+			];
 			cnt += 3;
 		}
 		Vrng ~= Verng.data;
@@ -106,21 +108,27 @@ private class VisualPrimitives
 			double sini = sin(cast(double) PI * i / 180);
 			vec = (qvec * cosi + pvec * sini) * inner_radius;
 			nvec = vectorf(dd.plane.normal.x - vec.x, dd.plane.normal.y - vec.y,
-					dd.plane.normal.z - vec.z).normalized;
+				dd.plane.normal.z - vec.z).normalized;
 			Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
-					vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
-					oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
+				vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
+				oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
 			vec = vec * (outer_radius / inner_radius);
 			nvec = vectorf(dd.plane.normal.x + vec.x, dd.plane.normal.y + vec.y,
-					dd.plane.normal.z + vec.z).normalized;
+				dd.plane.normal.z + vec.z).normalized;
 			Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
-					vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
-					oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
+				vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
+				oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
 
-			Erng ~= [cast(uint)(iv0 + ((vrt + 0) % mod)),
-				cast(uint)(iv0 + ((vrt + 1) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
-			Erng ~= [cast(uint)(iv0 + ((vrt + 1) % mod)),
-				cast(uint)(iv0 + ((vrt + 3) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+			Erng ~= [
+				cast(uint)(iv0 + ((vrt + 0) % mod)),
+				cast(uint)(iv0 + ((vrt + 1) % mod)),
+				cast(uint)(iv0 + ((vrt + 2) % mod))
+			];
+			Erng ~= [
+				cast(uint)(iv0 + ((vrt + 1) % mod)),
+				cast(uint)(iv0 + ((vrt + 3) % mod)),
+				cast(uint)(iv0 + ((vrt + 2) % mod))
+			];
 			vrt += 6;
 		}
 
@@ -148,21 +156,27 @@ private class VisualPrimitives
 			double sini = sin(cast(double) PI * i / 180);
 			vec = (qvec * cosi + pvec * sini) * inner_radius;
 			nvec = vectorf(dd.plane.normal.x - vec.x, dd.plane.normal.y - vec.y,
-					dd.plane.normal.z - vec.z).normalized;
+				dd.plane.normal.z - vec.z).normalized;
 			Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
-					vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
-					oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
+				vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
+				oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
 			vec = vec * (outer_radius / inner_radius);
 			nvec = vectorf(dd.plane.normal.x + vec.x, dd.plane.normal.y + vec.y,
-					dd.plane.normal.z + vec.z).normalized;
+				dd.plane.normal.z + vec.z).normalized;
 			Vrng ~= Vert3D(vec.x + dd.plane.origin.x, vec.y + dd.plane.origin.y,
-					vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
-					oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
+				vec.z + dd.plane.origin.z, 0, 0, 0, oColor.r, oColor.g,
+				oColor.b, 1.0, nvec.x, nvec.y, nvec.z);
 
-			Erng ~= [cast(uint)(iv0 + ((vrt + 0) % mod)),
-				cast(uint)(iv0 + ((vrt + 1) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
-			Erng ~= [cast(uint)(iv0 + ((vrt + 1) % mod)),
-				cast(uint)(iv0 + ((vrt + 3) % mod)), cast(uint)(iv0 + ((vrt + 2) % mod))];
+			Erng ~= [
+				cast(uint)(iv0 + ((vrt + 0) % mod)),
+				cast(uint)(iv0 + ((vrt + 1) % mod)),
+				cast(uint)(iv0 + ((vrt + 2) % mod))
+			];
+			Erng ~= [
+				cast(uint)(iv0 + ((vrt + 1) % mod)),
+				cast(uint)(iv0 + ((vrt + 3) % mod)),
+				cast(uint)(iv0 + ((vrt + 2) % mod))
+			];
 			vrt += 6;
 		}
 
@@ -178,7 +192,7 @@ private class VisualPrimitives
 		foreach (Vectorf vert; tab)
 		{
 			Vrng ~= Vert3D(vert.x, vert.y, vert.z, 0, 0, 0, oColor.r, oColor.g,
-					oColor.b, 1.0, normal.x, normal.y, normal.z);
+				oColor.b, 1.0, normal.x, normal.y, normal.z);
 		}
 
 		Erng ~= [cast(uint)(iv0), cast(uint)(iv0 + 1), cast(uint)(iv0 + 2)];
@@ -306,8 +320,8 @@ class VisualHelper
 			normalize();
 
 			matrix = gMat4Mul(gMatTranslation(GFXvector3(focus_x, focus_y, 0.0f)),
-					gMat4Mul(gMatScaling(GFXvector3(1.0f / zoom, 1.0f / zoom, 1.0f)),
-						gMatTranslation(GFXvector3(-focus_x, -focus_y, 0.0f))));
+				gMat4Mul(gMatScaling(GFXvector3(1.0f / zoom, 1.0f / zoom, 1.0f)),
+					gMatTranslation(GFXvector3(-focus_x, -focus_y, 0.0f))));
 		}
 	}
 
@@ -465,19 +479,19 @@ class VisualHelper
 			enum float CamR = 1.0f, CamG = 0.8f, CamB = 0.1f;
 			enum float CamXR = 0.7f, CamXG = 0.7f, CamXB = 0.7f;
 			v3d ~= Vert3D(cx - 4 * cfx, cy - 4 * cfy, cz - 4 * cfz, 0, 0, 0, CamR,
-					CamG, CamB, 1.0, -cam.lookdir.x, -cam.lookdir.y, -cam.lookdir.z); // 0 - top
+				CamG, CamB, 1.0, -cam.lookdir.x, -cam.lookdir.y, -cam.lookdir.z); // 0 - top
 			v3d ~= Vert3D(cx + cux + crx, cy + cuy + cry, cz + cuz + crz, 0, 0, 0,
-					CamXR, CamXG, CamXB, 1.0, nm * (cux + crx + cfx),
-					nm * (cuy + cry + cfy), nm * (cuz + crz + cfz)); // 1 - ^>
+				CamXR, CamXG, CamXB, 1.0, nm * (cux + crx + cfx),
+				nm * (cuy + cry + cfy), nm * (cuz + crz + cfz)); // 1 - ^>
 			v3d ~= Vert3D(cx - cux + crx, cy - cuy + cry, cz - cuz + crz, 0, 0, 0,
-					CamXR, CamXG, CamXB, 1.0, nm * (-cux + crx + cfx),
-					nm * (-cuy + cry + cfy), nm * (-cuz + crz + cfz)); // 2 - V>
+				CamXR, CamXG, CamXB, 1.0, nm * (-cux + crx + cfx),
+				nm * (-cuy + cry + cfy), nm * (-cuz + crz + cfz)); // 2 - V>
 			v3d ~= Vert3D(cx - cux - crx, cy - cuy - cry, cz - cuz - crz, 0, 0, 0,
-					CamXR, CamXG, CamXB, 1.0, nm * (-cux - crx + cfx),
-					nm * (-cuy - cry + cfy), nm * (-cuz - crz + cfz)); // 3 - <V
+				CamXR, CamXG, CamXB, 1.0, nm * (-cux - crx + cfx),
+				nm * (-cuy - cry + cfy), nm * (-cuz - crz + cfz)); // 3 - <V
 			v3d ~= Vert3D(cx + cux - crx, cy + cuy - cry, cz + cuz - crz, 0, 0, 0,
-					CamXR, CamXG, CamXB, 1.0, nm * (cux - crx + cfx),
-					nm * (cuy - cry + cfy), nm * (cuz - crz + cfz)); // 4 - <^
+				CamXR, CamXG, CamXB, 1.0, nm * (cux - crx + cfx),
+				nm * (cuy - cry + cfy), nm * (cuz - crz + cfz)); // 4 - <^
 			e3d ~= [0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1, 1, 2, 3, 3, 4, 1];
 			numverts += 18;
 			sceneObjects[tso.id] = tso;
@@ -499,28 +513,28 @@ class VisualHelper
 
 				case DrawType.Sphere:
 					tso.vertCount = VisualPrimitives.appendSphere(v3d,
-							e3d, cast(int) v3d.length, obj);
+						e3d, cast(int) v3d.length, obj);
 					numverts += tso.vertCount;
 					sceneObjects[tso.id] = tso;
 					continue;
 
 				case DrawType.Triangle:
 					tso.vertCount = VisualPrimitives.appendTriangle(v3d,
-							e3d, cast(int) v3d.length, obj);
+						e3d, cast(int) v3d.length, obj);
 					numverts += tso.vertCount;
 					sceneObjects[tso.id] = tso;
 					continue;
 
 				case DrawType.Plane:
 					tso.vertCount = VisualPrimitives.appendPlane(v3d,
-							e3d, cast(int) v3d.length, obj);
+						e3d, cast(int) v3d.length, obj);
 					numverts += tso.vertCount;
 					sceneObjects[tso.id] = tso;
 					continue;
 
 				case DrawType.AccretionDisc:
 					tso.vertCount = VisualPrimitives.appendAccretionDisc(v3d,
-							e3d, cast(int) v3d.length, obj);
+						e3d, cast(int) v3d.length, obj);
 					numverts += tso.vertCount;
 					sceneObjects[tso.id] = tso;
 					continue;
@@ -564,28 +578,28 @@ class VisualHelper
 
 			case DrawType.Sphere:
 				tso.vertCount = VisualPrimitives.appendSphere(v3d,
-						e3d, cast(int) v3d.length, deb);
+					e3d, cast(int) v3d.length, deb);
 				numverts += tso.vertCount;
 				sceneObjects[tso.id] = tso;
 				continue;
 
 			case DrawType.Triangle:
 				tso.vertCount = VisualPrimitives.appendTriangle(v3d,
-						e3d, cast(int) v3d.length, deb);
+					e3d, cast(int) v3d.length, deb);
 				numverts += tso.vertCount;
 				sceneObjects[tso.id] = tso;
 				continue;
 
 			case DrawType.Plane:
 				tso.vertCount = VisualPrimitives.appendPlane(v3d,
-						e3d, cast(int) v3d.length, deb);
+					e3d, cast(int) v3d.length, deb);
 				numverts += tso.vertCount;
 				sceneObjects[tso.id] = tso;
 				continue;
 
 			case DrawType.AccretionDisc:
 				tso.vertCount = VisualPrimitives.appendAccretionDisc(v3d,
-						e3d, cast(int) v3d.length, deb);
+					e3d, cast(int) v3d.length, deb);
 				numverts += tso.vertCount;
 				sceneObjects[tso.id] = tso;
 				continue;
@@ -615,7 +629,7 @@ class VisualHelper
 			foreach (string id, TSObject* obj; sceneObjects)
 			{
 				writefln("\t%s [Vi:%d,Vn:%d,Ve:%d]", id, obj.vertIndex,
-						obj.vertCount, obj.vertIndex + obj.vertCount - 1);
+					obj.vertCount, obj.vertIndex + obj.vertCount - 1);
 			}
 		}
 
@@ -671,13 +685,13 @@ class VisualHelper
 		foreach (SavedRay ray; DebugDispatcher.saver.rays)
 		{
 			v3d ~= Vert3D(ray.start.x, ray.start.y, -ray.start.z, 0.0f, 0.0f,
-					0.0f, ray.color.r, ray.color.g, ray.color.b, 1.0f, 0.0f, 1.0f, 0.0f);
+				0.0f, ray.color.r, ray.color.g, ray.color.b, 1.0f, 0.0f, 1.0f, 0.0f);
 			if (*(ray.end - ray.start) > 10_000_000.0f)
 			{
 				ray.end = ray.start + ray.dir * 100.0f;
 			}
 			v3d ~= Vert3D(ray.end.x, ray.end.y, -ray.end.z, 0.0f, 0.0f, 0.0f,
-					ray.color.r, ray.color.g, ray.color.b, 1.0f, 0.0f, 1.0f, 0.0f);
+				ray.color.r, ray.color.g, ray.color.b, 1.0f, 0.0f, 1.0f, 0.0f);
 		}
 		numRays = cast(int) v3d.length;
 		if (numRays > 0)
@@ -699,7 +713,22 @@ class VisualHelper
 	public void runGraphics()
 	{
 		double Taccum = 0.0;
-		DerelictGLFW3.load();
+		GLFWSupport ret = loadGLFW();
+		if(ret != glfwSupport) {
+			static import bindbc.loader.sharedlib;
+			foreach(info; bindbc.loader.sharedlib.errors) {
+				writeln(info.error, info.message);
+			}
+
+			string msg;
+			if(ret == GLFWSupport.noLibrary) {
+				msg = "This application requires the GLFW library.";
+			} else {
+				msg = "The version of the GLFW library on your system is too low. Please upgrade.";
+			}
+			throw new Error(msg);
+    	}
+
 		glfwInit();
 		setupWindow();
 		initVisuals();
@@ -725,10 +754,10 @@ class VisualHelper
 			camera.rmatrix = gMat4Mul(gMatRotX(camera.pitch), gMatRotY(camera.yaw));
 			camera.rinvmatrix = gMat4Inverse(camera.rmatrix);
 			camera.matrix = gMat4Mul(camera.rmatrix,
-					gMatTranslation(gVec3(-camera.x, -camera.y, -camera.z)));
+				gMatTranslation(gVec3(-camera.x, -camera.y, -camera.z)));
 			camMover();
 			matProjection = gMatProjection(camera.fov * PI / 180.0,
-					winy / cast(double) winx, camera.near, camera.far);
+				winy / cast(double) winx, camera.near, camera.far);
 			resetGl();
 			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glEnable(GL_DEPTH_TEST);
@@ -752,7 +781,7 @@ class VisualHelper
 				}
 			}
 			glMultiDrawElements(GL_TRIANGLES, cast(const(int)*)(vends.ptr),
-					GL_UNSIGNED_INT, cast(const(void*)*)(vbegins.ptr), cast(GLsizei) numvs);
+				GL_UNSIGNED_INT, cast(const(void*)*)(vbegins.ptr), cast(GLsizei) numvs);
 
 			objRays.bind();
 			objRays.vao.enableAttribs();
@@ -796,7 +825,7 @@ class VisualHelper
 			gAssertGl();
 			glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			imguiBeginFrame(mousex, winy - mousey, mouseLocked ? 0 : mousebtns,
-					mouseLocked ? 0 : mousescroll, cast(dchar) keychar);
+				mouseLocked ? 0 : mousescroll, cast(dchar) keychar);
 			// GUI code
 
 			mouseInGui |= imguiBeginScrollArea("Controls", 10, 270, 240, winy - 280, &scroll_d);
@@ -847,7 +876,7 @@ class VisualHelper
 					size_t max_number_of_steps;
 					bool dirty_history = false;
 					MetricContainer wrp = cast(MetricContainer)(
-							cast(WorldSpaceWrapper) grt.config.space).smetric;
+						cast(WorldSpaceWrapper) grt.config.space).smetric;
 
 					final switch (dbgWorldType) with (WorldType)
 					{
@@ -883,7 +912,7 @@ class VisualHelper
 							imguiSlider("", &gui_max_number_of_steps, 1, 10000, 1);
 
 							if (gui_max_number_of_steps != max_number_of_steps
-									|| gui_param_step != param_step)
+								|| gui_param_step != param_step)
 							{
 								dirty_history = true;
 
@@ -892,14 +921,14 @@ class VisualHelper
 									(cast(metric.analytic.AnalyticSkyBox) wrp).paramStep
 										= -gui_param_step;
 									(cast(metric.analytic.AnalyticSkyBox) wrp).maxNumberOfSteps = cast(
-											size_t) gui_max_number_of_steps;
+										size_t) gui_max_number_of_steps;
 								}
 								else
 								{
 									(cast(metric.analytic.Analytic) wrp).paramStep
 										= -gui_param_step;
 									(cast(metric.analytic.Analytic) wrp).maxNumberOfSteps = cast(
-											size_t) gui_max_number_of_steps;
+										size_t) gui_max_number_of_steps;
 								}
 							}
 
@@ -981,11 +1010,12 @@ class VisualHelper
 											uint[] e3d = [];
 
 											auto deb = returnDebugRenderObjects()[
-											"@ext_event_horizon"];
+												"@ext_event_horizon"
+											];
 											TSObject* tso = sceneObjects["@ext_event_horizon"];
 
 											VisualPrimitives.appendSphere(v3d,
-													e3d, tso.dataIndex, deb);
+												e3d, tso.dataIndex, deb);
 
 											(cast(Vert3D[]) objSpatial.data.data)[(
 													tso.dataIndex) .. (tso.dataIndex + v3d.length)] = v3d[0
@@ -1012,7 +1042,7 @@ class VisualHelper
 									imguiLabel("Momentum: %f".format(angular_momentum));
 									imguiSlider("", &angular_momentum, 0.0f, 10.0f, 0.1f);
 									if (mass != cast(float) met.m
-											|| angular_momentum != cast(float) met.j)
+										|| angular_momentum != cast(float) met.j)
 									{
 										dirty_history = true;
 										with (met)
@@ -1048,7 +1078,7 @@ class VisualHelper
 			{
 				static int scroll_cs;
 				mouseInGui |= imguiBeginScrollArea("Help", winx / 2 - 150,
-						winy / 2 - 250, 300, 500, &scroll_cs);
+					winy / 2 - 250, 300, 500, &scroll_cs);
 				imguiLabel("Keys:");
 				imguiLabel("F1 - this help");
 				imguiLabel("W,A,S,D,Q,E - Camera movement");
@@ -1067,7 +1097,7 @@ class VisualHelper
 			{
 				static int scroll_ol;
 				mouseInGui |= imguiBeginScrollArea("Objects", winx / 2 - 150,
-						winy / 2 - 250, 300, 500, &scroll_ol);
+					winy / 2 - 250, 300, 500, &scroll_ol);
 				foreach (TSObject* obj; sortedObjects)
 				{
 					imguiCollapse(obj.id, "", &obj.opanel);
@@ -1109,7 +1139,7 @@ class VisualHelper
 	{
 		static int scroll_pos;
 		mouseInGui |= imguiBeginScrollArea("Positions", winx / 2 - 200,
-				winy / 2 - 275, 400, 550, &scroll_pos);
+			winy / 2 - 275, 400, 550, &scroll_pos);
 		bool flag = false;
 		foreach (string key, SValue sv; SceneDescription.defines)
 		{
@@ -1437,13 +1467,13 @@ class VisualHelper
 				for (int i = -lineCount / 2; i <= lineCount / 2; i++)
 				{
 					v3d ~= Vert3D(xPos + i * xyGSize, yPos - dim, zPos, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos + i * xyGSize, yPos + dim, zPos, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos - dim, yPos + i * xyGSize, zPos, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos + dim, yPos + i * xyGSize, zPos, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 				}
 			}
 
@@ -1457,13 +1487,13 @@ class VisualHelper
 				for (int i = -lineCount / 2; i <= lineCount / 2; i++)
 				{
 					v3d ~= Vert3D(xPos + i * xzGSize, yPos, zPos - dim, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos + i * xzGSize, yPos, zPos + dim, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos - dim, yPos, zPos + i * xzGSize, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos + dim, yPos, zPos + i * xzGSize, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 				}
 			}
 
@@ -1477,13 +1507,13 @@ class VisualHelper
 				for (int i = -lineCount / 2; i <= lineCount / 2; i++)
 				{
 					v3d ~= Vert3D(xPos, yPos - dim, zPos + i * yzGSize, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos, yPos + dim, zPos + i * yzGSize, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos, yPos + i * yzGSize, zPos - dim, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 					v3d ~= Vert3D(xPos, yPos + i * yzGSize, zPos + dim, 0, 0,
-							0, 1, 1, 1, 1, 0, 0, 1);
+						0, 1, 1, 1, 1, 0, 0, 1);
 				}
 			}
 		}
@@ -1503,7 +1533,7 @@ class VisualHelper
 
 		static int scroll;
 		bool mig = imguiBeginScrollArea("Grid Settings", winx - 200,
-				winy / 2 - 250, 190, 500, &scroll);
+			winy / 2 - 250, 190, 500, &scroll);
 
 		static bool xyExp, xzExp, yzExp;
 

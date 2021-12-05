@@ -13,7 +13,6 @@ import std.concurrency;
 import core.thread : Thread;
 import core.time;
 import math;
-import gpuacc.gpu;
 import dbg.debugger : VisualHelper;
 import dbg.calcs;
 
@@ -56,7 +55,6 @@ void main(string[] args)
 	string arg0 = args[0].idup; //asds
 	GRTrace* grt = new GRTrace();
 	Raytracer.grt = grt;
-	InitGPU(grt);
 	InitScripting(grt, arg0);
 	bool doHelp;
 	getopt(args, "verbose|v", &grt.config.verbose, "script|s",
@@ -85,6 +83,4 @@ void main(string[] args)
 	{
 		askCalculation(grt);
 	}
-
-	FinalizeGPU();
 }
