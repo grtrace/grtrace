@@ -50,7 +50,7 @@ in
 {
 	assert(x.length == y.length);
 }
-body
+do
 {
 	Polynomial res = Polynomial(x.length - 1);
 

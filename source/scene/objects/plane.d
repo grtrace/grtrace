@@ -138,7 +138,7 @@ class TexturablePlane : Plane
 		assert(a_u < d_u);
 		assert(a_v < d_v);
 	}
-	body
+	do
 	{
 		super(m, p);
 

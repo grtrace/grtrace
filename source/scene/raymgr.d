@@ -4,7 +4,7 @@ module scene.raymgr;
 import grtrace;
 import std.container.array;
 import std.math, std.string, std.algorithm, std.array, std.range;
-import core.thread, core.atomic, core.time, core.bitop;
+import core.thread, core.atomic, core.time, core.volatile;
 import math.geometric;
 import image.color;
 import scene.scenemgr;

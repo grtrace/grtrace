@@ -67,7 +67,7 @@ struct GFXvector3
 			~ "{return GFXvector3(x" ~ op ~ "o.x," ~ "y" ~ op ~ "o.y, z" ~ op ~ "o.z);}";
 	}
 
-	public ref GFXnum opIndex(size_t i)
+	public ref GFXnum opIndex(size_t i) return
 	{
 		switch (i)
 		{
@@ -138,7 +138,7 @@ struct GFXvector4
 			~ "o.z,w" ~ op ~ "o.w);}";
 	}
 
-	public ref GFXnum opIndex(size_t i)
+	public ref GFXnum opIndex(size_t i) return
 	{
 		switch (i)
 		{

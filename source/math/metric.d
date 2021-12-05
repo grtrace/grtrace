@@ -22,7 +22,7 @@ struct Metric4
 	{
 		assert(mat == mat.transposed);
 	}
-	body
+	do
 	{
 		vals[0] = mat[0];
 		vals[1] = mat[1];
@@ -63,13 +63,13 @@ struct Metric4
 		return cast(Matrix4f) this;
 	}
 
-	ref fpnum opIndex(int row, int col)
+	ref fpnum opIndex(int row, int col) return
 	{
 		return vals[rcmap[row][col]];
 	}
 
 	/// Fast compile-time indexed fetch
-	ref fpnum at(int row, int col)()
+	ref fpnum at(int row, int col)() return
 	{
 		return vals[ercmap[row][col]];
 	}

@@ -153,7 +153,7 @@ public:
 	{
 		assert(this.determinant != 0);
 	}
-	body
+	do
 	{
 		Matrix4!T tmp;
 
@@ -213,7 +213,7 @@ public:
 	{
 		assert((i >= 0) && (i < 16));
 	}
-	body
+	do
 	{
 		return vals[i];
 	}
@@ -223,7 +223,7 @@ public:
 	{
 		assert((i >= 0) && (i < 16));
 	}
-	body
+	do
 	{
 		vals[i] = val;
 	}
