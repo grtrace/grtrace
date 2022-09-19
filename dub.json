@@ -1,9 +1,9 @@
 {
 	"name": "grtrace",
 	"description": "General Relativity rayTracer",
-	"copyright": "Copyright © 2016, Jakub Szewczyk&Grzegorz Uriasz",
+	"copyright": "Copyright © 2016, Raven Szewczyk&Grzegorz Uriasz",
 	"authors": [
-		"Jakub Szewczyk",
+		"Raven Szewczyk",
 		"Grzegorz Uriasz"
 	],
 	"workingDirectory": "bin",

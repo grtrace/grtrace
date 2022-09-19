@@ -1,6 +1,6 @@
 ### GRTrace
 General Relativity rayTracer
-A scientific project done by 2 high school students - Jakub Szewczyk and Grzegorz Uriasz.
+A scientific project done by 2 high school students - Raven Szewczyk and Grzegorz Uriasz.
 
 This is an implementation of the raytracing algorithm we have developed, the rays are casted in a curved spacetime,
 which is specified by either an analytic metric description (e.g. [Kerr metric](source/metric/initiators/kerr.d)) or a 
